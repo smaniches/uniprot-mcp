@@ -117,10 +117,11 @@ branch = true
 source = ["uniprot_mcp"]
 
 [tool.coverage.report]
-# 84% is the release gate (current measurement ~85% with some Hypothesis
-# variance). Remaining gaps are in _self_test, retry/timeout corner
-# branches, and formatter fallback paths; tracked for v0.2 to reach 90%.
-fail_under = 84
+# Elite gate: 99% (line + branch). Current measurement is 100%; the
+# 1% buffer absorbs Hypothesis variance. If tempted to lower this to
+# make CI green, write a test instead — every uncovered branch is a
+# bug that hasn't bitten yet.
+fail_under = 99
 show_missing = true
 skip_covered = false
 exclude_lines = [
