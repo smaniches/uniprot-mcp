@@ -78,6 +78,7 @@ No runtime execution during audit. Remediation PR includes a fresh test run (off
 | C3 | P1 | CI did not exercise `tests/contract/`. | **Fixed** — added to the offline pytest invocation |
 | C4 | P2 | GitHub Actions pinned by tag, not SHA. Scorecard flags this. | **Deferred to v0.2** — Dependabot is configured to migrate; risk contained because tag-pins come from well-known org-verified actions |
 | C5 | P2 | SBOM generated in release workflow but not attested. | **Deferred to v0.2** — attestation via `actions/attest-build-provenance` requires attestation type `sbom`, available but not yet wired |
+| C6 | P2 | CodeQL + OSSF Scorecard workflows fail on **private** repositories (Code Scanning is a paid feature on private personal repos). | **Deferred until public release** — workflows removed; bandit in the CI lint job still provides SAST coverage; CodeQL/Scorecard re-enable the day we flip the repo public |
 
 ### Security
 
