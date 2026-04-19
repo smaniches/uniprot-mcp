@@ -17,7 +17,7 @@ nox.options.sessions = ["lint", "typecheck", "test"]
 nox.options.reuse_existing_virtualenvs = True
 
 PYTHON_VERSIONS = ["3.11", "3.12", "3.13"]
-SRC = ["client.py", "server.py", "formatters.py"]
+SRC = ["src/uniprot_mcp"]
 
 
 @nox.session(python=False)

@@ -10,7 +10,7 @@ import string
 import pytest
 from hypothesis import given, strategies as st
 
-from client import ACCESSION_RE, UniProtClient
+from uniprot_mcp.client import ACCESSION_RE, UniProtClient
 
 
 # UniProt accession = 6 or 10 chars per official spec.

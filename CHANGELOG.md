@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Project layout:** migrated flat `server.py`/`client.py`/`formatters.py`
+  to `src/uniprot_mcp/` (eliminates site-packages collision risk, makes
+  `py.typed` PEP 561-effective, removes `sys.path` hack). Console script
+  now wires `uniprot-mcp = "uniprot_mcp.server:main"`.
+- `smithery.yaml` now invokes the `uniprot-mcp` console script instead
+  of a non-existent `Dockerfile`.
+- CI: `pip-audit --strict` no longer silently masked with `|| true`.
+- CI: `tests/contract/` added to the offline pytest invocation.
+
+### Added
+- **Input validation layer** in every tool: length caps on `query`,
+  `ids`, `accession`, `organism`, `database`, `feature_types`;
+  allow-list for `response_format`; accession-format pre-check before
+  any HTTP call.
+- **Agent-safe error envelopes** — raw exception text no longer leaks
+  to LLM callers (logged server-side instead).
+- **Retry on `id_mapping_submit`** (was previously a single-shot call).
+- **HTTP-date `Retry-After` parsing** (RFC 7231) — previously only
+  delta-seconds were honoured; HTTP-date headers fell back to
+  exponential back-off.
+- `tests/contract/` — fixture-shape contract tests (directory was
+  previously referenced in docs but did not exist).
+- Unit tests for `_check_accession`, `_check_format`, `_safe_error`,
+  the HTTP-date Retry-After branch, multi-word organism quoting in
+  `uniprot_search`, and the no-network-on-bad-input property.
+
+### Fixed
+- `formatters.py` now fully type-hinted; `is_swissprot` helper replaces
+  duplicated logic; ambiguous `l` loop variable renamed.
+
+### Security
+- See `AUDIT.md` — this release closes P0/P1 findings from the
+  post-ship professional audit.
+
+
+
 ## [0.1.0] - 2026-04-18
 
 ### Added

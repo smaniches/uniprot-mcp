@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from client import ACCESSION_RE
+from uniprot_mcp.client import ACCESSION_RE
 
 
 @pytest.mark.parametrize(

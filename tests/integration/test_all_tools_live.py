@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from client import UniProtClient
+from uniprot_mcp.client import UniProtClient
 
 pytestmark = pytest.mark.integration
 

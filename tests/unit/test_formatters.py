@@ -1,7 +1,7 @@
 """Unit tests for formatters — offline, fixture-driven."""
 from __future__ import annotations
 
-from formatters import (
+from uniprot_mcp.formatters import (
     fmt_crossrefs,
     fmt_entry,
     fmt_features,

@@ -37,7 +37,7 @@ jobs:
       - name: Bandit (security lint)
         run: bandit -r client.py server.py formatters.py
       - name: pip-audit (CVE scan)
-        run: pip-audit --strict --ignore-vuln GHSA-0000-0000-0000 || true
+        run: pip-audit --strict
 
   test:
     name: Tests (${{ matrix.os }} · Python ${{ matrix.python }})
@@ -58,7 +58,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[test]"
       - name: Run offline test suite
-        run: pytest tests/unit tests/property tests/client -v --cov --cov-report=xml
+        run: pytest tests/unit tests/property tests/client tests/contract -v --cov --cov-report=xml
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
         uses: codecov/codecov-action@v4

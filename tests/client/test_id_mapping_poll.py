@@ -6,7 +6,7 @@ from itertools import cycle
 import httpx
 import respx
 
-from client import UniProtClient
+from uniprot_mcp.client import UniProtClient
 
 
 async def test_poll_exits_on_results() -> None:

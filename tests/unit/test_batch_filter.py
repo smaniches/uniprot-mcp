@@ -11,7 +11,7 @@ import httpx
 import pytest
 import respx
 
-from client import UniProtClient
+from uniprot_mcp.client import UniProtClient
 
 
 @pytest.fixture
