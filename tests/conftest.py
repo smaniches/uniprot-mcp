@@ -37,6 +37,22 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             item.add_marker(skip_live)
 
 
+@pytest.fixture(autouse=True)
+async def _reset_server_client_singleton():
+    """Ensure the module-level UniProtClient singleton doesn't leak
+    between tests. A connected httpx.AsyncClient captured before a
+    `respx.mock` context starts will bypass the mock, producing flaky
+    test-order dependencies."""
+    yield
+    try:
+        from uniprot_mcp import server as _srv
+    except ImportError:  # pragma: no cover - pre-install
+        return
+    if _srv._uniprot is not None:
+        await _srv._uniprot.close()
+        _srv._uniprot = None
+
+
 @pytest.fixture
 def fixture_loader():
     """Return a callable that loads a JSON fixture by stem."""

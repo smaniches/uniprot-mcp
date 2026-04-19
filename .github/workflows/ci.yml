@@ -33,9 +33,9 @@ jobs:
       - name: Ruff format check
         run: ruff format --check .
       - name: Mypy
-        run: mypy client.py server.py formatters.py
+        run: mypy src/uniprot_mcp
       - name: Bandit (security lint)
-        run: bandit -r client.py server.py formatters.py
+        run: bandit -r src/uniprot_mcp
       - name: pip-audit (CVE scan)
         run: pip-audit --strict
 
