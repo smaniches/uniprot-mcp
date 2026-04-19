@@ -1,4 +1,5 @@
 """Cover the `_self_test` helper end-to-end with a mocked upstream."""
+
 from __future__ import annotations
 
 import httpx

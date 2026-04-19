@@ -4,6 +4,7 @@ Each tool is exercised end-to-end with a respx-mocked UniProt API.
 Goal: ensure every tool's success branch is covered, not just the
 input-validation rejection path.
 """
+
 from __future__ import annotations
 
 import httpx
@@ -145,7 +146,11 @@ async def test_taxonomy_search_happy_path() -> None:
         router.get("/taxonomy/search").mock(
             return_value=httpx.Response(
                 200,
-                json={"results": [{"taxonId": 9606, "scientificName": "Homo sapiens", "rank": "species"}]},
+                json={
+                    "results": [
+                        {"taxonId": 9606, "scientificName": "Homo sapiens", "rank": "species"}
+                    ]
+                },
             )
         )
         out = await uniprot_taxonomy_search("Homo sapiens", 3, "markdown")
