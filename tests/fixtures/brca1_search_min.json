@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "source": "https://rest.uniprot.org/uniprotkb/search?query=(gene:BRCA1)+AND+(organism_id:9606)&size=1",
+    "captured_at": "2026-04-18T00:00:00Z"
+  },
+  "results": [
+    {
+      "primaryAccession": "P38398",
+      "entryType": "UniProtKB reviewed (Swiss-Prot)",
+      "proteinDescription": {
+        "recommendedName": {
+          "fullName": { "value": "Breast cancer type 1 susceptibility protein" }
+        }
+      },
+      "genes": [{ "geneName": { "value": "BRCA1" } }],
+      "organism": { "scientificName": "Homo sapiens", "taxonId": 9606 },
+      "sequence": { "length": 1863 }
+    }
+  ]
+}

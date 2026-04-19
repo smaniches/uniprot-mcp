@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "uniprot-mcp: A Model Context Protocol server for the UniProt protein knowledgebase"
+abstract: >-
+  uniprot-mcp is a Model Context Protocol (MCP) server exposing ten
+  tools that query the UniProt REST API from LLM-driven agents such as
+  Claude. It wraps entry retrieval, sequence download, feature and
+  variant inspection, GO annotation, cross-reference lookup, ID mapping,
+  batch retrieval, and taxonomy search, with strict accession validation,
+  retry and back-off, and snapshot-tested formatters.
+type: software
+authors:
+  - family-names: "Maniches"
+    given-names: "Santiago"
+    email: "santiago.maniches@gmail.com"
+    orcid: "https://orcid.org/0009-0005-6480-1987"
+    affiliation: "TOPOLOGICA LLC"
+version: 0.1.0
+date-released: "2026-04-18"
+license: Apache-2.0
+repository-code: "https://github.com/smaniches/uniprot-mcp"
+url: "https://github.com/smaniches/uniprot-mcp"
+keywords:
+  - model-context-protocol
+  - mcp
+  - uniprot
+  - bioinformatics
+  - proteins
+  - llm-tools
+  - anthropic-claude
+references:
+  - type: article
+    title: "UniProt: the Universal Protein Knowledgebase in 2025"
+    authors:
+      - name: "The UniProt Consortium"
+    year: 2025
+    journal: "Nucleic Acids Research"
+    doi: "10.1093/nar/gkae1010"

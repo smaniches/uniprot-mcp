@@ -1,0 +1,24 @@
+uniprot-mcp
+Copyright 2026 Santiago Maniches
+
+This product includes software developed by Santiago Maniches
+(ORCID: 0009-0005-6480-1987) under the auspices of TOPOLOGICA LLC
+(https://topologica.ai).
+
+Original author and primary maintainer:
+  Santiago Maniches <santiago.maniches@gmail.com>
+  ORCID: https://orcid.org/0009-0005-6480-1987
+
+Organizational affiliation:
+  TOPOLOGICA LLC
+
+Data source:
+  This software is a client for the UniProt Knowledgebase
+  (https://www.uniprot.org). UniProt data is made available under
+  the Creative Commons Attribution 4.0 International (CC BY 4.0)
+  License by the UniProt Consortium (EMBL-EBI, SIB, PIR). When using
+  data retrieved via this software, please cite:
+
+    The UniProt Consortium. UniProt: the Universal Protein
+    Knowledgebase in 2025. Nucleic Acids Research, 2025.
+    https://doi.org/10.1093/nar/gkae1010

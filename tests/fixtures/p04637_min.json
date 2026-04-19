@@ -1,0 +1,88 @@
+{
+  "_meta": {
+    "source": "https://rest.uniprot.org/uniprotkb/P04637",
+    "captured_at": "2026-04-18T00:00:00Z",
+    "note": "Hand-minified subset of the live response; covers all fields exercised by formatter unit tests."
+  },
+  "primaryAccession": "P04637",
+  "entryType": "UniProtKB reviewed (Swiss-Prot)",
+  "proteinDescription": {
+    "recommendedName": {
+      "fullName": { "value": "Cellular tumor antigen p53" }
+    }
+  },
+  "genes": [
+    { "geneName": { "value": "TP53" } }
+  ],
+  "organism": { "scientificName": "Homo sapiens", "taxonId": 9606 },
+  "sequence": { "length": 393, "molWeight": 43653 },
+  "comments": [
+    {
+      "commentType": "FUNCTION",
+      "texts": [{ "value": "Multifunctional transcription factor that induces cell cycle arrest." }]
+    },
+    {
+      "commentType": "SUBCELLULAR LOCATION",
+      "subcellularLocations": [
+        { "location": { "value": "Nucleus" } },
+        { "location": { "value": "Cytoplasm" } }
+      ]
+    },
+    {
+      "commentType": "DISEASE",
+      "disease": {
+        "diseaseId": "Li-Fraumeni syndrome",
+        "description": "An autosomal dominant familial cancer syndrome."
+      }
+    }
+  ],
+  "features": [
+    {
+      "type": "Domain",
+      "description": "Transactivation domain",
+      "location": { "start": { "value": 1 }, "end": { "value": 42 } }
+    },
+    {
+      "type": "Modified residue",
+      "description": "Phosphoserine; by CDK5, PRPK, AMPK, NUAK1 and ATM",
+      "location": { "start": { "value": 15 }, "end": { "value": 15 } }
+    },
+    {
+      "type": "Natural variant",
+      "description": "in a sporadic cancer; somatic mutation",
+      "location": { "start": { "value": 175 }, "end": { "value": 175 } },
+      "alternativeSequence": {
+        "originalSequence": "R",
+        "alternativeSequences": ["H"]
+      }
+    }
+  ],
+  "uniProtKBCrossReferences": [
+    { "database": "PDB", "id": "1A1U" },
+    { "database": "PDB", "id": "1AIE" },
+    {
+      "database": "GO",
+      "id": "GO:0003700",
+      "properties": [
+        { "key": "GoTerm", "value": "F:DNA-binding transcription factor activity" },
+        { "key": "GoEvidenceType", "value": "IDA:UniProtKB" }
+      ]
+    },
+    {
+      "database": "GO",
+      "id": "GO:0006915",
+      "properties": [
+        { "key": "GoTerm", "value": "P:apoptotic process" },
+        { "key": "GoEvidenceType", "value": "IDA:UniProtKB" }
+      ]
+    },
+    {
+      "database": "GO",
+      "id": "GO:0005634",
+      "properties": [
+        { "key": "GoTerm", "value": "C:nucleus" },
+        { "key": "GoEvidenceType", "value": "IDA:UniProtKB" }
+      ]
+    }
+  ]
+}

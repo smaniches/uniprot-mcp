@@ -1,0 +1,177 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "uniprot-mcp"
+version = "0.1.0"
+description = "Model Context Protocol server for the UniProt protein knowledgebase."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "mcp", "model-context-protocol", "uniprot", "bioinformatics",
+    "proteins", "swiss-prot", "biology", "llm-tools", "anthropic", "claude",
+]
+authors = [
+    { name = "Santiago Maniches", email = "santiago.maniches@gmail.com" },
+]
+maintainers = [
+    { name = "Santiago Maniches", email = "santiago.maniches@gmail.com" },
+    { name = "TOPOLOGICA LLC", email = "santiago.maniches@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx>=0.27",
+    "mcp>=1.2",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "pytest-socket>=0.7",
+    "respx>=0.21",
+    "hypothesis>=6.100",
+    "syrupy>=4.6",
+]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "bandit>=1.7",
+    "pip-audit>=2.7",
+    "pre-commit>=3.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/smaniches/uniprot-mcp"
+Repository = "https://github.com/smaniches/uniprot-mcp"
+Issues = "https://github.com/smaniches/uniprot-mcp/issues"
+Changelog = "https://github.com/smaniches/uniprot-mcp/blob/main/CHANGELOG.md"
+"Author ORCID" = "https://orcid.org/0009-0005-6480-1987"
+Organization = "https://topologica.ai"
+
+[project.scripts]
+uniprot-mcp = "server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = []
+include = [
+    "server.py",
+    "client.py",
+    "formatters.py",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "server.py",
+    "client.py",
+    "formatters.py",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "CHANGELOG.md",
+    "CITATION.cff",
+    "tests/**",
+]
+exclude = [
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/.mypy_cache",
+    "**/.ruff_cache",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "--disable-socket",
+    "--allow-unix-socket",
+    "--allow-hosts=127.0.0.1,::1",
+]
+markers = [
+    "integration: live UniProt REST API; opt-in with --integration",
+    "mcp_protocol: spawns the MCP server as a subprocess",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning:pydantic.*",
+    "ignore::DeprecationWarning:mcp.*",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["client", "server", "formatters"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["_test.py", "_test_mcp_protocol.py", "_verify_fixed.py"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "SIM",      # simplify
+    "RUF",      # ruff-specific
+    "N",        # pep8-naming
+    "ASYNC",    # flake8-async
+    "S",        # bandit-lite
+]
+ignore = [
+    "S101",     # use of assert in tests is fine
+    "E501",     # line too long handled by formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "N802", "N803"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["client.py", "server.py", "formatters.py"]
+disallow_untyped_decorators = false
+warn_unused_ignores = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["mcp.*"]
+ignore_missing_imports = true
+
+[tool.bandit]
+exclude_dirs = ["tests", "_scratch"]
+skips = ["B101"]  # asserts in non-test code only, but we don't use them anyway
+

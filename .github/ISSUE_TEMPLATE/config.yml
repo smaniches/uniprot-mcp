@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/smaniches/uniprot-mcp/security/policy
+    about: Please report security issues privately per SECURITY.md — do NOT open a public issue.
+  - name: UniProt API questions
+    url: https://www.uniprot.org/contact
+    about: Issues with UniProt data itself belong upstream, not here.
