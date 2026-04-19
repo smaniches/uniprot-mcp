@@ -1,0 +1,72 @@
+# serializer version: 1
+# name: test_fmt_crossrefs_snapshot
+  '''
+  ## Cross-refs: P04637 (2 databases, 5 entries)
+  
+  **GO** (3): GO:0003700, GO:0006915, GO:0005634
+  **PDB** (2): 1A1U, 1AIE
+  '''
+# ---
+# name: test_fmt_entry_snapshot
+  '''
+  ## P04637: Cellular tumor antigen p53
+  
+  **Gene:** TP53
+  **Organism:** Homo sapiens
+  **Reviewed:** Swiss-Prot
+  **Length:** 393 aa | **Mass:** 43653 Da
+  
+  **Function:** Multifunctional transcription factor that induces cell cycle arrest.
+  **Localization:** Nucleus, Cytoplasm
+  **Disease:** Li-Fraumeni syndrome - An autosomal dominant familial cancer syndrome.
+  
+  **Cross-refs:** 5 across 2 databases
+  **PDB:** 1A1U, 1AIE
+  '''
+# ---
+# name: test_fmt_features_snapshot
+  '''
+  ## Features: P04637 (3 total)
+  
+  ### Domain (1)
+    1-42: Transactivation domain
+  
+  ### Modified residue (1)
+    15-15: Phosphoserine; by CDK5, PRPK, AMPK, NUAK1 and ATM
+  
+  ### Natural variant (1)
+    175-175: in a sporadic cancer; somatic mutation
+  
+  '''
+# ---
+# name: test_fmt_go_snapshot
+  '''
+  ## GO: P04637 (3 terms)
+  
+  ### Molecular Function (1)
+    GO:0003700: DNA-binding transcription factor activity [IDA:UniProtKB]
+  
+  ### Biological Process (1)
+    GO:0006915: apoptotic process [IDA:UniProtKB]
+  
+  ### Cellular Component (1)
+    GO:0005634: nucleus [IDA:UniProtKB]
+  
+  '''
+# ---
+# name: test_fmt_search_snapshot
+  '''
+  **1 results**
+  
+  **1. [P38398]** Breast cancer type 1 susceptibility protein (BRCA1)
+     Homo sapiens | 1863 aa | SP
+  
+  '''
+# ---
+# name: test_fmt_variants_snapshot
+  '''
+  ## Variants: P04637 (1)
+  
+    **R175H**: in a sporadic cancer; somatic mutation
+  '''
+# ---

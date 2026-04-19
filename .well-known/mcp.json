@@ -1,0 +1,43 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema/mcp.json",
+  "name": "uniprot-mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server for the UniProt protein knowledgebase.",
+  "homepage": "https://github.com/smaniches/uniprot-mcp",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Santiago Maniches",
+    "email": "santiago.maniches@gmail.com",
+    "orcid": "https://orcid.org/0009-0005-6480-1987",
+    "organization": "TOPOLOGICA LLC"
+  },
+  "keywords": ["uniprot", "bioinformatics", "proteins", "swiss-prot", "mcp"],
+  "transports": ["stdio"],
+  "runtime": {
+    "python": ">=3.11"
+  },
+  "entry": {
+    "stdio": {
+      "command": "python",
+      "args": ["server.py"]
+    }
+  },
+  "tools": [
+    "uniprot_get_entry",
+    "uniprot_search",
+    "uniprot_get_sequence",
+    "uniprot_get_features",
+    "uniprot_get_variants",
+    "uniprot_get_go_terms",
+    "uniprot_get_cross_refs",
+    "uniprot_id_mapping",
+    "uniprot_batch_entries",
+    "uniprot_taxonomy_search"
+  ],
+  "dataSource": {
+    "name": "UniProt Knowledgebase",
+    "url": "https://www.uniprot.org",
+    "license": "CC BY 4.0",
+    "citation": "The UniProt Consortium. UniProt: the Universal Protein Knowledgebase in 2025. Nucleic Acids Research (2025). doi:10.1093/nar/gkae1010"
+  }
+}

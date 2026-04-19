@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write       # create GitHub Release
+  id-token: write       # Sigstore / PyPI Trusted Publishing
+  attestations: write   # SLSA provenance
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      sbom: ${{ steps.sbom.outputs.path }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip build
+          pip install cyclonedx-bom
+      - name: Build sdist + wheel
+        run: python -m build
+      - name: Generate CycloneDX SBOM
+        id: sbom
+        run: |
+          cyclonedx-py requirements -o sbom.cdx.json <(pip freeze)
+          echo "path=sbom.cdx.json" >> "$GITHUB_OUTPUT"
+      - name: SLSA provenance attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "dist/*"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            dist/*
+            sbom.cdx.json
+
+  publish-pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/uniprot-mcp/
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: .
+      - name: Publish to PyPI (Trusted Publishing, OIDC)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          print-hash: true
+
+  sign-and-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: .
+      - name: Sign artifacts with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: |
+            dist/*.tar.gz
+            dist/*.whl
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*
+            sbom.cdx.json
+            *.sigstore.json

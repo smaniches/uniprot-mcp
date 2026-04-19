@@ -1,0 +1,14 @@
+# Smithery.ai deployment manifest.
+# Docs: https://smithery.ai/docs/deployments
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: |-
+    (_config) => ({
+      command: "python",
+      args: ["server.py"]
+    })
+build:
+  dockerfile: Dockerfile  # present if / when we publish a container

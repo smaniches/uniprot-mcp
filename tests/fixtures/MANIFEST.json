@@ -1,0 +1,8 @@
+{
+  "_comment": "Content-addressed manifest of canonical fixtures. Regenerate with `python -m tests.fixtures.verify --update` after reviewing any fixture change.",
+  "_schema_version": 1,
+  "fixtures": {
+    "brca1_search_min.json": "602f8d57da1f4f7045820c30a8e50d363016b12a5ad8a77421fe2cba109870af",
+    "p04637_min.json": "b2800adda84b851bc76cb348f6ab7c459c6e6d04783aa052ad5033d4ebe47235"
+  }
+}

@@ -162,7 +162,57 @@ async def uniprot_taxonomy_search(query: str, size: int = 5,
         return f"Error: {e}"
 
 
-def main():
+def _self_test() -> int:
+    """Quick end-to-end smoke check without needing an MCP client.
+
+    Imports the server, lists every registered tool, runs a single
+    low-cost live UniProt call, and prints a ``PASS``/``FAIL`` summary.
+    Exit code is 0 on success, non-zero on failure. Useful for
+    operators who want to verify the install without wiring up Claude.
+    """
+    import asyncio
+
+    expected = {
+        "uniprot_get_entry", "uniprot_search", "uniprot_get_sequence",
+        "uniprot_get_features", "uniprot_get_variants", "uniprot_get_go_terms",
+        "uniprot_get_cross_refs", "uniprot_id_mapping", "uniprot_batch_entries",
+        "uniprot_taxonomy_search",
+    }
+
+    tools = getattr(mcp, "_tool_manager", None)
+    registered: set[str] = set()
+    if tools is not None and hasattr(tools, "_tools"):
+        registered = set(tools._tools.keys())
+
+    missing = expected - registered
+    extra = registered - expected
+    print(f"[tools] registered: {len(registered)}/{len(expected)}", file=sys.stderr)
+    if missing:
+        print(f"[FAIL] missing tools: {sorted(missing)}", file=sys.stderr)
+        return 1
+    if extra:
+        print(f"[WARN] unexpected tools: {sorted(extra)}", file=sys.stderr)
+
+    async def _live() -> int:
+        try:
+            data = await _client().get_entry("P04637")
+            gene = data.get("genes", [{}])[0].get("geneName", {}).get("value")
+            if gene != "TP53":
+                print(f"[FAIL] P04637 gene is {gene!r}, expected TP53", file=sys.stderr)
+                return 2
+            print("[live] P04637 -> TP53 ✓", file=sys.stderr)
+            return 0
+        finally:
+            await _client().close()
+
+    rc = asyncio.run(_live())
+    print("[PASS]" if rc == 0 else "[FAIL]", file=sys.stderr)
+    return rc
+
+
+def main() -> None:
+    if "--self-test" in sys.argv[1:]:
+        sys.exit(_self_test())
     mcp.run()
 
 
