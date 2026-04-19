@@ -9,6 +9,7 @@ Run a session:
 
 Install: ``pip install nox`` (or ``pipx install nox``).
 """
+
 from __future__ import annotations
 
 import nox

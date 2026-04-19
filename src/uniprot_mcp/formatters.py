@@ -2,6 +2,7 @@
 
 Pure functions, no I/O. Strict type hints (mypy strict-compatible).
 """
+
 from __future__ import annotations
 
 import json

@@ -9,11 +9,12 @@ Author: Santiago Maniches <santiago.maniches@gmail.com>
         TOPOLOGICA LLC
 License: Apache-2.0
 """
+
 from __future__ import annotations
 
 import asyncio
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any
 
@@ -63,8 +64,8 @@ def parse_retry_after(value: str | None, attempt: int) -> float:
     if dt is None:
         return fallback
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    delta = (dt - datetime.now(tz=timezone.utc)).total_seconds()
+        dt = dt.replace(tzinfo=UTC)
+    delta = (dt - datetime.now(tz=UTC)).total_seconds()
     return min(max(delta, 0.0), MAX_RETRY_AFTER_SECONDS)
 
 
@@ -101,9 +102,7 @@ class UniProtClient:
             try:
                 resp = await client.request(method, path, params=params, headers=headers)
                 if resp.status_code == 429:
-                    await asyncio.sleep(
-                        parse_retry_after(resp.headers.get("Retry-After"), attempt)
-                    )
+                    await asyncio.sleep(parse_retry_after(resp.headers.get("Retry-After"), attempt))
                     continue
                 if resp.status_code >= 500:
                     await asyncio.sleep(1.5 ** (attempt + 1))
@@ -126,9 +125,7 @@ class UniProtClient:
         return (await self._req("GET", "/uniprotkb/search", params=params)).json()
 
     async def get_fasta(self, accession: str) -> str:
-        resp = await self._req(
-            "GET", f"/uniprotkb/{accession}", accept="text/plain;format=fasta"
-        )
+        resp = await self._req("GET", f"/uniprotkb/{accession}", accept="text/plain;format=fasta")
         return resp.text
 
     async def id_mapping_submit(self, from_db: str, to_db: str, ids: list[str]) -> str:
@@ -141,9 +138,7 @@ class UniProtClient:
                     data={"from": from_db, "to": to_db, "ids": ",".join(ids)},
                 )
                 if resp.status_code == 429:
-                    await asyncio.sleep(
-                        parse_retry_after(resp.headers.get("Retry-After"), attempt)
-                    )
+                    await asyncio.sleep(parse_retry_after(resp.headers.get("Retry-After"), attempt))
                     continue
                 if resp.status_code >= 500:
                     await asyncio.sleep(1.5 ** (attempt + 1))
@@ -190,15 +185,11 @@ class UniProtClient:
         if fields:
             params["fields"] = ",".join(fields)
         results = (
-            (await self._req("GET", "/uniprotkb/search", params=params))
-            .json()
-            .get("results", [])
+            (await self._req("GET", "/uniprotkb/search", params=params)).json().get("results", [])
         )
         return {"results": results, "invalid": invalid}
 
     async def taxonomy_search(self, query: str, size: int = 10) -> dict[str, Any]:
         return (
-            await self._req(
-                "GET", "/taxonomy/search", params={"query": query, "size": size}
-            )
+            await self._req("GET", "/taxonomy/search", params={"query": query, "size": size})
         ).json()

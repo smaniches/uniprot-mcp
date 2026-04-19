@@ -8,6 +8,7 @@ Usage:
     python -m tests.fixtures.verify           # check
     python -m tests.fixtures.verify --update  # regenerate MANIFEST.json
 """
+
 from __future__ import annotations
 
 import hashlib

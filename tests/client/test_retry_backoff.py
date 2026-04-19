@@ -1,4 +1,5 @@
 """Verify retry and back-off behaviour of UniProtClient using respx."""
+
 from __future__ import annotations
 
 from itertools import cycle

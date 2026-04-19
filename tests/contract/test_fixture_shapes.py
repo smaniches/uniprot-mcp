@@ -9,6 +9,7 @@ new capture doesn't expose will fail a contract test here.
 Keep the schema explicit and minimal — only fields the code actually
 reads. Over-specification creates false failures.
 """
+
 from __future__ import annotations
 
 from typing import Any

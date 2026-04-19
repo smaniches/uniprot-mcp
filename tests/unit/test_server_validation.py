@@ -5,6 +5,7 @@ These protect two properties:
 - Internal exception text does not leak back to the LLM through tool
   return values.
 """
+
 from __future__ import annotations
 
 import pytest

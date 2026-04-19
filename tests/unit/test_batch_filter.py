@@ -5,6 +5,7 @@ to return HTTP 400 and the whole batch failed. After the fix, invalid
 tokens are filtered client-side and surfaced in the `invalid` list; the
 HTTP call only contains well-formed accessions.
 """
+
 from __future__ import annotations
 
 import httpx

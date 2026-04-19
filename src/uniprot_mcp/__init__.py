@@ -5,6 +5,7 @@ Author: Santiago Maniches <santiago.maniches@gmail.com>
         TOPOLOGICA LLC
 License: Apache-2.0
 """
+
 from __future__ import annotations
 
 from uniprot_mcp.client import ACCESSION_RE, UniProtClient

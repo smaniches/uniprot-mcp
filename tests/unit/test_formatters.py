@@ -1,4 +1,5 @@
 """Unit tests for formatters — offline, fixture-driven."""
+
 from __future__ import annotations
 
 from uniprot_mcp.formatters import (
@@ -25,6 +26,7 @@ def test_fmt_entry_markdown_contains_core_fields(fixture_loader) -> None:
 
 def test_fmt_entry_json_roundtrips(fixture_loader) -> None:
     import json as _json
+
     entry = fixture_loader("p04637_min")
     out = fmt_entry(entry, "json")
     parsed = _json.loads(out)

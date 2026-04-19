@@ -14,6 +14,7 @@ Author: Santiago Maniches <santiago.maniches@gmail.com>
         TOPOLOGICA LLC
 License: Apache-2.0
 """
+
 from __future__ import annotations
 
 import logging
@@ -72,16 +73,12 @@ def _check_len(name: str, value: str, limit: int) -> None:
 def _check_accession(value: str) -> None:
     _check_len("accession", value, MAX_ACCESSION_LEN)
     if not ACCESSION_RE.match(value.upper()):
-        raise _InputError(
-            "accession must match the UniProt format (e.g. P04637, A0A1B2C3D4)"
-        )
+        raise _InputError("accession must match the UniProt format (e.g. P04637, A0A1B2C3D4)")
 
 
 def _check_format(value: str) -> None:
     if value not in ALLOWED_RESPONSE_FORMATS:
-        raise _InputError(
-            f"response_format must be one of {sorted(ALLOWED_RESPONSE_FORMATS)}"
-        )
+        raise _InputError(f"response_format must be one of {sorted(ALLOWED_RESPONSE_FORMATS)}")
 
 
 def _safe_error(tool: str, exc: BaseException) -> str:
@@ -109,9 +106,7 @@ async def uniprot_get_entry(accession: str, response_format: str = "markdown") -
         return _safe_error("uniprot_get_entry", exc)
 
 
-@mcp.tool(
-    name="uniprot_search", annotations={"readOnlyHint": True, "openWorldHint": True}
-)
+@mcp.tool(name="uniprot_search", annotations={"readOnlyHint": True, "openWorldHint": True})
 async def uniprot_search(
     query: str,
     size: int = 10,
@@ -221,9 +216,7 @@ async def uniprot_get_cross_refs(
     name="uniprot_get_variants",
     annotations={"readOnlyHint": True, "openWorldHint": True},
 )
-async def uniprot_get_variants(
-    accession: str, response_format: str = "markdown"
-) -> str:
+async def uniprot_get_variants(accession: str, response_format: str = "markdown") -> str:
     """Get known natural variants and disease mutations for a protein."""
     try:
         _check_accession(accession)
@@ -264,9 +257,7 @@ async def uniprot_id_mapping(
     name="uniprot_batch_entries",
     annotations={"readOnlyHint": True, "openWorldHint": True},
 )
-async def uniprot_batch_entries(
-    accessions: str, response_format: str = "markdown"
-) -> str:
+async def uniprot_batch_entries(accessions: str, response_format: str = "markdown") -> str:
     """Fetch multiple entries. accessions=comma-separated UniProt IDs (max 100)."""
     try:
         _check_len("accessions", accessions, MAX_IDS_LEN)

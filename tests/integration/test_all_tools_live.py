@@ -3,6 +3,7 @@
 Marked `integration` — skipped unless `pytest --integration` is passed.
 These are the nightly drift detectors.
 """
+
 from __future__ import annotations
 
 import pytest

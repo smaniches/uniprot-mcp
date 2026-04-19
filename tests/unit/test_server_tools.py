@@ -7,10 +7,10 @@ Ensures:
   language.
 - The tool names on `mcp` match what the MCP protocol exposes.
 """
+
 from __future__ import annotations
 
 import httpx
-import pytest
 import respx
 
 from uniprot_mcp import server

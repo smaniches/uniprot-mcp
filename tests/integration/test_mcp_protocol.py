@@ -7,6 +7,7 @@ required safety annotations.
 Runs only with `pytest --integration` because `tools/call` hits the live
 UniProt API.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -88,5 +89,5 @@ async def test_mcp_handshake_and_tool_inventory() -> None:
         proc.terminate()
         try:
             await asyncio.wait_for(proc.wait(), timeout=5.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             proc.kill()
