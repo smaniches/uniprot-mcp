@@ -22,6 +22,7 @@ import sys
 from typing import Final
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from uniprot_mcp.client import ACCESSION_RE, UniProtClient
 from uniprot_mcp.formatters import (
@@ -92,7 +93,7 @@ def _safe_error(tool: str, exc: BaseException) -> str:
 
 @mcp.tool(
     name="uniprot_get_entry",
-    annotations={"readOnlyHint": True, "openWorldHint": True},
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_entry(accession: str, response_format: str = "markdown") -> str:
     """Fetch a UniProt protein entry by accession (e.g. P04637 for p53, P38398 for BRCA1).
@@ -106,7 +107,7 @@ async def uniprot_get_entry(accession: str, response_format: str = "markdown") -
         return _safe_error("uniprot_get_entry", exc)
 
 
-@mcp.tool(name="uniprot_search", annotations={"readOnlyHint": True, "openWorldHint": True})
+@mcp.tool(name="uniprot_search", annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
 async def uniprot_search(
     query: str,
     size: int = 10,
@@ -139,7 +140,7 @@ async def uniprot_search(
 
 @mcp.tool(
     name="uniprot_get_sequence",
-    annotations={"readOnlyHint": True, "openWorldHint": True},
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_sequence(accession: str) -> str:
     """Get protein sequence in FASTA format for a UniProt accession."""
@@ -152,7 +153,7 @@ async def uniprot_get_sequence(accession: str) -> str:
 
 @mcp.tool(
     name="uniprot_get_features",
-    annotations={"readOnlyHint": True, "openWorldHint": True},
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_features(
     accession: str, feature_types: str = "", response_format: str = "markdown"
@@ -175,7 +176,7 @@ async def uniprot_get_features(
 
 @mcp.tool(
     name="uniprot_get_go_terms",
-    annotations={"readOnlyHint": True, "openWorldHint": True},
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_go_terms(
     accession: str, aspect: str = "", response_format: str = "markdown"
@@ -195,7 +196,7 @@ async def uniprot_get_go_terms(
 
 @mcp.tool(
     name="uniprot_get_cross_refs",
-    annotations={"readOnlyHint": True, "openWorldHint": True},
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_cross_refs(
     accession: str, database: str = "", response_format: str = "markdown"
@@ -214,7 +215,7 @@ async def uniprot_get_cross_refs(
 
 @mcp.tool(
     name="uniprot_get_variants",
-    annotations={"readOnlyHint": True, "openWorldHint": True},
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_variants(accession: str, response_format: str = "markdown") -> str:
     """Get known natural variants and disease mutations for a protein."""
@@ -230,7 +231,7 @@ async def uniprot_get_variants(accession: str, response_format: str = "markdown"
 
 @mcp.tool(
     name="uniprot_id_mapping",
-    annotations={"readOnlyHint": True, "openWorldHint": True},
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_id_mapping(
     ids: str, from_db: str, to_db: str, response_format: str = "markdown"
@@ -255,7 +256,7 @@ async def uniprot_id_mapping(
 
 @mcp.tool(
     name="uniprot_batch_entries",
-    annotations={"readOnlyHint": True, "openWorldHint": True},
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_batch_entries(accessions: str, response_format: str = "markdown") -> str:
     """Fetch multiple entries. accessions=comma-separated UniProt IDs (max 100)."""
@@ -277,7 +278,7 @@ async def uniprot_batch_entries(accessions: str, response_format: str = "markdow
 
 @mcp.tool(
     name="uniprot_taxonomy_search",
-    annotations={"readOnlyHint": True, "openWorldHint": True},
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_taxonomy_search(
     query: str, size: int = 5, response_format: str = "markdown"

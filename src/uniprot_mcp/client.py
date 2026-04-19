@@ -114,7 +114,8 @@ class UniProtClient:
         raise RuntimeError(f"Request failed after {MAX_RETRIES + 1} attempts")
 
     async def get_entry(self, accession: str) -> dict[str, Any]:
-        return (await self._req("GET", f"/uniprotkb/{accession}")).json()
+        data: dict[str, Any] = (await self._req("GET", f"/uniprotkb/{accession}")).json()
+        return data
 
     async def search(
         self, query: str, size: int = 10, fields: list[str] | None = None
@@ -122,7 +123,8 @@ class UniProtClient:
         params: dict[str, Any] = {"query": query, "size": min(size, 500)}
         if fields:
             params["fields"] = ",".join(fields)
-        return (await self._req("GET", "/uniprotkb/search", params=params)).json()
+        data: dict[str, Any] = (await self._req("GET", "/uniprotkb/search", params=params)).json()
+        return data
 
     async def get_fasta(self, accession: str) -> str:
         resp = await self._req("GET", f"/uniprotkb/{accession}", accept="text/plain;format=fasta")
@@ -190,6 +192,7 @@ class UniProtClient:
         return {"results": results, "invalid": invalid}
 
     async def taxonomy_search(self, query: str, size: int = 10) -> dict[str, Any]:
-        return (
+        data: dict[str, Any] = (
             await self._req("GET", "/taxonomy/search", params={"query": query, "size": size})
         ).json()
+        return data
