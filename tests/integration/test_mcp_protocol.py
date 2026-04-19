@@ -7,6 +7,7 @@ required safety annotations.
 Runs only with `pytest --integration` because `tools/call` hits the live
 UniProt API.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -19,7 +20,7 @@ import pytest
 pytestmark = [pytest.mark.integration, pytest.mark.mcp_protocol]
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-SERVER_PATH = REPO_ROOT / "server.py"
+SERVER_PATH = REPO_ROOT / "src" / "uniprot_mcp" / "server.py"
 
 EXPECTED_TOOLS = {
     "uniprot_get_entry",
@@ -88,5 +89,5 @@ async def test_mcp_handshake_and_tool_inventory() -> None:
         proc.terminate()
         try:
             await asyncio.wait_for(proc.wait(), timeout=5.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             proc.kill()

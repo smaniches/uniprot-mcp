@@ -7,9 +7,10 @@ the PR. Regenerate intentionally with:
     nox -s snapshot-update
     # or: pytest --snapshot-update
 """
+
 from __future__ import annotations
 
-from formatters import (
+from uniprot_mcp.formatters import (
     fmt_crossrefs,
     fmt_entry,
     fmt_features,

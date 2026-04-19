@@ -3,15 +3,15 @@
 Hypothesis generates arbitrary strings and checks invariants that must
 hold for *any* input, not just cherry-picked cases.
 """
+
 from __future__ import annotations
 
 import string
 
-import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
-from client import ACCESSION_RE, UniProtClient
-
+from uniprot_mcp.client import ACCESSION_RE, UniProtClient
 
 # UniProt accession = 6 or 10 chars per official spec.
 VALID_LENGTHS = {6, 10}
@@ -35,13 +35,9 @@ def test_match_implies_starts_with_letter(s: str) -> None:
         assert s[0].isalpha()
 
 
-@given(
-    accessions=st.lists(
-        st.text(min_size=0, max_size=15), min_size=0, max_size=30, unique=True
-    )
-)
+@given(accessions=st.lists(st.text(min_size=0, max_size=15), min_size=0, max_size=30, unique=True))
 async def test_batch_partition_is_disjoint_and_complete(accessions: list[str]) -> None:
-    """valid ∪ invalid = input, valid ∩ invalid = ∅ (as sets)."""
+    """valid union invalid equals input; valid intersection invalid is empty (as sets)."""
     client = UniProtClient()
     try:
         # all-invalid short-circuits; otherwise respx would be needed.

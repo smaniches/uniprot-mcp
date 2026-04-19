@@ -1,12 +1,11 @@
 """Verify the id_mapping poll loop exits correctly."""
-from __future__ import annotations
 
-from itertools import cycle
+from __future__ import annotations
 
 import httpx
 import respx
 
-from client import UniProtClient
+from uniprot_mcp.client import UniProtClient
 
 
 async def test_poll_exits_on_results() -> None:
@@ -17,9 +16,7 @@ async def test_poll_exits_on_results() -> None:
             httpx.Response(
                 200,
                 json={
-                    "results": [
-                        {"from": "BRCA1", "to": {"primaryAccession": "P38398"}}
-                    ],
+                    "results": [{"from": "BRCA1", "to": {"primaryAccession": "P38398"}}],
                     "failedIds": [],
                 },
             ),

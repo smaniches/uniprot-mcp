@@ -7,8 +7,5 @@ startCommand:
     properties: {}
   commandFunction: |-
     (_config) => ({
-      command: "python",
-      args: ["server.py"]
+      command: "uniprot-mcp"
     })
-build:
-  dockerfile: Dockerfile  # present if / when we publish a container

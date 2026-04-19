@@ -1,4 +1,5 @@
 """Verify retry and back-off behaviour of UniProtClient using respx."""
+
 from __future__ import annotations
 
 from itertools import cycle
@@ -7,7 +8,7 @@ import httpx
 import pytest
 import respx
 
-from client import MAX_RETRIES, UniProtClient
+from uniprot_mcp.client import MAX_RETRIES, UniProtClient
 
 
 async def test_retries_on_429_then_succeeds() -> None:

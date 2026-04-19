@@ -18,8 +18,7 @@
   },
   "entry": {
     "stdio": {
-      "command": "python",
-      "args": ["server.py"]
+      "command": "uniprot-mcp"
     }
   },
   "tools": [

@@ -10,11 +10,12 @@ capture timestamp (UTC, ISO-8601), and UniProt release (from the
 
 This script is *not* invoked during CI. CI must stay offline.
 """
+
 from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -36,7 +37,7 @@ FIXTURES = {
 def _meta(resp: httpx.Response) -> dict[str, str]:
     return {
         "source": str(resp.request.url),
-        "captured_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "captured_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "uniprot_release": resp.headers.get("x-uniprot-release", "unknown"),
         "http_status": str(resp.status_code),
     }

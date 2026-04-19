@@ -5,6 +5,7 @@ Changes are intentional only — regenerate with:
 
     python -m tests.fixtures.verify --update
 """
+
 from __future__ import annotations
 
 from tests.fixtures.verify import verify
