@@ -72,9 +72,7 @@ async def test_client_sleeps_per_http_date_retry_after(
     # The parser computes ``dt - now()`` at call time, shortly after
     # we computed ``future``. Allow a generous ±1.5 s tolerance for
     # scheduler jitter.
-    assert 3.5 <= slept <= 5.5, (
-        f"expected ~5 s sleep for HTTP-date Retry-After, got {slept}"
-    )
+    assert 3.5 <= slept <= 5.5, f"expected ~5 s sleep for HTTP-date Retry-After, got {slept}"
 
 
 async def test_client_sleeps_per_delta_seconds_retry_after(
@@ -152,6 +150,4 @@ async def test_client_sleeps_zero_for_past_http_date(
         finally:
             await client.close()
 
-    assert recorder.calls == [0.0], (
-        f"past HTTP-date must clamp to 0, got {recorder.calls!r}"
-    )
+    assert recorder.calls == [0.0], f"past HTTP-date must clamp to 0, got {recorder.calls!r}"

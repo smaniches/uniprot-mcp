@@ -4,6 +4,18 @@ Async, with exponential back-off on 429 / 5xx, strict accession
 validation, HTTP-date-aware Retry-After parsing, and a polling loop
 for the ID-mapping job API.
 
+Every successful request updates :attr:`UniProtClient.last_provenance`
+with the release-number, release-date, retrieval timestamp, and the
+final resolved URL. Callers (MCP tool handlers) read that property
+immediately after a request and pass the record into the formatter,
+which surfaces it to the LLM or downstream consumer.
+
+Thread-safety: a single :class:`UniProtClient` is not safe to share
+across concurrent tasks that care about provenance. The stdio MCP
+transport serializes tool invocations, so the module-level singleton
+in ``server.py`` is fine; if you ever move to HTTP/SSE with parallel
+tool calls, give each invocation its own client.
+
 Author: Santiago Maniches <santiago.maniches@gmail.com>
         ORCID https://orcid.org/0009-0005-6480-1987
         TOPOLOGICA LLC
@@ -16,7 +28,7 @@ import asyncio
 import re
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
-from typing import Any
+from typing import Any, TypedDict
 
 import httpx
 
@@ -32,13 +44,51 @@ ACCESSION_RE = re.compile(
     r"\A(?:[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2})\Z"
 )
 
+# Stable identifier for the data source. Emitted in every Provenance
+# record so downstream consumers can disambiguate multi-source outputs.
+SOURCE_NAME = "UniProt"
+
+# Response headers UniProt uses to announce the currently-served release.
+# Documented at https://www.uniprot.org/help/api_programmatic_access.
+_RELEASE_HEADER = "X-UniProt-Release"
+_RELEASE_DATE_HEADER = "X-UniProt-Release-Date"
+
+
+class Provenance(TypedDict):
+    """Machine-verifiable provenance for a single UniProt response.
+
+    Emitted on every response so (a) the LLM can cite it, (b) a human
+    auditor can reproduce the request, and (c) reproducibility pipelines
+    can pin to a specific release.
+
+    Fields:
+      source         — always ``"UniProt"``; lets multi-source
+                       orchestrators route on origin.
+      release        — UniProt release identifier (e.g. ``"2026_02"``)
+                       or ``None`` when the server omitted the header.
+      release_date   — ISO-8601 calendar date of that release, or ``None``.
+      retrieved_at   — ISO-8601 UTC instant at which the client received
+                       the response, second precision.
+      url            — the fully resolved request URL including query
+                       string — reproduces the exact query.
+    """
+
+    source: str
+    release: str | None
+    release_date: str | None
+    retrieved_at: str
+    url: str
+
+
 __all__ = [
     "ACCESSION_RE",
     "BASE_URL",
     "MAX_RETRIES",
     "MAX_RETRY_AFTER_SECONDS",
+    "SOURCE_NAME",
     "TIMEOUT",
     "UA",
+    "Provenance",
     "UniProtClient",
     "parse_retry_after",
 ]
@@ -69,11 +119,34 @@ def parse_retry_after(value: str | None, attempt: int) -> float:
     return min(max(delta, 0.0), MAX_RETRY_AFTER_SECONDS)
 
 
+def _extract_provenance(response: httpx.Response, *, now: datetime | None = None) -> Provenance:
+    """Build a Provenance record from a UniProt HTTP response.
+
+    ``now`` is exposed for test determinism; production callers leave
+    it at ``None`` so retrieval time is captured at extraction moment.
+    """
+    moment = now if now is not None else datetime.now(tz=UTC)
+    return Provenance(
+        source=SOURCE_NAME,
+        release=response.headers.get(_RELEASE_HEADER),
+        release_date=response.headers.get(_RELEASE_DATE_HEADER),
+        retrieved_at=moment.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        url=str(response.url),
+    )
+
+
 class UniProtClient:
     """Thin async wrapper over the UniProt REST API."""
 
     def __init__(self) -> None:
         self._client: httpx.AsyncClient | None = None
+        self._last_provenance: Provenance | None = None
+
+    @property
+    def last_provenance(self) -> Provenance | None:
+        """Provenance of the most recent successful request, or ``None``
+        if no request has completed yet on this client."""
+        return self._last_provenance
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -108,6 +181,7 @@ class UniProtClient:
                     await asyncio.sleep(1.5 ** (attempt + 1))
                     continue
                 resp.raise_for_status()
+                self._last_provenance = _extract_provenance(resp)
                 return resp
             except httpx.TimeoutException:
                 await asyncio.sleep(1.5 ** (attempt + 1))
@@ -146,6 +220,7 @@ class UniProtClient:
                     await asyncio.sleep(1.5 ** (attempt + 1))
                     continue
                 resp.raise_for_status()
+                self._last_provenance = _extract_provenance(resp)
                 job_id: str = resp.json()["jobId"]
                 return job_id
             except httpx.TimeoutException:

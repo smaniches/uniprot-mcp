@@ -1,7 +1,7 @@
 """Property-based tests for ``uniprot_search`` query construction.
 
 The server builds UniProt query-language strings by string concatenation
-(``src/uniprot_mcp/server.py`` lines 120–134). That is cheap but easy
+(``src/uniprot_mcp/server.py`` lines 120-134). That is cheap but easy
 to break — a stray quote in ``organism`` or a ``reviewed:`` already
 present in ``query`` can silently produce a malformed or duplicated
 clause.
@@ -103,9 +103,7 @@ async def test_numeric_organism_uses_unquoted_taxon_id(query: str, taxid: str) -
 
 @given(query=search_query, organism=organism_name)
 @_SETTINGS
-async def test_no_double_quote_leaks_into_organism_clause(
-    query: str, organism: str
-) -> None:
+async def test_no_double_quote_leaks_into_organism_clause(query: str, organism: str) -> None:
     """Any ``"`` supplied in organism is replaced with ``'`` before the
     server wraps the value in double quotes. If that replacement were
     ever skipped, an attacker-controlled ``"`` could close the clause
@@ -125,9 +123,7 @@ async def test_no_double_quote_leaks_into_organism_clause(
         return
     _, rest = sent.split('organism_name:"', 1)
     inner, _, _ = rest.partition('"')
-    assert '"' not in inner, (
-        f"Unescaped double-quote leaked inside organism_name clause: {inner!r}"
-    )
+    assert '"' not in inner, f"Unescaped double-quote leaked inside organism_name clause: {inner!r}"
 
 
 @given(query=search_query)
@@ -147,6 +143,4 @@ async def test_reviewed_only_is_idempotent(query: str) -> None:
     if not route.called:
         return
     sent = route.calls[0].request.url.params["query"]
-    assert sent.lower().count("reviewed:") == 1, (
-        f"reviewed:true was duplicated: {sent!r}"
-    )
+    assert sent.lower().count("reviewed:") == 1, f"reviewed:true was duplicated: {sent!r}"

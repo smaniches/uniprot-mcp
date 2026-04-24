@@ -6,6 +6,11 @@ Hardened against the common class of MCP-server defects:
 - ``response_format`` is validated against an allow-list.
 - Error envelopes do not leak raw exception text back to the LLM; we
   emit a stable, agent-safe message and log detail server-side.
+- Every successful tool response carries a machine-verifiable
+  :class:`~uniprot_mcp.client.Provenance` record — UniProt release
+  number, release date, retrieval timestamp, and the resolved query
+  URL — rendered inline as a Markdown footer, a JSON envelope, or a
+  PIR-style comment block depending on the output format.
 - Module-level lazy client avoids the FastMCP lifespan ctx-injection
   race that broke ``Failed to connect`` in the first implementation.
 
@@ -28,6 +33,7 @@ from uniprot_mcp.client import ACCESSION_RE, UniProtClient
 from uniprot_mcp.formatters import (
     fmt_crossrefs,
     fmt_entry,
+    fmt_fasta,
     fmt_features,
     fmt_go,
     fmt_idmapping,
@@ -101,8 +107,9 @@ async def uniprot_get_entry(accession: str, response_format: str = "markdown") -
     try:
         _check_accession(accession)
         _check_format(response_format)
-        data = await _client().get_entry(accession)
-        return fmt_entry(data, response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        return fmt_entry(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
         return _safe_error("uniprot_get_entry", exc)
 
@@ -132,8 +139,9 @@ async def uniprot_search(
                 # UniProt query language: organism_name needs quoting for multi-word.
                 safe = organism.replace('"', "'")
                 q = f'({q}) AND (organism_name:"{safe}")'
-        data = await _client().search(q, size=size)
-        return fmt_search(data, response_format)
+        client = _client()
+        data = await client.search(q, size=size)
+        return fmt_search(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
         return _safe_error("uniprot_search", exc)
 
@@ -146,7 +154,9 @@ async def uniprot_get_sequence(accession: str) -> str:
     """Get protein sequence in FASTA format for a UniProt accession."""
     try:
         _check_accession(accession)
-        return await _client().get_fasta(accession)
+        client = _client()
+        fasta = await client.get_fasta(accession)
+        return fmt_fasta(fasta, provenance=client.last_provenance)
     except Exception as exc:
         return _safe_error("uniprot_get_sequence", exc)
 
@@ -164,12 +174,13 @@ async def uniprot_get_features(
         _check_accession(accession)
         _check_len("feature_types", feature_types, MAX_FEATURE_TYPES_LEN)
         _check_format(response_format)
-        data = await _client().get_entry(accession)
+        client = _client()
+        data = await client.get_entry(accession)
         features = data.get("features", []) or []
         if feature_types:
             types = {t.strip().lower() for t in feature_types.split(",") if t.strip()}
             features = [f for f in features if str(f.get("type", "")).lower() in types]
-        return fmt_features(features, accession, response_format)
+        return fmt_features(features, accession, response_format, provenance=client.last_provenance)
     except Exception as exc:
         return _safe_error("uniprot_get_features", exc)
 
@@ -187,9 +198,12 @@ async def uniprot_get_go_terms(
         _check_format(response_format)
         if aspect and aspect not in {"F", "P", "C"}:
             raise _InputError("aspect must be empty or one of 'F', 'P', 'C'")
-        data = await _client().get_entry(accession)
+        client = _client()
+        data = await client.get_entry(accession)
         xrefs = data.get("uniProtKBCrossReferences", []) or []
-        return fmt_go(xrefs, accession, aspect or None, response_format)
+        return fmt_go(
+            xrefs, accession, aspect or None, response_format, provenance=client.last_provenance
+        )
     except Exception as exc:
         return _safe_error("uniprot_get_go_terms", exc)
 
@@ -206,9 +220,12 @@ async def uniprot_get_cross_refs(
         _check_accession(accession)
         _check_len("database", database, MAX_DATABASE_LEN)
         _check_format(response_format)
-        data = await _client().get_entry(accession)
+        client = _client()
+        data = await client.get_entry(accession)
         xrefs = data.get("uniProtKBCrossReferences", []) or []
-        return fmt_crossrefs(xrefs, accession, database or None, response_format)
+        return fmt_crossrefs(
+            xrefs, accession, database or None, response_format, provenance=client.last_provenance
+        )
     except Exception as exc:
         return _safe_error("uniprot_get_cross_refs", exc)
 
@@ -222,9 +239,10 @@ async def uniprot_get_variants(accession: str, response_format: str = "markdown"
     try:
         _check_accession(accession)
         _check_format(response_format)
-        data = await _client().get_entry(accession)
+        client = _client()
+        data = await client.get_entry(accession)
         features = data.get("features", []) or []
-        return fmt_variants(features, accession, response_format)
+        return fmt_variants(features, accession, response_format, provenance=client.last_provenance)
     except Exception as exc:
         return _safe_error("uniprot_get_variants", exc)
 
@@ -247,9 +265,10 @@ async def uniprot_id_mapping(
             raise _InputError("ids cannot exceed 100 entries per call")
         if not id_list:
             raise _InputError("ids must contain at least one non-empty identifier")
-        job_id = await _client().id_mapping_submit(from_db, to_db, id_list)
-        data = await _client().id_mapping_results(job_id)
-        return fmt_idmapping(data, response_format)
+        client = _client()
+        job_id = await client.id_mapping_submit(from_db, to_db, id_list)
+        data = await client.id_mapping_results(job_id)
+        return fmt_idmapping(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
         return _safe_error("uniprot_id_mapping", exc)
 
@@ -264,8 +283,11 @@ async def uniprot_batch_entries(accessions: str, response_format: str = "markdow
         _check_len("accessions", accessions, MAX_IDS_LEN)
         _check_format(response_format)
         acc_list = [a.strip() for a in accessions.split(",") if a.strip()][:100]
-        data = await _client().batch_entries(acc_list)
-        out = fmt_search({"results": data["results"]}, response_format)
+        client = _client()
+        data = await client.batch_entries(acc_list)
+        out = fmt_search(
+            {"results": data["results"]}, response_format, provenance=client.last_provenance
+        )
         if data.get("invalid"):
             out += (
                 f"\n\n_Skipped {len(data['invalid'])} invalid accession(s): "
@@ -288,8 +310,9 @@ async def uniprot_taxonomy_search(
         _check_len("query", query, MAX_QUERY_LEN)
         _check_format(response_format)
         size = max(1, min(size, 500))
-        data = await _client().taxonomy_search(query, size)
-        return fmt_taxonomy(data, response_format)
+        client = _client()
+        data = await client.taxonomy_search(query, size)
+        return fmt_taxonomy(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
         return _safe_error("uniprot_taxonomy_search", exc)
 

@@ -1,12 +1,23 @@
 """Response formatters: JSON and Markdown output for UniProt data.
 
 Pure functions, no I/O. Strict type hints (mypy strict-compatible).
+
+Every formatter optionally accepts a :class:`Provenance` keyword
+argument. When supplied, JSON output is wrapped in a
+``{"data": ..., "provenance": ...}`` envelope and Markdown output
+gains a trailing ``---``-delimited provenance footer. A dedicated
+:func:`fmt_fasta` helper handles the sequence tool, emitting a
+PIR-style ``;``-prefixed comment block above the FASTA records so
+downstream parsers (BLAST+, biopython, emboss) skip the provenance
+cleanly.
 """
 
 from __future__ import annotations
 
 import json
 from typing import Any
+
+from uniprot_mcp.client import SOURCE_NAME, Provenance
 
 Entry = dict[str, Any]
 Feature = dict[str, Any]
@@ -15,6 +26,7 @@ Xref = dict[str, Any]
 __all__ = [
     "fmt_crossrefs",
     "fmt_entry",
+    "fmt_fasta",
     "fmt_features",
     "fmt_go",
     "fmt_idmapping",
@@ -53,9 +65,71 @@ def _organism(entry: Entry) -> str:
     return str(org.get("scientificName", "Unknown"))
 
 
-def fmt_entry(data: Entry, fmt: str = "markdown") -> str:
-    if fmt == "json":
+def _provenance_md_footer(provenance: Provenance) -> list[str]:
+    """Render provenance as trailing Markdown lines.
+
+    Shape:
+
+        ``<blank>``
+        ``---``
+        ``_Source: UniProt release 2026_02 (2026-03-05) • Retrieved …_``
+        ``_Query: https://rest.uniprot.org/…_``
+
+    The emitted block is ≤ 4 lines and uses only plain Markdown so it
+    renders identically in every client (Claude Desktop, Cline, raw).
+    """
+    release = provenance.get("release")
+    release_date = provenance.get("release_date")
+    retrieved_at = provenance["retrieved_at"]
+    url = provenance["url"]
+
+    release_text: str
+    if release and release_date:
+        release_text = f"{SOURCE_NAME} release {release} ({release_date})"
+    elif release:
+        release_text = f"{SOURCE_NAME} release {release}"
+    else:
+        release_text = SOURCE_NAME
+
+    return [
+        "",
+        "---",
+        f"_Source: {release_text} • Retrieved {retrieved_at}_",
+        f"_Query: {url}_",
+    ]
+
+
+def _provenance_fasta_header(provenance: Provenance) -> list[str]:
+    """Render provenance as PIR-style ``;``-prefixed comment lines.
+
+    Safe for BLAST+, biopython ``SeqIO``, emboss ``seqret``, and any
+    parser that follows the NBRF/PIR convention of ignoring lines that
+    start with ``;`` before the first ``>`` record.
+    """
+    release = provenance.get("release")
+    release_date = provenance.get("release_date")
+    lines: list[str] = [f";Source: {SOURCE_NAME}"]
+    if release and release_date:
+        lines.append(f";Release: {release} ({release_date})")
+    elif release:
+        lines.append(f";Release: {release}")
+    lines.append(f";Retrieved: {provenance['retrieved_at']}")
+    lines.append(f";URL: {provenance['url']}")
+    return lines
+
+
+def _json_envelope(data: Any, provenance: Provenance | None) -> str:
+    """Serialize ``data`` as JSON, wrapping in a provenance envelope
+    when ``provenance`` is supplied."""
+    if provenance is None:
         return json.dumps(data, indent=2, ensure_ascii=False, default=str)
+    payload = {"data": data, "provenance": dict(provenance)}
+    return json.dumps(payload, indent=2, ensure_ascii=False, default=str)
+
+
+def fmt_entry(data: Entry, fmt: str = "markdown", *, provenance: Provenance | None = None) -> str:
+    if fmt == "json":
+        return _json_envelope(data, provenance)
     acc = data.get("primaryAccession", "?")
     name = _protein_name(data)
     gene = _gene_name(data)
@@ -103,12 +177,16 @@ def fmt_entry(data: Entry, fmt: str = "markdown") -> str:
             show = pdb_ids[:10]
             extra = f" (+{len(pdb_ids) - 10} more)" if len(pdb_ids) > 10 else ""
             lines.append(f"**PDB:** {', '.join(show)}{extra}")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)
 
 
-def fmt_search(data: dict[str, Any], fmt: str = "markdown") -> str:
+def fmt_search(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
     if fmt == "json":
-        return json.dumps(data, indent=2, ensure_ascii=False, default=str)
+        return _json_envelope(data, provenance)
     results: list[Entry] = data.get("results", []) or []
     lines: list[str] = [f"**{len(results)} results**", ""]
     for i, e in enumerate(results, 1):
@@ -122,12 +200,20 @@ def fmt_search(data: dict[str, Any], fmt: str = "markdown") -> str:
         lines.append(f"**{i}. [{acc}]** {name}{g}")
         lines.append(f"   {org} | {length} aa | {rev}")
         lines.append("")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)
 
 
-def fmt_features(features: list[Feature], accession: str, fmt: str = "markdown") -> str:
+def fmt_features(
+    features: list[Feature],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
     if fmt == "json":
-        return json.dumps(features, indent=2, ensure_ascii=False, default=str)
+        return _json_envelope(features, provenance)
     by_type: dict[str, list[Feature]] = {}
     for f in features:
         by_type.setdefault(str(f.get("type", "?")), []).append(f)
@@ -143,6 +229,8 @@ def fmt_features(features: list[Feature], accession: str, fmt: str = "markdown")
         if len(feats) > 20:
             lines.append(f"  ... (+{len(feats) - 20} more)")
         lines.append("")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)
 
 
@@ -151,10 +239,12 @@ def fmt_go(
     accession: str,
     aspect_filter: str | None,
     fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
 ) -> str:
     go_refs: list[Xref] = [x for x in xrefs if x.get("database") == "GO"]
     if fmt == "json":
-        return json.dumps(go_refs, indent=2, ensure_ascii=False, default=str)
+        return _json_envelope(go_refs, provenance)
     by_aspect: dict[str, list[tuple[str, str, str]]] = {"F": [], "P": [], "C": []}
     for ref in go_refs:
         go_id = str(ref.get("id", ""))
@@ -179,6 +269,8 @@ def fmt_go(
         for go_id, term, ev in terms:
             lines.append(f"  {go_id}: {term} [{ev}]")
         lines.append("")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)
 
 
@@ -187,11 +279,13 @@ def fmt_crossrefs(
     accession: str,
     db_filter: str | None,
     fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
 ) -> str:
     if db_filter:
         xrefs = [x for x in xrefs if str(x.get("database", "")).lower() == db_filter.lower()]
     if fmt == "json":
-        return json.dumps(xrefs, indent=2, ensure_ascii=False, default=str)
+        return _json_envelope(xrefs, provenance)
     by_db: dict[str, list[str]] = {}
     for x in xrefs:
         by_db.setdefault(str(x.get("database", "?")), []).append(str(x.get("id", "")))
@@ -204,13 +298,21 @@ def fmt_crossrefs(
         show = ", ".join(ids[:15])
         extra = f" (+{len(ids) - 15} more)" if len(ids) > 15 else ""
         lines.append(f"**{db}** ({len(ids)}): {show}{extra}")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)
 
 
-def fmt_variants(features: list[Feature], accession: str, fmt: str = "markdown") -> str:
+def fmt_variants(
+    features: list[Feature],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
     variants: list[Feature] = [f for f in features if f.get("type") == "Natural variant"]
     if fmt == "json":
-        return json.dumps(variants, indent=2, ensure_ascii=False, default=str)
+        return _json_envelope(variants, provenance)
     lines: list[str] = [f"## Variants: {accession} ({len(variants)})", ""]
     for v in variants[:50]:
         loc = v.get("location", {}) or {}
@@ -223,12 +325,16 @@ def fmt_variants(features: list[Feature], accession: str, fmt: str = "markdown")
         lines.append(f"  **{mut}**: {desc}" if desc else f"  **{mut}**")
     if len(variants) > 50:
         lines.append(f"  ... (+{len(variants) - 50} more)")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)
 
 
-def fmt_idmapping(data: dict[str, Any], fmt: str = "markdown") -> str:
+def fmt_idmapping(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
     if fmt == "json":
-        return json.dumps(data, indent=2, ensure_ascii=False, default=str)
+        return _json_envelope(data, provenance)
     results: list[dict[str, Any]] = data.get("results", []) or []
     failed: list[str] = data.get("failedIds", []) or []
     lines: list[str] = [f"## ID Mapping: {len(results)} mapped, {len(failed)} failed", ""]
@@ -244,12 +350,16 @@ def fmt_idmapping(data: dict[str, Any], fmt: str = "markdown") -> str:
         lines.append(f"  ... (+{len(results) - 50} more)")
     if failed:
         lines.extend(["", f"**Failed:** {', '.join(failed[:20])}"])
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)
 
 
-def fmt_taxonomy(data: dict[str, Any], fmt: str = "markdown") -> str:
+def fmt_taxonomy(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
     if fmt == "json":
-        return json.dumps(data, indent=2, ensure_ascii=False, default=str)
+        return _json_envelope(data, provenance)
     results: list[dict[str, Any]] = data.get("results", []) or []
     lines: list[str] = [f"## Taxonomy ({len(results)} results)", ""]
     for r in results:
@@ -259,4 +369,24 @@ def fmt_taxonomy(data: dict[str, Any], fmt: str = "markdown") -> str:
         rank = r.get("rank", "")
         c = f" ({common})" if common else ""
         lines.append(f"  **{tid}**: {sci}{c} [{rank}]")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)
+
+
+def fmt_fasta(fasta_text: str, *, provenance: Provenance | None = None) -> str:
+    """Return a FASTA string with an optional PIR-style provenance block.
+
+    The provenance block is placed *before* the first ``>`` record so
+    strict parsers that only tokenize records starting with ``>`` (BLAST+,
+    UniProt-style pipelines) ignore it. Permissive parsers that honour
+    the PIR convention (biopython, emboss) explicitly skip ``;``-prefixed
+    lines.
+    """
+    if provenance is None:
+        return fasta_text
+    header = "\n".join(_provenance_fasta_header(provenance))
+    # Guarantee exactly one separating newline so the concatenation is
+    # well-formed regardless of whether `fasta_text` already ended in \n.
+    sep = "" if fasta_text.startswith("\n") else "\n"
+    return header + sep + fasta_text
