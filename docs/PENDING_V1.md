@@ -133,5 +133,6 @@ is to slip the flip window by seven days, not to drop the item.
 Reverse-chronological. Each entry names the item from §1–§3 and the
 commit or artefact that closed it.
 
+- **2026-04-24** — §1.6 (Hypothesis fuzz for `uniprot_search` query construction) **and** §1.7 (measured-delay test for the client's `Retry-After` honour path) closed. Four property tests now assert organism-name quoting, numeric-taxid unquoted emission, no-unescaped-quote-in-clause, and `reviewed_only` idempotence. Four unit tests monkey-patch `asyncio.sleep` and verify the client sleeps for the exact duration `parse_retry_after` returns across HTTP-date, delta-seconds, missing-header, and past-date cases. 8 new tests, 154 total, zero regressions.
 - **2026-04-24** — §1.1 (C4 SHA-pin all `uses:` references) **and** §1.2 (C5 wire SBOM attestation) closed in the same commit. Every Action is now pinned to its resolved commit SHA with the human-readable tag in a trailing comment; `actions/attest-sbom@v1` added to `release.yml` to attest the CycloneDX output alongside the existing build-provenance attestation. Dependabot's `github-actions` ecosystem (`.github/dependabot.yml:22-25`) will auto-bump the pins weekly.
 
