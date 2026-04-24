@@ -125,3 +125,13 @@ Items I cannot take unilaterally; flagged for explicit direction.
 Any slippage on §1 or §3 pushes the entire window, not just the
 missed item. If by 2026-05-25 any §3 item is still red, the default
 is to slip the flip window by seven days, not to drop the item.
+
+---
+
+## §6 — Completed log
+
+Reverse-chronological. Each entry names the item from §1–§3 and the
+commit or artefact that closed it.
+
+- **2026-04-24** — §1.1 (C4 SHA-pin all `uses:` references) **and** §1.2 (C5 wire SBOM attestation) closed in the same commit. Every Action is now pinned to its resolved commit SHA with the human-readable tag in a trailing comment; `actions/attest-sbom@v1` added to `release.yml` to attest the CycloneDX output alongside the existing build-provenance attestation. Dependabot's `github-actions` ecosystem (`.github/dependabot.yml:22-25`) will auto-bump the pins weekly.
+
