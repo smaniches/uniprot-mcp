@@ -1,4 +1,4 @@
-"""TOPOLOGICA UniProt MCP Server. 17 tools. FastMCP. stdio transport.
+"""TOPOLOGICA UniProt MCP Server. 28 tools. FastMCP. stdio transport.
 
 Hardened against the common class of MCP-server defects:
 
@@ -41,10 +41,13 @@ from mcp.types import ToolAnnotations
 
 from uniprot_mcp.client import (
     ACCESSION_RE,
+    CITATION_ID_RE,
     KEYWORD_ID_RE,
     PIN_RELEASE_ENV,
+    PROTEOME_ID_RE,
     SUBCELLULAR_LOCATION_ID_RE,
     UA,
+    UNIPARC_ID_RE,
     UNIREF_ID_RE,
     UNIREF_IDENTITY_TIERS,
     ReleaseMismatchError,
@@ -52,18 +55,28 @@ from uniprot_mcp.client import (
     canonical_response_hash,
 )
 from uniprot_mcp.formatters import (
+    fmt_alphafold,
+    fmt_chembl,
+    fmt_citation,
+    fmt_citation_search,
     fmt_crossrefs,
     fmt_entry,
     fmt_fasta,
     fmt_features,
     fmt_go,
     fmt_idmapping,
+    fmt_interpro,
     fmt_keyword,
     fmt_keyword_search,
+    fmt_pdb,
+    fmt_proteome,
+    fmt_proteome_search,
     fmt_search,
     fmt_subcellular_location,
     fmt_subcellular_location_search,
     fmt_taxonomy,
+    fmt_uniparc,
+    fmt_uniparc_search,
     fmt_uniref,
     fmt_uniref_search,
     fmt_variants,
@@ -88,6 +101,12 @@ MAX_VOCAB_ID_LEN: Final[int] = 12
 # UniRef IDs: ``UniRef100_`` (10) + UniProt accession (≤ 10) or UPI (13).
 # 30 covers either with margin.
 MAX_UNIREF_ID_LEN: Final[int] = 30
+# UniParc UPI is exactly 13 characters; cap at 16 for headroom.
+MAX_UNIPARC_ID_LEN: Final[int] = 16
+# Proteome UP ID is up to 13 characters; cap at 16.
+MAX_PROTEOME_ID_LEN: Final[int] = 16
+# Citation IDs (PubMed) up to 12 digits; cap at 16.
+MAX_CITATION_ID_LEN: Final[int] = 16
 # Provenance-verify URL cap. Real UniProt URLs are well under this.
 MAX_PROVENANCE_URL_LEN: Final[int] = 1_000
 # UniProt release tag is YYYY_MM (7 chars). 16 covers any plausible
@@ -143,6 +162,26 @@ def _check_uniref_id(value: str) -> None:
     if not UNIREF_ID_RE.match(value):
         raise _InputError(
             "uniref_id must match the UniProt format (e.g. UniRef50_P04637, UniRef90_P04637, UniRef100_P04637)"
+        )
+
+
+def _check_uniparc_id(value: str) -> None:
+    _check_len("upi", value, MAX_UNIPARC_ID_LEN)
+    if not UNIPARC_ID_RE.match(value):
+        raise _InputError("upi must match the UniParc format (e.g. UPI000002ED67)")
+
+
+def _check_proteome_id(value: str) -> None:
+    _check_len("proteome_id", value, MAX_PROTEOME_ID_LEN)
+    if not PROTEOME_ID_RE.match(value):
+        raise _InputError("proteome_id must match the UniProt format (e.g. UP000005640)")
+
+
+def _check_citation_id(value: str) -> None:
+    _check_len("citation_id", value, MAX_CITATION_ID_LEN)
+    if not CITATION_ID_RE.match(value):
+        raise _InputError(
+            "citation_id must be a numeric identifier (typically a PubMed ID, e.g. 12345678)"
         )
 
 
@@ -515,6 +554,278 @@ async def uniprot_search_uniref(
 
 
 @mcp.tool(
+    name="uniprot_get_uniparc",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_uniparc(upi: str, response_format: str = "markdown") -> str:
+    """Fetch a UniParc sequence-archive record by UPI (e.g. UPI000002ED67).
+    Returns sequence, MD5/CRC64 checksums, cross-reference counts, linked
+    UniProtKB accessions, and the common-taxa list. UniParc is the
+    non-redundant sequence archive — every protein sequence ever submitted
+    to a major public database has exactly one UniParc record."""
+    try:
+        _check_uniparc_id(upi)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_uniparc(upi)
+        return fmt_uniparc(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_get_uniparc", exc)
+
+
+@mcp.tool(
+    name="uniprot_search_uniparc",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_search_uniparc(
+    query: str, size: int = 10, response_format: str = "markdown"
+) -> str:
+    """Search UniParc. Examples: 'taxonomy_id:9606' for human sequences,
+    'database:Ensembl' for Ensembl-derived entries."""
+    try:
+        _check_len("query", query, MAX_QUERY_LEN)
+        _check_format(response_format)
+        size = max(1, min(size, 500))
+        client = _client()
+        data = await client.search_uniparc(query, size=size)
+        return fmt_uniparc_search(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_search_uniparc", exc)
+
+
+@mcp.tool(
+    name="uniprot_get_proteome",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_proteome(proteome_id: str, response_format: str = "markdown") -> str:
+    """Fetch a UniProt proteome by UP ID (e.g. UP000005640 = human reference).
+    Returns organism, taxonomy lineage, protein count, gene count, BUSCO
+    completeness score, annotation score, and component breakdown
+    (chromosomes / contigs)."""
+    try:
+        _check_proteome_id(proteome_id)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_proteome(proteome_id)
+        return fmt_proteome(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_get_proteome", exc)
+
+
+@mcp.tool(
+    name="uniprot_search_proteomes",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_search_proteomes(
+    query: str, size: int = 10, response_format: str = "markdown"
+) -> str:
+    """Search UniProt proteomes. Examples: 'organism_id:9606' for human,
+    'proteome_type:1' for reference proteomes only, 'taxonomy_name:bacteria'
+    for all bacterial proteomes."""
+    try:
+        _check_len("query", query, MAX_QUERY_LEN)
+        _check_format(response_format)
+        size = max(1, min(size, 500))
+        client = _client()
+        data = await client.search_proteomes(query, size=size)
+        return fmt_proteome_search(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_search_proteomes", exc)
+
+
+@mcp.tool(
+    name="uniprot_get_citation",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_citation(citation_id: str, response_format: str = "markdown") -> str:
+    """Fetch a UniProt citation record by ID (typically a PubMed ID, e.g. 7649814).
+    Returns title, authors, journal, year, volume, pages, and cross-references."""
+    try:
+        _check_citation_id(citation_id)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_citation(citation_id)
+        return fmt_citation(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_get_citation", exc)
+
+
+@mcp.tool(
+    name="uniprot_search_citations",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_search_citations(
+    query: str, size: int = 10, response_format: str = "markdown"
+) -> str:
+    """Search the UniProt citations index. Examples: 'p53 AND author:Vogelstein',
+    'BRCA1 AND year:[2020 TO 2024]'."""
+    try:
+        _check_len("query", query, MAX_QUERY_LEN)
+        _check_format(response_format)
+        size = max(1, min(size, 500))
+        client = _client()
+        data = await client.search_citations(query, size=size)
+        return fmt_citation_search(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_search_citations", exc)
+
+
+@mcp.tool(
+    name="uniprot_resolve_pdb",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_resolve_pdb(accession: str, response_format: str = "markdown") -> str:
+    """List every PDB structure cross-referenced from a UniProt entry, with
+    method, resolution, and chain coverage. Faster than parsing the raw
+    cross-references blob — returns a structured list typed for downstream
+    analysis."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        return fmt_pdb(data, accession, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_resolve_pdb", exc)
+
+
+@mcp.tool(
+    name="uniprot_resolve_alphafold",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_resolve_alphafold(accession: str, response_format: str = "markdown") -> str:
+    """Resolve the AlphaFoldDB cross-reference for a UniProt entry — typically
+    one canonical model per accession. Includes a direct EBI viewer link."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        return fmt_alphafold(data, accession, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_resolve_alphafold", exc)
+
+
+@mcp.tool(
+    name="uniprot_resolve_interpro",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_resolve_interpro(accession: str, response_format: str = "markdown") -> str:
+    """List InterPro signatures (domain / family classifications) for a
+    UniProt entry, with names extracted from the entry's cross-reference
+    properties."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        return fmt_interpro(data, accession, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_resolve_interpro", exc)
+
+
+@mcp.tool(
+    name="uniprot_resolve_chembl",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_resolve_chembl(accession: str, response_format: str = "markdown") -> str:
+    """Resolve ChEMBL drug-target cross-references for a UniProt entry.
+    Returns the ChEMBL target IDs with EBI viewer links — empty if the
+    protein has no documented bioactivity data in ChEMBL."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        return fmt_chembl(data, accession, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_resolve_chembl", exc)
+
+
+@mcp.tool(
+    name="uniprot_get_evidence_summary",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_evidence_summary(accession: str, response_format: str = "markdown") -> str:
+    """Summarise the ECO (Evidence and Conclusion Ontology) codes attached to
+    a UniProt entry's annotations. Counts how many features and comments cite
+    each evidence code, distinguishing experimental from inferred annotations.
+    Critical for distinguishing 'wet-lab confirmed' annotations from 'inferred
+    by similarity' for any downstream agent that cares about evidence quality."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        return _format_evidence_summary(data, accession, response_format, client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_get_evidence_summary", exc)
+
+
+def _format_evidence_summary(
+    data: dict[str, object], accession: str, fmt: str, provenance: object
+) -> str:
+    """Aggregate every evidence code referenced in features and comments."""
+    counts: dict[str, int] = {}
+
+    def visit(node: object) -> None:
+        if isinstance(node, dict):
+            evidences = node.get("evidences")
+            if isinstance(evidences, list):
+                for ev in evidences:
+                    if isinstance(ev, dict):
+                        code = str(ev.get("evidenceCode", "") or "")
+                        if code:
+                            counts[code] = counts.get(code, 0) + 1
+            for v in node.values():
+                visit(v)
+        elif isinstance(node, list):
+            for v in node:
+                visit(v)
+
+    visit(data)
+
+    if fmt == "json":
+        from uniprot_mcp.formatters import _json_envelope
+
+        return _json_envelope({"accession": accession, "evidence_counts": counts}, provenance)  # type: ignore[arg-type]
+
+    from uniprot_mcp.formatters import _provenance_md_footer  # local import — cheap
+
+    lines: list[str] = [f"## Evidence summary: {accession} ({len(counts)} distinct ECO codes)", ""]
+    if not counts:
+        lines.append("_No evidence annotations on this entry._")
+    else:
+        for code, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
+            description = _ECO_HUMAN_LABELS.get(code, "")
+            suffix = f"  —  {description}" if description else ""
+            lines.append(f"- **{code}**: {n} occurrence(s){suffix}")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))  # type: ignore[arg-type]
+    return "\n".join(lines)
+
+
+# Human-readable labels for the most common ECO codes UniProt uses. The
+# ECO ontology has thousands of terms; this curated subset covers the
+# overwhelming majority of UniProt usage. Source:
+# https://www.evidenceontology.org/ — ECO term labels.
+_ECO_HUMAN_LABELS: Final[dict[str, str]] = {
+    "ECO:0000269": "experimental evidence used in manual assertion",
+    "ECO:0000250": "sequence similarity evidence used in manual assertion",
+    "ECO:0000305": "curator inference used in manual assertion",
+    "ECO:0000244": "combinatorial evidence used in manual assertion",
+    "ECO:0000255": "match to InterPro member signature evidence used in manual assertion",
+    "ECO:0000256": "match to sequence model evidence used in automatic assertion",
+    "ECO:0000259": "match to InterPro member signature used in automatic assertion",
+    "ECO:0000303": "non-traceable author statement used in manual assertion",
+    "ECO:0000304": "traceable author statement used in manual assertion",
+    "ECO:0000312": "imported information used in manual assertion",
+    "ECO:0007744": "combinatorial evidence used in automatic assertion",
+    "ECO:0000501": "evidence used in automatic assertion",
+}
+
+
+@mcp.tool(
     name="uniprot_provenance_verify",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
@@ -696,6 +1007,17 @@ def _self_test() -> int:
         "uniprot_search_subcellular_locations",
         "uniprot_get_uniref",
         "uniprot_search_uniref",
+        "uniprot_get_uniparc",
+        "uniprot_search_uniparc",
+        "uniprot_get_proteome",
+        "uniprot_search_proteomes",
+        "uniprot_get_citation",
+        "uniprot_search_citations",
+        "uniprot_resolve_pdb",
+        "uniprot_resolve_alphafold",
+        "uniprot_resolve_interpro",
+        "uniprot_resolve_chembl",
+        "uniprot_get_evidence_summary",
         "uniprot_provenance_verify",
     }
 

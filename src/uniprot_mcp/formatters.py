@@ -24,18 +24,28 @@ Feature = dict[str, Any]
 Xref = dict[str, Any]
 
 __all__ = [
+    "fmt_alphafold",
+    "fmt_chembl",
+    "fmt_citation",
+    "fmt_citation_search",
     "fmt_crossrefs",
     "fmt_entry",
     "fmt_fasta",
     "fmt_features",
     "fmt_go",
     "fmt_idmapping",
+    "fmt_interpro",
     "fmt_keyword",
     "fmt_keyword_search",
+    "fmt_pdb",
+    "fmt_proteome",
+    "fmt_proteome_search",
     "fmt_search",
     "fmt_subcellular_location",
     "fmt_subcellular_location_search",
     "fmt_taxonomy",
+    "fmt_uniparc",
+    "fmt_uniparc_search",
     "fmt_uniref",
     "fmt_uniref_search",
     "fmt_variants",
@@ -646,6 +656,357 @@ def fmt_uniref_search(
         lines.append(f"- {head}  —  {suffix}")
     if len(results) > 50:
         lines.append(f"... (+{len(results) - 50} more)")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_uniparc(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    """Format a single UniParc record (e.g. UPI000002ED67)."""
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    upi = str(data.get("uniParcId", "?") or "?")
+    seq = data.get("sequence", {}) or {}
+    length = seq.get("length", "?")
+    mw = seq.get("molWeight", "?")
+    md5 = seq.get("md5", "")
+    crc64 = seq.get("crc64", "")
+    xref_count = data.get("crossReferenceCount", "?")
+    oldest = data.get("oldestCrossRefCreated", "")
+    latest = data.get("mostRecentCrossRefUpdated", "")
+    accessions = data.get("uniProtKBAccessions") or []
+    common_taxons = data.get("commonTaxons") or []
+
+    lines: list[str] = [f"## {upi}", ""]
+    lines.append(f"**Length:** {length} aa | **Mass:** {mw} Da")
+    if md5 or crc64:
+        bits = []
+        if md5:
+            bits.append(f"md5 `{md5}`")
+        if crc64:
+            bits.append(f"crc64 `{crc64}`")
+        lines.append("**Checksums:** " + ", ".join(bits))
+    lines.append(f"**Cross-reference records:** {xref_count}")
+    if oldest:
+        lines.append(f"**Oldest cross-ref:** {oldest}")
+    if latest:
+        lines.append(f"**Most recent cross-ref:** {latest}")
+    if accessions:
+        show = ", ".join(str(a) for a in accessions[:10])
+        extra = f" (+{len(accessions) - 10} more)" if len(accessions) > 10 else ""
+        lines.append(f"**Linked UniProtKB accessions:** {show}{extra}")
+    if common_taxons:
+        names = [
+            str(t.get("scientificName", "")) for t in common_taxons[:5] if t.get("scientificName")
+        ]
+        if names:
+            lines.append(f"**Common taxa:** {', '.join(names)}")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_uniparc_search(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    results: list[dict[str, Any]] = data.get("results", []) or []
+    lines: list[str] = [f"**{len(results)} UniParc records**", ""]
+    for r in results[:50]:
+        upi = str(r.get("uniParcId", "?") or "?")
+        length = (r.get("sequence") or {}).get("length", "?")
+        xref_count = r.get("crossReferenceCount", "?")
+        lines.append(f"- **{upi}**  —  {length} aa | {xref_count} cross-refs")
+    if len(results) > 50:
+        lines.append(f"... (+{len(results) - 50} more)")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_proteome(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    """Format a single UniProt proteome (e.g. UP000005640 = human)."""
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    upid = str(data.get("id", "?") or "?")
+    description = str(data.get("description", "") or "").strip()
+    proteome_type = str(data.get("proteomeType", "") or "")
+    superkingdom = str(data.get("superkingdom", "") or "")
+    tax = data.get("taxonomy") or {}
+    organism = str(tax.get("scientificName", "")) if isinstance(tax, dict) else ""
+    taxon_id = tax.get("taxonId") if isinstance(tax, dict) else None
+    protein_count = data.get("proteinCount", "?")
+    gene_count = data.get("geneCount", "?")
+    components = data.get("components") or []
+    modified = str(data.get("modified", "") or "")
+    annotation_score = data.get("annotationScore")
+    completeness = data.get("proteomeCompletenessReport") or {}
+    busco = (completeness.get("buscoReport") or {}) if isinstance(completeness, dict) else {}
+
+    title = f"## {upid}: {organism}" if organism else f"## {upid}"
+    lines: list[str] = [title, ""]
+    if description:
+        lines.append(f"**Description:** {description[:300]}")
+    if proteome_type:
+        lines.append(f"**Type:** {proteome_type}")
+    if organism:
+        suffix = f" (taxId {taxon_id})" if taxon_id is not None else ""
+        lines.append(f"**Organism:** {organism}{suffix}")
+    if superkingdom:
+        lines.append(f"**Superkingdom:** {superkingdom}")
+    lines.append(f"**Protein count:** {protein_count}")
+    if gene_count not in ("?", None):
+        lines.append(f"**Gene count:** {gene_count}")
+    if annotation_score is not None:
+        lines.append(f"**Annotation score:** {annotation_score} / 5")
+    if isinstance(busco, dict) and busco.get("score") is not None:
+        lines.append(f"**BUSCO completeness:** {busco['score']} %")
+    if components:
+        lines.append(f"**Components:** {len(components)}")
+        names = [str(c.get("name", "")) for c in components[:10] if c.get("name")]
+        if names:
+            extra = f" (+{len(components) - 10} more)" if len(components) > 10 else ""
+            lines.append("  " + ", ".join(names) + extra)
+    if modified:
+        lines.append(f"**Last modified:** {modified}")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_proteome_search(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    results: list[dict[str, Any]] = data.get("results", []) or []
+    lines: list[str] = [f"**{len(results)} proteomes**", ""]
+    for r in results[:50]:
+        upid = str(r.get("id", "?") or "?")
+        tax = r.get("taxonomy") or {}
+        organism = str(tax.get("scientificName", "")) if isinstance(tax, dict) else ""
+        protein_count = r.get("proteinCount", "?")
+        proteome_type = str(r.get("proteomeType", "") or "")
+        bits = []
+        if protein_count != "?":
+            bits.append(f"{protein_count} proteins")
+        if proteome_type:
+            bits.append(proteome_type)
+        suffix = f"  —  {' | '.join(bits)}" if bits else ""
+        head = f"**{upid}**"
+        if organism:
+            head = f"{head}: {organism}"
+        lines.append(f"- {head}{suffix}")
+    if len(results) > 50:
+        lines.append(f"... (+{len(results) - 50} more)")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_citation(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    """Format a single UniProt citation record."""
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    citation = data.get("citation") or data
+    cid = str(
+        citation.get("id", citation.get("citationCrossReferences", [{}])[0].get("id", "?")) or "?"
+    )
+    title = str(citation.get("title", "") or "").strip()
+    authors = citation.get("authors") or []
+    journal = str(citation.get("journal", "") or "")
+    year = citation.get("publicationDate") or citation.get("year") or ""
+    volume = citation.get("volume") or ""
+    pages = (citation.get("firstPage") or "") + (
+        f"-{citation.get('lastPage', '')}" if citation.get("lastPage") else ""
+    )
+    cross_refs = citation.get("citationCrossReferences") or []
+
+    lines: list[str] = [f"## Citation {cid}", ""]
+    if title:
+        lines.append(f"**Title:** {title}")
+    if authors:
+        sample = ", ".join(str(a) for a in authors[:6])
+        more = f" (+{len(authors) - 6} more)" if len(authors) > 6 else ""
+        lines.append(f"**Authors:** {sample}{more}")
+    if journal:
+        bits: list[str] = [journal]
+        if year:
+            bits.append(str(year))
+        if volume:
+            bits.append(f"vol. {volume}")
+        if pages.strip("-"):
+            bits.append(pages)
+        lines.append(f"**Source:** {', '.join(bits)}")
+    if cross_refs:
+        names = [f"{x.get('database', '?')}:{x.get('id', '?')}" for x in cross_refs[:5]]
+        lines.append(f"**Cross-refs:** {', '.join(names)}")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_citation_search(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    results: list[dict[str, Any]] = data.get("results", []) or []
+    lines: list[str] = [f"**{len(results)} citations**", ""]
+    for r in results[:50]:
+        c = r.get("citation") or r
+        cid = str(
+            c.get("id") or (c.get("citationCrossReferences", [{}]) or [{}])[0].get("id", "?") or "?"
+        )
+        title = str(c.get("title", "") or "").strip()
+        year = c.get("publicationDate") or c.get("year") or ""
+        head = f"**{cid}**"
+        if year:
+            head = f"{head} ({year})"
+        if title:
+            head = f"{head}: {title[:140]}"
+        lines.append(f"- {head}")
+    if len(results) > 50:
+        lines.append(f"... (+{len(results) - 50} more)")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def _xrefs_for_db(data: dict[str, Any], database: str) -> list[Xref]:
+    return [
+        x for x in (data.get("uniProtKBCrossReferences") or []) if x.get("database") == database
+    ]
+
+
+def _xref_props(xref: Xref) -> dict[str, str]:
+    return {str(p.get("key", "")): str(p.get("value", "")) for p in (xref.get("properties") or [])}
+
+
+def fmt_pdb(
+    data: dict[str, Any],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Resolve every PDB cross-reference recorded on a UniProt entry into
+    structured fields (PDB ID, method, resolution, chain coverage)."""
+    pdbs = _xrefs_for_db(data, "PDB")
+    if fmt == "json":
+        structured = [
+            {
+                "pdb_id": x.get("id"),
+                "method": _xref_props(x).get("Method"),
+                "resolution": _xref_props(x).get("Resolution"),
+                "chains": _xref_props(x).get("Chains"),
+            }
+            for x in pdbs
+        ]
+        return _json_envelope({"accession": accession, "pdb": structured}, provenance)
+    lines: list[str] = [f"## PDB structures for {accession} ({len(pdbs)})", ""]
+    for x in pdbs[:50]:
+        props = _xref_props(x)
+        method = props.get("Method", "?")
+        resolution = props.get("Resolution", "")
+        chains = props.get("Chains", "")
+        bits: list[str] = [method]
+        if resolution:
+            bits.append(resolution)
+        if chains:
+            bits.append(f"chains {chains}")
+        lines.append(f"- **{x.get('id', '?')}**  —  {' | '.join(bits)}")
+    if len(pdbs) > 50:
+        lines.append(f"... (+{len(pdbs) - 50} more)")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_alphafold(
+    data: dict[str, Any],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Resolve the AlphaFoldDB cross-reference. UniProt typically carries
+    one AlphaFold entry per accession (the canonical model)."""
+    afs = _xrefs_for_db(data, "AlphaFoldDB")
+    if fmt == "json":
+        structured = [{"alphafold_id": x.get("id"), **_xref_props(x)} for x in afs]
+        return _json_envelope({"accession": accession, "alphafold": structured}, provenance)
+    lines: list[str] = [f"## AlphaFold models for {accession} ({len(afs)})", ""]
+    for x in afs:
+        af_id = x.get("id", "?")
+        lines.append(f"- **{af_id}**  —  https://alphafold.ebi.ac.uk/entry/{af_id}")
+    if not afs:
+        lines.append("_No AlphaFold cross-reference on this entry._")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_interpro(
+    data: dict[str, Any],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Resolve InterPro cross-references into structured signatures with
+    descriptions when present."""
+    iprs = _xrefs_for_db(data, "InterPro")
+    if fmt == "json":
+        structured = [
+            {
+                "interpro_id": x.get("id"),
+                "name": _xref_props(x).get("EntryName"),
+            }
+            for x in iprs
+        ]
+        return _json_envelope({"accession": accession, "interpro": structured}, provenance)
+    lines: list[str] = [f"## InterPro signatures for {accession} ({len(iprs)})", ""]
+    for x in iprs[:50]:
+        ipr_id = x.get("id", "?")
+        name = _xref_props(x).get("EntryName", "")
+        lines.append(f"- **{ipr_id}**  —  {name}" if name else f"- **{ipr_id}**")
+    if len(iprs) > 50:
+        lines.append(f"... (+{len(iprs) - 50} more)")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_chembl(
+    data: dict[str, Any],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Resolve ChEMBL cross-references (drug-target identifiers)."""
+    chembls = _xrefs_for_db(data, "ChEMBL")
+    if fmt == "json":
+        structured = [{"chembl_id": x.get("id"), **_xref_props(x)} for x in chembls]
+        return _json_envelope({"accession": accession, "chembl": structured}, provenance)
+    lines: list[str] = [f"## ChEMBL targets for {accession} ({len(chembls)})", ""]
+    for x in chembls[:50]:
+        chembl_id = x.get("id", "?")
+        lines.append(
+            f"- **{chembl_id}**  —  https://www.ebi.ac.uk/chembl/target_report_card/{chembl_id}/"
+        )
+    if not chembls:
+        lines.append(
+            "_No ChEMBL cross-reference on this entry — protein may not be a documented drug target._"
+        )
     if provenance is not None:
         lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)

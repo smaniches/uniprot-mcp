@@ -37,10 +37,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   formatters surface it as a Markdown footer, JSON envelope
   (`{"data": ..., "provenance": ...}`), or PIR-style `;`-prefix
   FASTA header (parser-safe for BLAST+, biopython, emboss).
-- **6 new tools** (Wave B/1+B/2): `uniprot_get_keyword`,
-  `uniprot_search_keywords`, `uniprot_get_subcellular_location`,
-  `uniprot_search_subcellular_locations`, `uniprot_get_uniref`,
-  `uniprot_search_uniref`. Tool surface 10 → 16.
+- **18 new tools** (Wave B/1 → B/7), tool surface 10 → 28:
+  - **B/1** controlled vocabularies: `uniprot_get_keyword`,
+    `uniprot_search_keywords`, `uniprot_get_subcellular_location`,
+    `uniprot_search_subcellular_locations`.
+  - **B/2** UniRef clusters: `uniprot_get_uniref`, `uniprot_search_uniref`.
+  - **B/3** UniParc archive: `uniprot_get_uniparc`, `uniprot_search_uniparc`.
+  - **B/4** Proteomes: `uniprot_get_proteome`, `uniprot_search_proteomes`.
+  - **B/5** Citations: `uniprot_get_citation`, `uniprot_search_citations`.
+  - **B/6** Evidence-code summary: `uniprot_get_evidence_summary` —
+    aggregates ECO codes across an entry's features and comments and
+    labels the common ones (experimental vs by-similarity vs automatic).
+  - **B/7** Structured cross-DB resolvers (gateway-only — no cross-
+    origin calls): `uniprot_resolve_pdb`, `uniprot_resolve_alphafold`,
+    `uniprot_resolve_interpro`, `uniprot_resolve_chembl`.
+- **`uniprot_provenance_verify`** tool — re-fetches a recorded URL and
+  compares both the release header and the canonical SHA-256 of the
+  response body, with five distinct verdicts (`verified`,
+  `release_drift`, `hash_drift`, `release_and_hash_drift`,
+  `url_unreachable`) and an advice string per verdict.
 - **Threat model:** `docs/THREAT_MODEL.md` (12 STRIDE-shaped threats,
   receipt-anchored to code paths).
 - **Anthropic Connectors Directory artifacts:** `SUPPORT.md` and

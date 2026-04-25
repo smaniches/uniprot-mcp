@@ -66,6 +66,22 @@ UNIREF_ID_RE = re.compile(
 )
 UNIREF_IDENTITY_TIERS = ("50", "90", "100")
 
+# UniParc UPI (sequence-archive identifier). Always 13 chars: ``UPI``
+# prefix + 10 uppercase hex digits.
+# https://www.uniprot.org/help/uniparc
+UNIPARC_ID_RE = re.compile(r"\AUPI[A-F0-9]{10}\Z")
+
+# Proteome UP identifier. ``UP`` prefix + 9-11 digits.
+# https://www.uniprot.org/help/proteome
+PROTEOME_ID_RE = re.compile(r"\AUP[0-9]{9,11}\Z")
+
+# UniProt's literature/citations endpoint identifies records by the
+# numeric source identifier (typically a PubMed ID; sometimes a
+# DOI-shaped reference for citations without a PMID). For pinning down
+# the exact format we accept what UniProt accepts: 1-12 digits — wide
+# enough for any real PMID, narrow enough to reject paths.
+CITATION_ID_RE = re.compile(r"\A[0-9]{1,12}\Z")
+
 # Stable identifier for the data source. Emitted in every Provenance
 # record so downstream consumers can disambiguate multi-source outputs.
 SOURCE_NAME = "UniProt"
@@ -145,14 +161,17 @@ class Provenance(TypedDict):
 __all__ = [
     "ACCESSION_RE",
     "BASE_URL",
+    "CITATION_ID_RE",
     "KEYWORD_ID_RE",
     "MAX_RETRIES",
     "MAX_RETRY_AFTER_SECONDS",
     "PIN_RELEASE_ENV",
+    "PROTEOME_ID_RE",
     "SOURCE_NAME",
     "SUBCELLULAR_LOCATION_ID_RE",
     "TIMEOUT",
     "UA",
+    "UNIPARC_ID_RE",
     "UNIREF_IDENTITY_TIERS",
     "UNIREF_ID_RE",
     "Provenance",
@@ -418,6 +437,42 @@ class UniProtClient:
         data: dict[str, Any] = (
             await self._req(
                 "GET", "/locations/search", params={"query": query, "size": min(size, 500)}
+            )
+        ).json()
+        return data
+
+    async def get_uniparc(self, upi: str) -> dict[str, Any]:
+        data: dict[str, Any] = (await self._req("GET", f"/uniparc/{upi}")).json()
+        return data
+
+    async def search_uniparc(self, query: str, size: int = 10) -> dict[str, Any]:
+        data: dict[str, Any] = (
+            await self._req(
+                "GET", "/uniparc/search", params={"query": query, "size": min(size, 500)}
+            )
+        ).json()
+        return data
+
+    async def get_proteome(self, upid: str) -> dict[str, Any]:
+        data: dict[str, Any] = (await self._req("GET", f"/proteomes/{upid}")).json()
+        return data
+
+    async def search_proteomes(self, query: str, size: int = 10) -> dict[str, Any]:
+        data: dict[str, Any] = (
+            await self._req(
+                "GET", "/proteomes/search", params={"query": query, "size": min(size, 500)}
+            )
+        ).json()
+        return data
+
+    async def get_citation(self, citation_id: str) -> dict[str, Any]:
+        data: dict[str, Any] = (await self._req("GET", f"/citations/{citation_id}")).json()
+        return data
+
+    async def search_citations(self, query: str, size: int = 10) -> dict[str, Any]:
+        data: dict[str, Any] = (
+            await self._req(
+                "GET", "/citations/search", params={"query": query, "size": min(size, 500)}
             )
         ).json()
         return data

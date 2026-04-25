@@ -86,6 +86,17 @@ def test_every_expected_tool_is_registered() -> None:
         "uniprot_search_subcellular_locations",
         "uniprot_get_uniref",
         "uniprot_search_uniref",
+        "uniprot_get_uniparc",
+        "uniprot_search_uniparc",
+        "uniprot_get_proteome",
+        "uniprot_search_proteomes",
+        "uniprot_get_citation",
+        "uniprot_search_citations",
+        "uniprot_resolve_pdb",
+        "uniprot_resolve_alphafold",
+        "uniprot_resolve_interpro",
+        "uniprot_resolve_chembl",
+        "uniprot_get_evidence_summary",
         "uniprot_provenance_verify",
     }
     tools = getattr(server.mcp, "_tool_manager", None)
