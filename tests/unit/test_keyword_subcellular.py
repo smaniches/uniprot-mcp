@@ -48,7 +48,7 @@ def test_keyword_id_regex_rejects_non_canonical() -> None:
 
 
 def test_subcellular_location_id_regex_accepts_canonical_form() -> None:
-    assert SUBCELLULAR_LOCATION_ID_RE.match("SL-0086")
+    assert SUBCELLULAR_LOCATION_ID_RE.match("SL-0039")
     assert SUBCELLULAR_LOCATION_ID_RE.match("SL-0191")
 
 
@@ -77,7 +77,8 @@ async def test_get_keyword_rejects_bad_format() -> None:
 async def test_get_subcellular_location_rejects_bad_id_without_network() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         out = await uniprot_get_subcellular_location("SL-86", "markdown")
-    assert "Input error" in out and "SL-0086" in out
+    # Error message gives an example canonical ID. Real Cell-membrane = SL-0039.
+    assert "Input error" in out and "SL-" in out
     assert not router.calls
 
 
@@ -109,7 +110,7 @@ _KEYWORD_FIXTURE = {
 }
 
 _SUBCELLULAR_FIXTURE = {
-    "id": "SL-0086",
+    "id": "SL-0039",
     "name": "Cell membrane",
     "definition": "The membrane that surrounds a cell.",
     "category": "Cellular component",
@@ -186,7 +187,7 @@ async def test_search_keywords_happy_path() -> None:
 
 async def test_get_subcellular_location_happy_path() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
-        router.get("/locations/SL-0086").mock(
+        router.get("/locations/SL-0039").mock(
             return_value=httpx.Response(
                 200,
                 json=_SUBCELLULAR_FIXTURE,
@@ -196,8 +197,8 @@ async def test_get_subcellular_location_happy_path() -> None:
                 },
             )
         )
-        out = await uniprot_get_subcellular_location("SL-0086", "markdown")
-    assert "## SL-0086: Cell membrane" in out
+        out = await uniprot_get_subcellular_location("SL-0039", "markdown")
+    assert "## SL-0039: Cell membrane" in out
     assert "**Category:** Cellular component" in out
     assert "Plasma membrane, Plasmalemma" in out
     assert "**Keyword:** KW-1003 (Cell membrane)" in out
@@ -215,7 +216,7 @@ async def test_search_subcellular_locations_happy_path() -> None:
                 json={
                     "results": [
                         {
-                            "id": "SL-0086",
+                            "id": "SL-0039",
                             "name": "Cell membrane",
                             "category": "Cellular component",
                         },
@@ -227,7 +228,7 @@ async def test_search_subcellular_locations_happy_path() -> None:
         )
         out = await uniprot_search_subcellular_locations("membrane", size=5)
     assert "**2 subcellular locations**" in out
-    assert "**SL-0086**: Cell membrane" in out
+    assert "**SL-0039**: Cell membrane" in out
     assert "**SL-0191**: Nucleus" in out
 
 
@@ -277,5 +278,5 @@ def test_fmt_keyword_handles_flat_id_form() -> None:
 
 
 def test_fmt_subcellular_location_minimal_shape() -> None:
-    out = fmt_subcellular_location({"id": "SL-0086", "name": "X"}, "markdown")
-    assert "## SL-0086: X" in out
+    out = fmt_subcellular_location({"id": "SL-0039", "name": "X"}, "markdown")
+    assert "## SL-0039: X" in out

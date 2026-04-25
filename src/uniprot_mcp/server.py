@@ -400,7 +400,7 @@ async def uniprot_search_keywords(
 async def uniprot_get_subcellular_location(
     location_id: str, response_format: str = "markdown"
 ) -> str:
-    """Fetch a UniProt subcellular-location term by ID (e.g. SL-0086 Cell membrane, SL-0191 Nucleus).
+    """Fetch a UniProt subcellular-location term by ID (e.g. SL-0039 Cell membrane, SL-0086 Cytoplasm, SL-0191 Nucleus).
     Returns name, definition, category, GO cross-refs, and the is-a / part-of hierarchy."""
     try:
         _check_subcellular_location_id(location_id)

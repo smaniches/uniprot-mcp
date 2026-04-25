@@ -465,7 +465,8 @@ def fmt_keyword_search(
 def fmt_subcellular_location(
     data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
 ) -> str:
-    """Format a single UniProt subcellular location (e.g. SL-0086 Cell membrane)."""
+    """Format a single UniProt subcellular location (e.g. SL-0039 Cell membrane,
+    SL-0086 Cytoplasm, SL-0191 Nucleus)."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     sid = str(data.get("id", "?") or "?")

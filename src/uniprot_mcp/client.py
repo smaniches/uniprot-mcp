@@ -47,7 +47,8 @@ ACCESSION_RE = re.compile(
 # UniProt controlled-vocabulary identifier formats. Both are
 # zero-padded four-digit numbers behind a two-letter prefix.
 # https://www.uniprot.org/keywords  -> KW-NNNN (e.g. KW-0007 = Acetylation)
-# https://www.uniprot.org/locations -> SL-NNNN (e.g. SL-0086 = Cell membrane)
+# https://www.uniprot.org/locations -> SL-NNNN (e.g. SL-0086 = Cytoplasm,
+#                                       SL-0039 = Cell membrane, SL-0191 = Nucleus)
 KEYWORD_ID_RE = re.compile(r"\AKW-[0-9]{4}\Z")
 SUBCELLULAR_LOCATION_ID_RE = re.compile(r"\ASL-[0-9]{4}\Z")
 
