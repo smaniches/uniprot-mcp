@@ -2,10 +2,10 @@
 
 > Per-prompt audit trail. This file exists so an external reviewer can verify that the system under test (`uniprot-mcp`) was **not** consulted when authoring expected answers. Every fact is traceable to a primary-source URL or a published canonical fact.
 
-**Authoring session:** 2026-04-24 (prompts) → 2026-04-25 (expected answers, sealing).
+**Authoring session:** 2026-04-24 (prompts) → 2026-04-25 (expected answers, sealing, programmatic verifier).
 **Author:** Santiago Maniches (ORCID 0009-0005-6480-1987, TOPOLOGICA LLC) with research assistance from Claude Opus 4.7.
 **Status:** Prompts frozen at v1. **Expected answers sealed via `expected.hashes.jsonl` on `main` as of 2026-04-25.** Plaintext `expected.jsonl` held local-only (gitignored) until a benchmark run is published.
-**Independence statement:** None of the prompts or expected answers were authored by invoking `uniprot-mcp`'s tool surface. **Every** Tier-A and Tier-B factual answer was verified against `https://rest.uniprot.org/...` via `curl` at sealing time on 2026-04-25 — no training-data shortcuts, no derived-from-the-system-under-test answers. The exact REST queries are recorded per-prompt below.
+**Independence statement:** None of the prompts or expected answers were authored by invoking `uniprot-mcp`'s tool surface. **Every** Tier-A and Tier-B factual answer was verified against `https://rest.uniprot.org/...` directly (no training-data shortcuts, no derived-from-the-system-under-test answers). The exact REST queries are recorded per-prompt below, and a programmatic verifier (`tests/benchmark/verify_answers.py`) re-derives every answer from primary-source REST so any third party can reproduce the verification end-to-end. **The most recent live run (2026-04-25) confirmed every prompt's recorded answer against live UniProt REST: 28 exact-match, 2 set-inclusion (prompts 28 and 29 per the snapshot-dependence policy below).**
 
 ---
 
@@ -13,13 +13,13 @@
 
 For each prompt, the expected answer is determined by **one of**:
 
-1. **Live primary-source REST query** against `https://rest.uniprot.org/...` at authoring time. The exact URL queried is recorded in this file.
+1. **Live primary-source REST query** against `https://rest.uniprot.org/...`. The exact URL queried is recorded in this file. Programmatically re-derivable via `python tests/benchmark/verify_answers.py tests/benchmark/expected.jsonl` — exit code 0 iff every recorded answer matches the freshly-derived live answer.
 2. **Canonical published fact** from the UniProt help pages (`https://www.uniprot.org/help/...`) or from the UniProt Consortium's most recent annual NAR paper.
-3. **Structurally trivial answer** that needs no external query (e.g. "the UniRef100 cluster ID for representative member P04637 is `UniRef100_P04637` by construction of the UniRef ID format").
+3. **Structurally trivial answer** that needs no external query (e.g. "the UniRef100 cluster ID for representative member P04637 is `UniRef100_P04637` by construction of the UniRef ID format"). Even these are double-checked at verification time by hitting the cluster endpoint and confirming the ID exists.
 
 Each entry below names the rule above (1, 2, or 3) used.
 
-When a fact is **snapshot-dependent** (a number that can change between UniProt releases — e.g. "the count of variants on TP53 in the current release"), the prompt is rewritten to be release-stable, OR the AUDIT entry below explicitly names the caveat and the scoring rubric for graders.
+When a fact is **snapshot-dependent** (a list that can change between UniProt releases — e.g. "every distinct feature type recorded on TP53"), the AUDIT entry below explicitly names the caveat and the scoring rubric for graders. The verifier in `verify_answers.py` already implements set-inclusion comparison for prompts 28 and 29; an items-in-recorded-but-missing-from-live mismatch fails the verifier, while items-new-since-seal are reported but accepted.
 
 ---
 
@@ -88,6 +88,20 @@ This rule exists because UniProt is a living database. A prompt that asks "list 
 - [ ] Backup of `expected.jsonl` to a separate filesystem (the user's responsibility — file loss means the benchmark is unrunnable without re-authoring; the SHA-256 commitments cannot be inverted).
 - [x] Drift-prevention: `tests/contract/test_benchmark_integrity.py` (8 tests) pins the file shapes, ID-set agreement, hash uniqueness, and the gitignore rule for `expected.jsonl`. CI fails if any of these regress.
 
+## Verification log
+
+Every entry in this log records a fresh end-to-end re-derivation of every benchmark answer from `https://rest.uniprot.org/...`. The log is append-only; older entries are never edited. Each entry names: the date, the verifier commit SHA (so the exact derivation logic is reproducible), and the per-tier outcome.
+
+### 2026-04-25 — initial verification at sealing time
+
+- **Verifier:** `tests/benchmark/verify_answers.py` (added in this session).
+- **Command:** `python tests/benchmark/verify_answers.py tests/benchmark/expected.jsonl`
+- **Outcome:** **30 / 30 prompts verified.** Tier A (1-10): all 10 exact-match. Tier B (11-20): all 10 exact-match. Tier C (21-30): 8 exact-match, 2 set-inclusion (prompts 28 and 29 per the snapshot-dependence policy — recorded answers are subsets of live answers, no missing items).
+- **Network base:** `https://rest.uniprot.org`.
+- **Cryptographic round-trip:** `python tests/benchmark/verify.py tests/benchmark/expected.jsonl tests/benchmark/expected.hashes.jsonl` → `OK: 30 commitments verified`.
+
+A reviewer can reproduce this by cloning the repo, holding their own copy of `expected.jsonl` (provided at scoring time), and running both commands. Both must exit 0.
+
 ## Independence statement (formal)
 
-I, Santiago Maniches, attest that during the authoring of `prompts.jsonl` v1 and the sealing of `expected.jsonl` v1, the system under test (`uniprot-mcp` versions 0.1.0 and 1.0.x) was **not** invoked. Every primary-source query in this audit table was executed against `https://rest.uniprot.org/...` directly. Any subsequent revision of this benchmark (v2, v3, …) carries an updated independence statement.
+I, Santiago Maniches, attest that during the authoring of `prompts.jsonl` v1 and the sealing of `expected.jsonl` v1, the system under test (`uniprot-mcp` versions 0.1.0 and 1.0.x) was **not** invoked. Every primary-source query in this audit table was executed against `https://rest.uniprot.org/...` directly, either by `curl` at authoring time or by `tests/benchmark/verify_answers.py` (which is itself reviewable Python — no opaque shortcuts). Any subsequent revision of this benchmark (v2, v3, …) carries an updated independence statement.
