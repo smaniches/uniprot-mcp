@@ -1,4 +1,4 @@
-"""TOPOLOGICA UniProt MCP Server. 16 tools. FastMCP. stdio transport.
+"""TOPOLOGICA UniProt MCP Server. 17 tools. FastMCP. stdio transport.
 
 Hardened against the common class of MCP-server defects:
 
@@ -8,9 +8,16 @@ Hardened against the common class of MCP-server defects:
   emit a stable, agent-safe message and log detail server-side.
 - Every successful tool response carries a machine-verifiable
   :class:`~uniprot_mcp.client.Provenance` record — UniProt release
-  number, release date, retrieval timestamp, and the resolved query
-  URL — rendered inline as a Markdown footer, a JSON envelope, or a
-  PIR-style comment block depending on the output format.
+  number, release date, retrieval timestamp, the resolved query URL,
+  AND a SHA-256 of the canonical response body — rendered inline as a
+  Markdown footer, a JSON envelope, or a PIR-style comment block
+  depending on the output format. ``uniprot_provenance_verify``
+  re-fetches a recorded URL and compares both the release header and
+  the canonical response hash to detect post-hoc upstream drift.
+- ``--pin-release=YYYY_MM`` (or ``UNIPROT_PIN_RELEASE`` env var) opts
+  into strict release pinning: a successful response from any other
+  release raises ``ReleaseMismatchError`` and the tool returns an
+  agent-safe error envelope.
 - Module-level lazy client avoids the FastMCP lifespan ctx-injection
   race that broke ``Failed to connect`` in the first implementation.
 
@@ -22,20 +29,27 @@ License: Apache-2.0
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import sys
 from typing import Final
 
+import httpx
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
 from uniprot_mcp.client import (
     ACCESSION_RE,
     KEYWORD_ID_RE,
+    PIN_RELEASE_ENV,
     SUBCELLULAR_LOCATION_ID_RE,
+    UA,
     UNIREF_ID_RE,
     UNIREF_IDENTITY_TIERS,
+    ReleaseMismatchError,
     UniProtClient,
+    canonical_response_hash,
 )
 from uniprot_mcp.formatters import (
     fmt_crossrefs,
@@ -74,6 +88,11 @@ MAX_VOCAB_ID_LEN: Final[int] = 12
 # UniRef IDs: ``UniRef100_`` (10) + UniProt accession (≤ 10) or UPI (13).
 # 30 covers either with margin.
 MAX_UNIREF_ID_LEN: Final[int] = 30
+# Provenance-verify URL cap. Real UniProt URLs are well under this.
+MAX_PROVENANCE_URL_LEN: Final[int] = 1_000
+# UniProt release tag is YYYY_MM (7 chars). 16 covers any plausible
+# future schema with ample margin.
+MAX_RELEASE_TAG_LEN: Final[int] = 16
 ALLOWED_RESPONSE_FORMATS: Final[frozenset[str]] = frozenset({"markdown", "json"})
 
 # Module-level lazy client. No lifespan. No ctx injection. Just works.
@@ -132,6 +151,15 @@ def _safe_error(tool: str, exc: BaseException) -> str:
     logger.exception("tool=%s failed", tool)
     if isinstance(exc, _InputError):
         return f"Input error in {tool}: {exc}"
+    if isinstance(exc, ReleaseMismatchError):
+        # Agent-actionable: the message names the pinned release and the
+        # observed release verbatim. Safe because both values come from
+        # our own state plus an upstream header, not a raw exception trace.
+        return (
+            f"Release mismatch in {tool}: pinned {exc.pinned!r}, observed "
+            f"{exc.observed!r} at {exc.url}. Re-run against a release-{exc.pinned} "
+            f"snapshot or unset {PIN_RELEASE_ENV}."
+        )
     # Do not echo the raw exception text; agents sometimes treat it as data.
     return f"Error in {tool}: upstream request failed; see server logs for details."
 
@@ -486,6 +514,167 @@ async def uniprot_search_uniref(
         return _safe_error("uniprot_search_uniref", exc)
 
 
+@mcp.tool(
+    name="uniprot_provenance_verify",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_provenance_verify(
+    url: str,
+    release: str = "",
+    response_sha256: str = "",
+    response_format: str = "markdown",
+) -> str:
+    """Re-fetch a previously recorded UniProt URL and verify it still
+    returns the same release identifier and the same canonical response
+    body (SHA-256). Pass the values from a prior response's provenance
+    footer (`url`, `release`, `response_sha256`); empty optional fields
+    skip the corresponding check. Returns a verification report with
+    explicit pass / drift / unreachable verdicts per check.
+
+    This is the single tool that converts every prior uniprot-mcp
+    response into an independently auditable artefact — a year from
+    now, a third party can take the recorded provenance footer and
+    confirm the upstream still serves the exact same bytes."""
+    try:
+        _check_len("url", url, MAX_PROVENANCE_URL_LEN)
+        _check_len("release", release, MAX_RELEASE_TAG_LEN)
+        _check_len("response_sha256", response_sha256, 64)
+        _check_format(response_format)
+        if not url.startswith("https://rest.uniprot.org/"):
+            raise _InputError(
+                "url must begin with https://rest.uniprot.org/ — only UniProt REST "
+                "URLs are verifiable through this tool."
+            )
+        return await _provenance_verify_impl(
+            url=url,
+            recorded_release=release or None,
+            recorded_sha256=response_sha256 or None,
+            response_format=response_format,
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_provenance_verify", exc)
+
+
+async def _provenance_verify_impl(
+    *,
+    url: str,
+    recorded_release: str | None,
+    recorded_sha256: str | None,
+    response_format: str,
+) -> str:
+    """Worker for ``uniprot_provenance_verify``. Re-fetches ``url`` with
+    a fresh httpx client (bypasses the singleton's pin-release config)
+    and produces a structured verdict.
+    """
+    report: dict[str, object] = {
+        "url": url,
+        "recorded_release": recorded_release,
+        "recorded_sha256": recorded_sha256,
+    }
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(30.0),
+        headers={"User-Agent": UA, "Accept": "application/json"},
+        follow_redirects=True,
+    ) as client:
+        try:
+            resp = await client.get(url)
+        except httpx.HTTPError as exc:
+            report["status"] = "url_unreachable"
+            report["url_resolves"] = False
+            report["error"] = type(exc).__name__
+            return _format_verify_report(report, response_format)
+        report["url_resolves"] = resp.is_success
+        report["http_status"] = resp.status_code
+        if not resp.is_success:
+            report["status"] = "url_unreachable"
+            return _format_verify_report(report, response_format)
+
+        current_release = resp.headers.get("X-UniProt-Release")
+        current_sha = canonical_response_hash(resp)
+        report["current_release"] = current_release
+        report["current_sha256"] = current_sha
+
+        release_match: bool | None = None
+        if recorded_release is not None:
+            release_match = current_release == recorded_release
+            report["release_match"] = release_match
+
+        hash_match: bool | None = None
+        if recorded_sha256 is not None:
+            hash_match = current_sha == recorded_sha256
+            report["hash_match"] = hash_match
+
+        if release_match is False and hash_match is False:
+            report["status"] = "release_and_hash_drift"
+        elif release_match is False:
+            report["status"] = "release_drift"
+        elif hash_match is False:
+            report["status"] = "hash_drift"
+        else:
+            report["status"] = "verified"
+
+    return _format_verify_report(report, response_format)
+
+
+def _format_verify_report(report: dict[str, object], fmt: str) -> str:
+    if fmt == "json":
+        return json.dumps(report, indent=2, ensure_ascii=False, default=str)
+    status = report.get("status", "?")
+    lines: list[str] = ["## Provenance Verification", "", f"**Status:** {status}", ""]
+    lines.append(f"**URL:** {report.get('url', '?')}")
+    if "url_resolves" in report:
+        check = "✓" if report["url_resolves"] else "✗"
+        lines.append(f"- {check} URL resolves (HTTP {report.get('http_status', '?')})")
+    if "release_match" in report:
+        check = "✓" if report["release_match"] else "✗"
+        lines.append(
+            f"- {check} Release: recorded {report.get('recorded_release')!r}, "
+            f"current {report.get('current_release')!r}"
+        )
+    if "hash_match" in report:
+        check = "✓" if report["hash_match"] else "✗"
+        rec = report.get("recorded_sha256") or ""
+        cur = report.get("current_sha256") or ""
+        lines.append(
+            f"- {check} Response SHA-256: recorded {str(rec)[:16]}…, current {str(cur)[:16]}…"
+        )
+    if "error" in report:
+        lines.append("")
+        lines.append(f"**Error:** {report['error']}")
+    advice = _verify_advice(str(status))
+    if advice:
+        lines.extend(["", f"**Advice:** {advice}"])
+    return "\n".join(lines)
+
+
+def _verify_advice(status: str) -> str:
+    return {
+        "verified": (
+            "Both checks passed. The recorded provenance is reproducible against the "
+            "live UniProt API."
+        ),
+        "release_drift": (
+            "UniProt has moved past the release recorded in this provenance. The "
+            "underlying entry may also have changed; if you need byte-level "
+            "reproducibility, fetch the recorded release from the UniProt FTP "
+            "snapshot archive."
+        ),
+        "hash_drift": (
+            "The release tag still matches but the canonical response body has "
+            "changed. Investigate: UniProt may have edited the entry within the "
+            "release, or our canonicalisation differs."
+        ),
+        "release_and_hash_drift": (
+            "Both the release tag and the response body have moved on. Use a "
+            "release-specific FTP snapshot if you need the historical answer."
+        ),
+        "url_unreachable": (
+            "The recorded URL did not return a successful response. The endpoint "
+            "may have been retired, rate-limited, or temporarily unavailable."
+        ),
+    }.get(status, "")
+
+
 def _self_test() -> int:
     """Quick end-to-end smoke check without needing an MCP client."""
     import asyncio
@@ -507,6 +696,7 @@ def _self_test() -> int:
         "uniprot_search_subcellular_locations",
         "uniprot_get_uniref",
         "uniprot_search_uniref",
+        "uniprot_provenance_verify",
     }
 
     tools = getattr(mcp, "_tool_manager", None)
@@ -541,7 +731,20 @@ def _self_test() -> int:
 
 
 def main() -> None:
-    if "--self-test" in sys.argv[1:]:
+    args = sys.argv[1:]
+    # ``--pin-release=YYYY_MM`` opts into strict release pinning. The flag
+    # is consumed here and forwarded as an environment variable so the
+    # lazily-constructed UniProtClient picks it up at first instantiation.
+    for arg in args:
+        if arg.startswith("--pin-release="):
+            os.environ[PIN_RELEASE_ENV] = arg.split("=", 1)[1]
+        elif arg == "--pin-release":
+            print(
+                "ERROR: --pin-release requires a value (e.g. --pin-release=2026_02)",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+    if "--self-test" in args:
         sys.exit(_self_test())
     mcp.run()
 

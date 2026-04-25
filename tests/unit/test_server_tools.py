@@ -86,6 +86,7 @@ def test_every_expected_tool_is_registered() -> None:
         "uniprot_search_subcellular_locations",
         "uniprot_get_uniref",
         "uniprot_search_uniref",
+        "uniprot_provenance_verify",
     }
     tools = getattr(server.mcp, "_tool_manager", None)
     assert tools is not None, "FastMCP internals changed"

@@ -25,6 +25,9 @@ License: Apache-2.0
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
+import os
 import re
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -72,6 +75,36 @@ SOURCE_NAME = "UniProt"
 _RELEASE_HEADER = "X-UniProt-Release"
 _RELEASE_DATE_HEADER = "X-UniProt-Release-Date"
 
+# Environment variable that opts the client into release pinning. When set
+# (or when the constructor's ``pin_release`` argument is non-None), the
+# client raises :class:`ReleaseMismatchError` if a successful upstream
+# response carries an ``X-UniProt-Release`` header that disagrees with the
+# pinned value. UniProt's REST API does not honour a release-selector
+# query parameter; pinning is therefore *assertion-only* — the client
+# refuses results from any release other than the pinned one rather than
+# silently accepting drift.
+PIN_RELEASE_ENV = "UNIPROT_PIN_RELEASE"
+
+
+class ReleaseMismatchError(RuntimeError):
+    """A pinned-release client received a response from a different release.
+
+    Carries the pinned and observed release strings so the caller (or
+    the agent reading the error envelope) can decide whether to retry
+    against a snapshot or accept the drift.
+    """
+
+    def __init__(self, *, pinned: str, observed: str | None, url: str) -> None:
+        self.pinned = pinned
+        self.observed = observed
+        self.url = url
+        observed_disp = observed if observed is not None else "(absent)"
+        super().__init__(
+            f"UniProt release mismatch — pinned {pinned!r}, observed {observed_disp!r} "
+            f"at {url}. Re-run against a release-{pinned} FTP snapshot, or unset "
+            f"{PIN_RELEASE_ENV} to accept the live release."
+        )
+
 
 class Provenance(TypedDict):
     """Machine-verifiable provenance for a single UniProt response.
@@ -81,15 +114,24 @@ class Provenance(TypedDict):
     can pin to a specific release.
 
     Fields:
-      source         — always ``"UniProt"``; lets multi-source
-                       orchestrators route on origin.
-      release        — UniProt release identifier (e.g. ``"2026_02"``)
-                       or ``None`` when the server omitted the header.
-      release_date   — ISO-8601 calendar date of that release, or ``None``.
-      retrieved_at   — ISO-8601 UTC instant at which the client received
-                       the response, second precision.
-      url            — the fully resolved request URL including query
-                       string — reproduces the exact query.
+      source            — always ``"UniProt"``; lets multi-source
+                          orchestrators route on origin.
+      release           — UniProt release identifier (e.g. ``"2026_02"``)
+                          or ``None`` when the server omitted the header.
+      release_date      — ISO-8601 calendar date of that release, or ``None``.
+      retrieved_at      — ISO-8601 UTC instant at which the client received
+                          the response, second precision.
+      url               — the fully resolved request URL including query
+                          string — reproduces the exact query.
+      response_sha256   — SHA-256 of a *canonical* serialization of the
+                          response body. For JSON responses the body is
+                          parsed and re-serialized with sorted keys and
+                          compact separators, so insignificant key-order
+                          changes within a release don't break verification.
+                          For non-JSON (FASTA, plain text), the raw bytes
+                          are hashed. The :func:`provenance_verify` MCP
+                          tool re-fetches the URL and compares this hash
+                          to detect post-hoc upstream drift.
     """
 
     source: str
@@ -97,6 +139,7 @@ class Provenance(TypedDict):
     release_date: str | None
     retrieved_at: str
     url: str
+    response_sha256: str
 
 
 __all__ = [
@@ -105,6 +148,7 @@ __all__ = [
     "KEYWORD_ID_RE",
     "MAX_RETRIES",
     "MAX_RETRY_AFTER_SECONDS",
+    "PIN_RELEASE_ENV",
     "SOURCE_NAME",
     "SUBCELLULAR_LOCATION_ID_RE",
     "TIMEOUT",
@@ -112,7 +156,9 @@ __all__ = [
     "UNIREF_IDENTITY_TIERS",
     "UNIREF_ID_RE",
     "Provenance",
+    "ReleaseMismatchError",
     "UniProtClient",
+    "canonical_response_hash",
     "parse_retry_after",
 ]
 
@@ -142,6 +188,31 @@ def parse_retry_after(value: str | None, attempt: int) -> float:
     return min(max(delta, 0.0), MAX_RETRY_AFTER_SECONDS)
 
 
+def canonical_response_hash(response: httpx.Response) -> str:
+    """Return a SHA-256 hex digest of a *canonical* serialization of the
+    response body.
+
+    For JSON responses, the body is parsed and re-serialized with
+    ``sort_keys=True`` and compact separators — insignificant key-order
+    or whitespace differences within the same UniProt release will not
+    break verification, but real content differences will.
+
+    For non-JSON responses (FASTA, plain text), the raw response bytes
+    are hashed unchanged.
+    """
+    content_type = (response.headers.get("content-type") or "").lower()
+    if "json" in content_type:
+        try:
+            obj = response.json()
+        except (ValueError, json.JSONDecodeError):
+            return hashlib.sha256(response.content).hexdigest()
+        canonical = json.dumps(
+            obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+        return hashlib.sha256(canonical).hexdigest()
+    return hashlib.sha256(response.content).hexdigest()
+
+
 def _extract_provenance(response: httpx.Response, *, now: datetime | None = None) -> Provenance:
     """Build a Provenance record from a UniProt HTTP response.
 
@@ -155,15 +226,33 @@ def _extract_provenance(response: httpx.Response, *, now: datetime | None = None
         release_date=response.headers.get(_RELEASE_DATE_HEADER),
         retrieved_at=moment.strftime("%Y-%m-%dT%H:%M:%SZ"),
         url=str(response.url),
+        response_sha256=canonical_response_hash(response),
     )
 
 
 class UniProtClient:
-    """Thin async wrapper over the UniProt REST API."""
+    """Thin async wrapper over the UniProt REST API.
 
-    def __init__(self) -> None:
+    ``pin_release`` opts the client into strict release pinning. When
+    set (constructor argument or ``UNIPROT_PIN_RELEASE`` environment
+    variable), every successful response is checked against the pinned
+    release; mismatches raise :class:`ReleaseMismatchError`. UniProt
+    does not honour a release-selector query parameter, so pinning is
+    assertion-only — the client refuses results from any other release
+    rather than silently accepting drift.
+    """
+
+    def __init__(self, *, pin_release: str | None = None) -> None:
         self._client: httpx.AsyncClient | None = None
         self._last_provenance: Provenance | None = None
+        if pin_release is None:
+            pin_release = os.environ.get(PIN_RELEASE_ENV, "").strip() or None
+        self._pin_release: str | None = pin_release
+
+    @property
+    def pin_release(self) -> str | None:
+        """Pinned UniProt release identifier, or ``None`` for unpinned."""
+        return self._pin_release
 
     @property
     def last_provenance(self) -> Provenance | None:
@@ -204,7 +293,14 @@ class UniProtClient:
                     await asyncio.sleep(1.5 ** (attempt + 1))
                     continue
                 resp.raise_for_status()
-                self._last_provenance = _extract_provenance(resp)
+                provenance = _extract_provenance(resp)
+                if self._pin_release and provenance["release"] != self._pin_release:
+                    raise ReleaseMismatchError(
+                        pinned=self._pin_release,
+                        observed=provenance["release"],
+                        url=str(resp.url),
+                    )
+                self._last_provenance = provenance
                 return resp
             except httpx.TimeoutException:
                 await asyncio.sleep(1.5 ** (attempt + 1))
@@ -243,7 +339,14 @@ class UniProtClient:
                     await asyncio.sleep(1.5 ** (attempt + 1))
                     continue
                 resp.raise_for_status()
-                self._last_provenance = _extract_provenance(resp)
+                provenance = _extract_provenance(resp)
+                if self._pin_release and provenance["release"] != self._pin_release:
+                    raise ReleaseMismatchError(
+                        pinned=self._pin_release,
+                        observed=provenance["release"],
+                        url=str(resp.url),
+                    )
+                self._last_provenance = provenance
                 job_id: str = resp.json()["jobId"]
                 return job_id
             except httpx.TimeoutException:

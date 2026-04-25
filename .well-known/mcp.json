@@ -48,7 +48,8 @@
     "uniprot_get_subcellular_location",
     "uniprot_search_subcellular_locations",
     "uniprot_get_uniref",
-    "uniprot_search_uniref"
+    "uniprot_search_uniref",
+    "uniprot_provenance_verify"
   ],
   "toolDefaults": {
     "readOnlyHint": true,

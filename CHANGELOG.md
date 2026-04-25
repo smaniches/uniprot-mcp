@@ -8,16 +8,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Provenance verification (`uniprot_provenance_verify` tool).**
+  17th tool. Re-fetches a previously recorded UniProt URL and
+  compares the release tag and a SHA-256 of the canonical response
+  body against the values from a prior provenance footer. Distinct
+  verdicts: `verified` / `release_drift` / `hash_drift` /
+  `release_and_hash_drift` / `url_unreachable`, each with an advice
+  string pointing at the recommended remediation (FTP snapshot,
+  upstream investigation, etc.). Markdown + JSON output.
+- **Release pinning (`--pin-release=YYYY_MM` / `UNIPROT_PIN_RELEASE`).**
+  Strict opt-in: when set, every successful upstream response is
+  checked against the pinned release; mismatches raise
+  `ReleaseMismatchError`, which the server surfaces as an
+  agent-safe error envelope naming both the pinned and the observed
+  release plus the env var to unset for opt-out. Pinning is
+  assertion-only — UniProt's REST API does not honour a release
+  selector query parameter, so the client refuses drift rather than
+  silently masking it. Forwarded from the `uniprot-mcp` CLI flag
+  to the env var so the lazy client picks it up at first use.
+- **Canonical response hash on every successful request.** The
+  `Provenance` TypedDict gains a `response_sha256` field — JSON
+  responses are parsed and re-serialised with sorted keys before
+  hashing, so within-release key reordering doesn't break
+  verification, but real content drift does.
 - **Provenance on every response.** New `Provenance` TypedDict and
   `client.last_provenance` property capture the UniProt release
   number, release date, retrieval timestamp, and resolved URL. All
   formatters surface it as a Markdown footer, JSON envelope
   (`{"data": ..., "provenance": ...}`), or PIR-style `;`-prefix
   FASTA header (parser-safe for BLAST+, biopython, emboss).
-- **4 new tools** (controlled-vocabulary surface, Wave B/1):
-  `uniprot_get_keyword`, `uniprot_search_keywords`,
-  `uniprot_get_subcellular_location`,
-  `uniprot_search_subcellular_locations`. Tool surface 10 → 14.
+- **6 new tools** (Wave B/1+B/2): `uniprot_get_keyword`,
+  `uniprot_search_keywords`, `uniprot_get_subcellular_location`,
+  `uniprot_search_subcellular_locations`, `uniprot_get_uniref`,
+  `uniprot_search_uniref`. Tool surface 10 → 16.
 - **Threat model:** `docs/THREAT_MODEL.md` (12 STRIDE-shaped threats,
   receipt-anchored to code paths).
 - **Anthropic Connectors Directory artifacts:** `SUPPORT.md` and

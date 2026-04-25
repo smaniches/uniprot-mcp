@@ -80,14 +80,17 @@ def _provenance_md_footer(provenance: Provenance) -> list[str]:
         ``---``
         ``_Source: UniProt release 2026_02 (2026-03-05) • Retrieved …_``
         ``_Query: https://rest.uniprot.org/…_``
+        ``_SHA-256: <64 hex chars>_``
 
-    The emitted block is ≤ 4 lines and uses only plain Markdown so it
-    renders identically in every client (Claude Desktop, Cline, raw).
+    The emitted block uses only plain Markdown so it renders identically
+    in every client (Claude Desktop, Cline, raw). The SHA-256 line is
+    the input to ``uniprot_provenance_verify`` for byte-level audit.
     """
     release = provenance.get("release")
     release_date = provenance.get("release_date")
     retrieved_at = provenance["retrieved_at"]
     url = provenance["url"]
+    response_sha256 = provenance.get("response_sha256", "")
 
     release_text: str
     if release and release_date:
@@ -97,12 +100,15 @@ def _provenance_md_footer(provenance: Provenance) -> list[str]:
     else:
         release_text = SOURCE_NAME
 
-    return [
+    lines = [
         "",
         "---",
         f"_Source: {release_text} • Retrieved {retrieved_at}_",
         f"_Query: {url}_",
     ]
+    if response_sha256:
+        lines.append(f"_SHA-256: {response_sha256}_")
+    return lines
 
 
 def _provenance_fasta_header(provenance: Provenance) -> list[str]:
@@ -114,6 +120,7 @@ def _provenance_fasta_header(provenance: Provenance) -> list[str]:
     """
     release = provenance.get("release")
     release_date = provenance.get("release_date")
+    response_sha256 = provenance.get("response_sha256", "")
     lines: list[str] = [f";Source: {SOURCE_NAME}"]
     if release and release_date:
         lines.append(f";Release: {release} ({release_date})")
@@ -121,6 +128,8 @@ def _provenance_fasta_header(provenance: Provenance) -> list[str]:
         lines.append(f";Release: {release}")
     lines.append(f";Retrieved: {provenance['retrieved_at']}")
     lines.append(f";URL: {provenance['url']}")
+    if response_sha256:
+        lines.append(f";SHA-256: {response_sha256}")
     return lines
 
 

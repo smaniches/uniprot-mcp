@@ -54,6 +54,7 @@ _FIXED_PROV: Provenance = {
     "release_date": "2026-03-05",
     "retrieved_at": "2026-04-24T12:00:00Z",
     "url": "https://rest.uniprot.org/uniprotkb/P04637",
+    "response_sha256": "a" * 64,
 }
 
 
