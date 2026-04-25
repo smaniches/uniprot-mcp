@@ -36,6 +36,8 @@ __all__ = [
     "fmt_subcellular_location",
     "fmt_subcellular_location_search",
     "fmt_taxonomy",
+    "fmt_uniref",
+    "fmt_uniref_search",
     "fmt_variants",
     "is_swissprot",
 ]
@@ -525,6 +527,113 @@ def fmt_subcellular_location_search(
         cat = str(r.get("category", "") or "")
         suffix = f" [{cat}]" if cat else ""
         lines.append(f"- **{sid}**: {name}{suffix}")
+    if len(results) > 50:
+        lines.append(f"... (+{len(results) - 50} more)")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def _uniref_tier(record: dict[str, Any]) -> str:
+    """Extract the identity tier (50 / 90 / 100) from a UniRef record.
+
+    UniRef encodes the tier in two places: the cluster ID prefix and
+    the ``entryType`` field. Prefer the field, fall back to the prefix,
+    return ``"?"`` if neither is available.
+    """
+    entry_type = str(record.get("entryType", "") or "")
+    for tier in ("100", "90", "50"):
+        if tier in entry_type:
+            return tier
+    cluster_id = str(record.get("id", "") or "")
+    for tier in ("100", "90", "50"):
+        if cluster_id.startswith(f"UniRef{tier}_"):
+            return tier
+    return "?"
+
+
+def _uniref_representative(record: dict[str, Any]) -> str:
+    """Return a short label for the cluster's representative member,
+    e.g. ``"P04637 (TP53_HUMAN)"`` or just the accession if the
+    Swiss-Prot mnemonic is absent."""
+    rep = record.get("representativeMember") or {}
+    if not isinstance(rep, dict):
+        return ""
+    acc = str(rep.get("memberId", "") or rep.get("accession", "") or "")
+    name = str(rep.get("uniprotKBId", "") or rep.get("uniProtKBId", "") or "")
+    if acc and name:
+        return f"{acc} ({name})"
+    return acc or name or ""
+
+
+def fmt_uniref(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    """Format a single UniRef cluster (e.g. UniRef50_P04637)."""
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    cid = str(data.get("id", "?") or "?")
+    name = str(data.get("name", "") or "").strip()
+    tier = _uniref_tier(data)
+    rep = _uniref_representative(data)
+    member_count = data.get("memberCount", data.get("memberCounts", {}).get("total"))
+    common_taxon = data.get("commonTaxon") or {}
+    last_updated = str(data.get("updated", "") or data.get("lastUpdated", "") or "")
+    members = data.get("members") or []
+
+    title = f"## {cid}" if not name else f"## {cid}: {name}"
+    lines: list[str] = [title, ""]
+    if tier != "?":
+        lines.append(f"**Identity tier:** {tier}%")
+    if rep:
+        lines.append(f"**Representative:** {rep}")
+    if member_count is not None:
+        lines.append(f"**Member count:** {member_count}")
+    if isinstance(common_taxon, dict) and common_taxon.get("scientificName"):
+        tid = common_taxon.get("taxonId")
+        suffix = f" (taxId {tid})" if tid is not None else ""
+        lines.append(f"**Common taxon:** {common_taxon['scientificName']}{suffix}")
+    if last_updated:
+        lines.append(f"**Last updated:** {last_updated}")
+    if members:
+        sample = []
+        for m in members[:20]:
+            acc = m.get("memberId") or m.get("accession") or "" if isinstance(m, dict) else str(m)
+            if acc:
+                sample.append(str(acc))
+        if sample:
+            shown = ", ".join(sample)
+            extra = f" (+{len(members) - 20} more)" if len(members) > 20 else ""
+            lines.append(f"**Members:** {shown}{extra}")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_uniref_search(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    results: list[dict[str, Any]] = data.get("results", []) or []
+    lines: list[str] = [f"**{len(results)} UniRef clusters**", ""]
+    for r in results[:50]:
+        cid = str(r.get("id", "?") or "?")
+        name = str(r.get("name", "") or "").strip()
+        tier = _uniref_tier(r)
+        member_count = r.get("memberCount", "?")
+        rep = _uniref_representative(r)
+        bits: list[str] = []
+        if tier != "?":
+            bits.append(f"{tier}%")
+        bits.append(f"{member_count} members")
+        if rep:
+            bits.append(f"rep {rep}")
+        suffix = " | ".join(bits)
+        head = f"**{cid}**"
+        if name:
+            head = f"{head}: {name}"
+        lines.append(f"- {head}  —  {suffix}")
     if len(results) > 50:
         lines.append(f"... (+{len(results) - 50} more)")
     if provenance is not None:

@@ -1,4 +1,4 @@
-"""TOPOLOGICA UniProt MCP Server. 14 tools. FastMCP. stdio transport.
+"""TOPOLOGICA UniProt MCP Server. 16 tools. FastMCP. stdio transport.
 
 Hardened against the common class of MCP-server defects:
 
@@ -33,6 +33,8 @@ from uniprot_mcp.client import (
     ACCESSION_RE,
     KEYWORD_ID_RE,
     SUBCELLULAR_LOCATION_ID_RE,
+    UNIREF_ID_RE,
+    UNIREF_IDENTITY_TIERS,
     UniProtClient,
 )
 from uniprot_mcp.formatters import (
@@ -48,6 +50,8 @@ from uniprot_mcp.formatters import (
     fmt_subcellular_location,
     fmt_subcellular_location_search,
     fmt_taxonomy,
+    fmt_uniref,
+    fmt_uniref_search,
     fmt_variants,
 )
 
@@ -67,6 +71,9 @@ MAX_FEATURE_TYPES_LEN: Final[int] = 200
 # UniProt KW-NNNN / SL-NNNN are exactly 7 characters; cap modestly above
 # to leave headroom for any future numeric expansion without uncapping.
 MAX_VOCAB_ID_LEN: Final[int] = 12
+# UniRef IDs: ``UniRef100_`` (10) + UniProt accession (≤ 10) or UPI (13).
+# 30 covers either with margin.
+MAX_UNIREF_ID_LEN: Final[int] = 30
 ALLOWED_RESPONSE_FORMATS: Final[frozenset[str]] = frozenset({"markdown", "json"})
 
 # Module-level lazy client. No lifespan. No ctx injection. Just works.
@@ -110,6 +117,14 @@ def _check_subcellular_location_id(value: str) -> None:
     _check_len("location_id", value, MAX_VOCAB_ID_LEN)
     if not SUBCELLULAR_LOCATION_ID_RE.match(value):
         raise _InputError("location_id must match the UniProt format (e.g. SL-0086)")
+
+
+def _check_uniref_id(value: str) -> None:
+    _check_len("uniref_id", value, MAX_UNIREF_ID_LEN)
+    if not UNIREF_ID_RE.match(value):
+        raise _InputError(
+            "uniref_id must match the UniProt format (e.g. UniRef50_P04637, UniRef90_P04637, UniRef100_P04637)"
+        )
 
 
 def _safe_error(tool: str, exc: BaseException) -> str:
@@ -419,6 +434,58 @@ async def uniprot_search_subcellular_locations(
         return _safe_error("uniprot_search_subcellular_locations", exc)
 
 
+@mcp.tool(
+    name="uniprot_get_uniref",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_uniref(uniref_id: str, response_format: str = "markdown") -> str:
+    """Fetch a UniRef cluster by ID. Examples:
+    UniRef100_P04637 (100 % identity, only exact-match members),
+    UniRef90_P04637 (90 % identity), UniRef50_P04637 (50 %, broadest grouping).
+    Returns representative member, member list, common taxon, last-updated date."""
+    try:
+        _check_uniref_id(uniref_id)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_uniref(uniref_id)
+        return fmt_uniref(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_get_uniref", exc)
+
+
+@mcp.tool(
+    name="uniprot_search_uniref",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_search_uniref(
+    query: str,
+    identity_tier: str = "",
+    size: int = 10,
+    response_format: str = "markdown",
+) -> str:
+    """Search UniRef clusters. ``identity_tier`` filters by % identity:
+    ``"50"`` (loosest), ``"90"``, ``"100"`` (tightest), or empty for all tiers.
+    Examples: query='kinase' identity_tier='90' returns the 90 % clusters."""
+    try:
+        _check_len("query", query, MAX_QUERY_LEN)
+        _check_format(response_format)
+        if identity_tier and identity_tier not in UNIREF_IDENTITY_TIERS:
+            raise _InputError(
+                f"identity_tier must be one of {list(UNIREF_IDENTITY_TIERS)} or empty"
+            )
+        size = max(1, min(size, 500))
+        q = query
+        if identity_tier:
+            # UniProt query language uses decimal identity values.
+            decimal = {"50": "0.5", "90": "0.9", "100": "1.0"}[identity_tier]
+            q = f"({q}) AND identity:{decimal}"
+        client = _client()
+        data = await client.search_uniref(q, size=size)
+        return fmt_uniref_search(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_search_uniref", exc)
+
+
 def _self_test() -> int:
     """Quick end-to-end smoke check without needing an MCP client."""
     import asyncio
@@ -438,6 +505,8 @@ def _self_test() -> int:
         "uniprot_search_keywords",
         "uniprot_get_subcellular_location",
         "uniprot_search_subcellular_locations",
+        "uniprot_get_uniref",
+        "uniprot_search_uniref",
     }
 
     tools = getattr(mcp, "_tool_manager", None)

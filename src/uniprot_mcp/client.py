@@ -51,6 +51,17 @@ ACCESSION_RE = re.compile(
 KEYWORD_ID_RE = re.compile(r"\AKW-[0-9]{4}\Z")
 SUBCELLULAR_LOCATION_ID_RE = re.compile(r"\ASL-[0-9]{4}\Z")
 
+# UniRef cluster identifier. Three identity tiers (50 / 90 / 100 %)
+# are encoded in the prefix; the suffix is either a UniProt accession
+# (the canonical representative member) or a UniParc UPI.
+# https://www.uniprot.org/help/uniref
+UNIREF_ID_RE = re.compile(
+    r"\AUniRef(?:50|90|100)_"
+    r"(?:[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2}|UPI[A-F0-9]{10})"
+    r"\Z"
+)
+UNIREF_IDENTITY_TIERS = ("50", "90", "100")
+
 # Stable identifier for the data source. Emitted in every Provenance
 # record so downstream consumers can disambiguate multi-source outputs.
 SOURCE_NAME = "UniProt"
@@ -97,6 +108,8 @@ __all__ = [
     "SUBCELLULAR_LOCATION_ID_RE",
     "TIMEOUT",
     "UA",
+    "UNIREF_IDENTITY_TIERS",
+    "UNIREF_ID_RE",
     "Provenance",
     "UniProtClient",
     "parse_retry_after",
@@ -301,6 +314,25 @@ class UniProtClient:
         data: dict[str, Any] = (
             await self._req(
                 "GET", "/locations/search", params={"query": query, "size": min(size, 500)}
+            )
+        ).json()
+        return data
+
+    async def get_uniref(self, uniref_id: str) -> dict[str, Any]:
+        data: dict[str, Any] = (await self._req("GET", f"/uniref/{uniref_id}")).json()
+        return data
+
+    async def search_uniref(self, query: str, size: int = 10) -> dict[str, Any]:
+        """Search UniRef clusters.
+
+        The caller is expected to embed any identity-tier filter into
+        the query string itself (UniProt query syntax: ``identity:0.5``
+        / ``identity:0.9`` / ``identity:1.0`` for the 50 / 90 / 100 %
+        tiers respectively). The server tool wraps that for ergonomics.
+        """
+        data: dict[str, Any] = (
+            await self._req(
+                "GET", "/uniref/search", params={"query": query, "size": min(size, 500)}
             )
         ).json()
         return data

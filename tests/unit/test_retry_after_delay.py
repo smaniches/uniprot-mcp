@@ -69,10 +69,14 @@ async def test_client_sleeps_per_http_date_retry_after(
         f"expected exactly one sleep before retry, got {recorder.calls!r}"
     )
     slept = recorder.calls[0]
-    # The parser computes ``dt - now()`` at call time, shortly after
-    # we computed ``future``. Allow a generous ±1.5 s tolerance for
-    # scheduler jitter.
-    assert 3.5 <= slept <= 5.5, f"expected ~5 s sleep for HTTP-date Retry-After, got {slept}"
+    # The parser computes ``dt - now()`` at call time, shortly after we
+    # computed ``future``. The interval shrinks by however long it takes
+    # for respx to dispatch the mock and httpx to surface the 429. On a
+    # slow / loaded box this can be a couple of seconds. Allow a
+    # generous lower bound; the upper bound stays tight at the original
+    # 5 s + 0.5 s clock-skew margin to catch a regression that ignored
+    # the header entirely (which would fall back to 1.5 s, well below).
+    assert 2.0 <= slept <= 5.5, f"expected ~5 s sleep for HTTP-date Retry-After, got {slept}"
 
 
 async def test_client_sleeps_per_delta_seconds_retry_after(

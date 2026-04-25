@@ -46,7 +46,9 @@
     "uniprot_get_keyword",
     "uniprot_search_keywords",
     "uniprot_get_subcellular_location",
-    "uniprot_search_subcellular_locations"
+    "uniprot_search_subcellular_locations",
+    "uniprot_get_uniref",
+    "uniprot_search_uniref"
   ],
   "toolDefaults": {
     "readOnlyHint": true,
