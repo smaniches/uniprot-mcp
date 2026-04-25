@@ -39,7 +39,7 @@ BASE_URL = "https://rest.uniprot.org"
 TIMEOUT = 30.0
 MAX_RETRIES = 3
 MAX_RETRY_AFTER_SECONDS = 120.0  # cap server-dictated waits
-UA = "uniprot-mcp/0.1.0 (+https://github.com/smaniches/uniprot-mcp)"
+UA = "uniprot-mcp/1.0.1 (+https://github.com/smaniches/uniprot-mcp)"
 
 # Official UniProt accession format.
 # https://www.uniprot.org/help/accession_numbers

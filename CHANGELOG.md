@@ -5,7 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.1] - 2026-04-25
+
+First public release. Closes the AUDIT.md follow-up list, raises every
+formatter to provenance-aware output, expands the tool surface from
+10 to 28, ships a pre-registered SHA-256-committed benchmark with a
+third-party-reproducible verifier, ships `uniprot_provenance_verify`
+for per-query auditability, and ships `--pin-release` for strict
+reproducibility. Total commits between v0.1.0 (private baseline) and
+v1.0.1: 16 in the public-flip prep session, plus the audit-remediation
+history.
 
 ### Added
 - **Provenance verification (`uniprot_provenance_verify` tool).**
@@ -139,5 +148,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `batch_entries` no longer returns HTTP 400 when one malformed accession
   is mixed into an otherwise valid batch.
 
-[Unreleased]: https://github.com/smaniches/uniprot-mcp/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/smaniches/uniprot-mcp/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.0.1
 [0.1.0]: https://github.com/smaniches/uniprot-mcp/releases/tag/v0.1.0

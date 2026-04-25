@@ -1,7 +1,7 @@
 {
   "$schema": "https://modelcontextprotocol.io/schema/mcp.json",
   "name": "uniprot-mcp",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "description": "Reference-quality Model Context Protocol server for the UniProt protein knowledgebase. Ten tools cover entry retrieval, search, sequences, features, variants, GO terms, cross-references, ID mapping, batch retrieval, and taxonomy. Every successful response carries a verifiable Provenance record (UniProt release number, release date, retrieval timestamp, resolved query URL) surfaced as a Markdown footer, JSON envelope, or PIR-style FASTA header. All tools are read-only and require no API key.",
   "homepage": "https://github.com/smaniches/uniprot-mcp",
   "license": "Apache-2.0",
