@@ -102,6 +102,25 @@ Every entry in this log records a fresh end-to-end re-derivation of every benchm
 
 A reviewer can reproduce this by cloning the repo, holding their own copy of `expected.jsonl` (provided at scoring time), and running both commands. Both must exit 0.
 
+### 2026-04-25 — live end-to-end provenance round-trip (architectural validation)
+
+Independent of the benchmark commitments above: a separate test exercises the full architectural chain *upstream → Provenance extraction → Markdown / JSON surface → `uniprot_provenance_verify` re-fetch* against real UniProt to confirm the wiring is correct, not just the unit-test mocks.
+
+- **Pytest suite:** `tests/integration/test_provenance_roundtrip_live.py` — 4 tests, all PASSED. Run: `pytest --integration tests/integration/test_provenance_roundtrip_live.py`.
+- **Captured transcript:** [`run-2026-04-25-roundtrip/transcript.md`](run-2026-04-25-roundtrip/transcript.md) — full markdown + JSON output of every verifier verdict, with the actual live values observed.
+- **Demo runner:** `tests/benchmark/demo_roundtrip.py` — re-runnable on demand to capture a fresh transcript.
+- **Live values observed at capture (2026-04-25T17:09:00Z):**
+  - `release`: `2026_01`
+  - `release_date`: `28-January-2026` (UniProt returns this in human-readable form, not ISO 8601)
+  - `response_sha256` for `P04637`: `0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e`
+- **Verdicts produced:**
+  - matching `(release, sha)` → `verified` ✓
+  - matching release, wrong sha → `hash_drift` ✓
+  - wrong release, matching sha → `release_drift` ✓
+  - made-up accession URL → `url_unreachable` ✓ (HTTP 400 from UniProt)
+
+Every architectural claim made in this codebase about Provenance and verification is now grounded in observed behaviour against the real UniProt API at the recorded capture time.
+
 ## Independence statement (formal)
 
 I, Santiago Maniches, attest that during the authoring of `prompts.jsonl` v1 and the sealing of `expected.jsonl` v1, the system under test (`uniprot-mcp` versions 0.1.0 and 1.0.x) was **not** invoked. Every primary-source query in this audit table was executed against `https://rest.uniprot.org/...` directly, either by `curl` at authoring time or by `tests/benchmark/verify_answers.py` (which is itself reviewable Python — no opaque shortcuts). Any subsequent revision of this benchmark (v2, v3, …) carries an updated independence statement.
