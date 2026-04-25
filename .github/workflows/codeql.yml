@@ -1,0 +1,52 @@
+name: CodeQL
+
+# Public-repo only. Code Scanning is a paid feature on private personal
+# repositories; the workflow file ships in the codebase so that the
+# flip from private to public requires no additional commits.
+# Removed in commit 1401845 (private-repo billing); restored in this
+# commit (closing PENDING_V1.md §1.3).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly Monday 04:30 UTC — picks up new CVEs in dependencies that
+    # changed via Dependabot during the prior week.
+    - cron: "30 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python]
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@ce64ddcb0d8d890d2df4a9d1c04ff297367dea2a  # v3
+        with:
+          languages: ${{ matrix.language }}
+          # Default queries plus security-extended for additional rules
+          # tuned to match Anthropic Connectors Directory + OpenSSF
+          # Scorecard expectations.
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@ce64ddcb0d8d890d2df4a9d1c04ff297367dea2a  # v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@ce64ddcb0d8d890d2df4a9d1c04ff297367dea2a  # v3
+        with:
+          category: "/language:${{ matrix.language }}"
