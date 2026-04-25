@@ -44,6 +44,13 @@ ACCESSION_RE = re.compile(
     r"\A(?:[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2})\Z"
 )
 
+# UniProt controlled-vocabulary identifier formats. Both are
+# zero-padded four-digit numbers behind a two-letter prefix.
+# https://www.uniprot.org/keywords  -> KW-NNNN (e.g. KW-0007 = Acetylation)
+# https://www.uniprot.org/locations -> SL-NNNN (e.g. SL-0086 = Cell membrane)
+KEYWORD_ID_RE = re.compile(r"\AKW-[0-9]{4}\Z")
+SUBCELLULAR_LOCATION_ID_RE = re.compile(r"\ASL-[0-9]{4}\Z")
+
 # Stable identifier for the data source. Emitted in every Provenance
 # record so downstream consumers can disambiguate multi-source outputs.
 SOURCE_NAME = "UniProt"
@@ -83,9 +90,11 @@ class Provenance(TypedDict):
 __all__ = [
     "ACCESSION_RE",
     "BASE_URL",
+    "KEYWORD_ID_RE",
     "MAX_RETRIES",
     "MAX_RETRY_AFTER_SECONDS",
     "SOURCE_NAME",
+    "SUBCELLULAR_LOCATION_ID_RE",
     "TIMEOUT",
     "UA",
     "Provenance",
@@ -269,5 +278,29 @@ class UniProtClient:
     async def taxonomy_search(self, query: str, size: int = 10) -> dict[str, Any]:
         data: dict[str, Any] = (
             await self._req("GET", "/taxonomy/search", params={"query": query, "size": size})
+        ).json()
+        return data
+
+    async def get_keyword(self, keyword_id: str) -> dict[str, Any]:
+        data: dict[str, Any] = (await self._req("GET", f"/keywords/{keyword_id}")).json()
+        return data
+
+    async def search_keywords(self, query: str, size: int = 10) -> dict[str, Any]:
+        data: dict[str, Any] = (
+            await self._req(
+                "GET", "/keywords/search", params={"query": query, "size": min(size, 500)}
+            )
+        ).json()
+        return data
+
+    async def get_subcellular_location(self, location_id: str) -> dict[str, Any]:
+        data: dict[str, Any] = (await self._req("GET", f"/locations/{location_id}")).json()
+        return data
+
+    async def search_subcellular_locations(self, query: str, size: int = 10) -> dict[str, Any]:
+        data: dict[str, Any] = (
+            await self._req(
+                "GET", "/locations/search", params={"query": query, "size": min(size, 500)}
+            )
         ).json()
         return data

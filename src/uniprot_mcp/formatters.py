@@ -30,7 +30,11 @@ __all__ = [
     "fmt_features",
     "fmt_go",
     "fmt_idmapping",
+    "fmt_keyword",
+    "fmt_keyword_search",
     "fmt_search",
+    "fmt_subcellular_location",
+    "fmt_subcellular_location_search",
     "fmt_taxonomy",
     "fmt_variants",
     "is_swissprot",
@@ -369,6 +373,160 @@ def fmt_taxonomy(
         rank = r.get("rank", "")
         c = f" ({common})" if common else ""
         lines.append(f"  **{tid}**: {sci}{c} [{rank}]")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def _kw_id(record: dict[str, Any]) -> str:
+    """Pull the canonical keyword id out of either the wrapping object
+    or a flat field. Different UniProt endpoints serialize this both
+    ways, so handle both shapes defensively."""
+    kw = record.get("keyword")
+    if isinstance(kw, dict):
+        return str(kw.get("id", "?"))
+    if isinstance(kw, str) and kw:
+        return kw
+    return str(record.get("id", "?"))
+
+
+def _kw_name(record: dict[str, Any]) -> str:
+    kw = record.get("keyword")
+    if isinstance(kw, dict):
+        return str(kw.get("name", record.get("name", "?")))
+    return str(record.get("name", "?"))
+
+
+def fmt_keyword(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    """Format a single UniProt keyword (e.g. KW-0007 Acetylation)."""
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    kid = _kw_id(data)
+    name = _kw_name(data)
+    category = str(data.get("category", "") or "")
+    definition = str(data.get("definition", "") or "")
+    synonyms = [str(s) for s in (data.get("synonyms") or []) if s]
+    parents = data.get("parents") or []
+    children = data.get("children") or []
+    go_refs = data.get("geneOntologies") or []
+    stats = data.get("statistics") or {}
+    lines: list[str] = [f"## {kid}: {name}", ""]
+    if category:
+        lines.append(f"**Category:** {category}")
+    if definition:
+        lines.append(f"**Definition:** {definition}")
+    if synonyms:
+        show = ", ".join(synonyms[:8])
+        extra = f" (+{len(synonyms) - 8} more)" if len(synonyms) > 8 else ""
+        lines.append(f"**Synonyms:** {show}{extra}")
+    if parents:
+        names = [_kw_name(p) for p in parents[:5]]
+        lines.append(f"**Parents:** {', '.join(n for n in names if n != '?')}")
+    if children:
+        lines.append(f"**Children:** {len(children)} narrower keyword(s)")
+    if go_refs:
+        ids = [str(g.get("id", "")) for g in go_refs if g.get("id")]
+        if ids:
+            lines.append(f"**GO:** {', '.join(ids[:5])}")
+    if stats:
+        rev = stats.get("reviewedProteinCount")
+        unrev = stats.get("unreviewedProteinCount")
+        if rev is not None or unrev is not None:
+            lines.append(f"**Proteins annotated:** {rev or 0} reviewed, {unrev or 0} unreviewed")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_keyword_search(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    results: list[dict[str, Any]] = data.get("results", []) or []
+    lines: list[str] = [f"**{len(results)} keywords**", ""]
+    for r in results[:50]:
+        kid = _kw_id(r)
+        name = _kw_name(r)
+        cat = str(r.get("category", "") or "")
+        suffix = f" [{cat}]" if cat else ""
+        lines.append(f"- **{kid}**: {name}{suffix}")
+    if len(results) > 50:
+        lines.append(f"... (+{len(results) - 50} more)")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_subcellular_location(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    """Format a single UniProt subcellular location (e.g. SL-0086 Cell membrane)."""
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    sid = str(data.get("id", "?") or "?")
+    name = str(data.get("name", "?") or "?")
+    category = str(data.get("category", "") or "")
+    definition = str(data.get("definition", "") or "")
+    synonyms = [str(s) for s in (data.get("synonyms") or []) if s]
+    keyword = data.get("keyword") or {}
+    is_a = data.get("isA") or []
+    is_part_of = data.get("isPartOf") or []
+    parts = data.get("parts") or []
+    go_refs = data.get("geneOntologies") or []
+    stats = data.get("statistics") or {}
+    lines: list[str] = [f"## {sid}: {name}", ""]
+    if category:
+        lines.append(f"**Category:** {category}")
+    if definition:
+        lines.append(f"**Definition:** {definition}")
+    if synonyms:
+        show = ", ".join(synonyms[:8])
+        extra = f" (+{len(synonyms) - 8} more)" if len(synonyms) > 8 else ""
+        lines.append(f"**Synonyms:** {show}{extra}")
+    if isinstance(keyword, dict) and keyword.get("id"):
+        lines.append(f"**Keyword:** {keyword['id']} ({keyword.get('name', '')})")
+    if is_a:
+        names = [str(p.get("name", "")) for p in is_a[:5] if p.get("name")]
+        if names:
+            lines.append(f"**Is-a:** {', '.join(names)}")
+    if is_part_of:
+        names = [str(p.get("name", "")) for p in is_part_of[:5] if p.get("name")]
+        if names:
+            lines.append(f"**Part of:** {', '.join(names)}")
+    if parts:
+        lines.append(f"**Has parts:** {len(parts)}")
+    if go_refs:
+        ids = [str(g.get("id", "")) for g in go_refs if g.get("id")]
+        if ids:
+            lines.append(f"**GO:** {', '.join(ids[:5])}")
+    if stats:
+        rev = stats.get("reviewedProteinCount")
+        unrev = stats.get("unreviewedProteinCount")
+        if rev is not None or unrev is not None:
+            lines.append(f"**Proteins annotated:** {rev or 0} reviewed, {unrev or 0} unreviewed")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_subcellular_location_search(
+    data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
+) -> str:
+    if fmt == "json":
+        return _json_envelope(data, provenance)
+    results: list[dict[str, Any]] = data.get("results", []) or []
+    lines: list[str] = [f"**{len(results)} subcellular locations**", ""]
+    for r in results[:50]:
+        sid = str(r.get("id", "?") or "?")
+        name = str(r.get("name", "?") or "?")
+        cat = str(r.get("category", "") or "")
+        suffix = f" [{cat}]" if cat else ""
+        lines.append(f"- **{sid}**: {name}{suffix}")
+    if len(results) > 50:
+        lines.append(f"... (+{len(results) - 50} more)")
     if provenance is not None:
         lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)

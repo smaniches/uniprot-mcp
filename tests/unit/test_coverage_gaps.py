@@ -505,6 +505,10 @@ def test_self_test_extra_tool_warning(monkeypatch, capsys) -> None:
             "uniprot_id_mapping": None,
             "uniprot_batch_entries": None,
             "uniprot_taxonomy_search": None,
+            "uniprot_get_keyword": None,
+            "uniprot_search_keywords": None,
+            "uniprot_get_subcellular_location": None,
+            "uniprot_search_subcellular_locations": None,
             "unexpected_extra_tool": None,
         }
 

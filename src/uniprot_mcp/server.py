@@ -1,4 +1,4 @@
-"""TOPOLOGICA UniProt MCP Server. 10 tools. FastMCP. stdio transport.
+"""TOPOLOGICA UniProt MCP Server. 14 tools. FastMCP. stdio transport.
 
 Hardened against the common class of MCP-server defects:
 
@@ -29,7 +29,12 @@ from typing import Final
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-from uniprot_mcp.client import ACCESSION_RE, UniProtClient
+from uniprot_mcp.client import (
+    ACCESSION_RE,
+    KEYWORD_ID_RE,
+    SUBCELLULAR_LOCATION_ID_RE,
+    UniProtClient,
+)
 from uniprot_mcp.formatters import (
     fmt_crossrefs,
     fmt_entry,
@@ -37,7 +42,11 @@ from uniprot_mcp.formatters import (
     fmt_features,
     fmt_go,
     fmt_idmapping,
+    fmt_keyword,
+    fmt_keyword_search,
     fmt_search,
+    fmt_subcellular_location,
+    fmt_subcellular_location_search,
     fmt_taxonomy,
     fmt_variants,
 )
@@ -55,6 +64,9 @@ MAX_IDS_LEN: Final[int] = 5_000  # ~500 comma-separated ids of realistic length
 MAX_ORGANISM_LEN: Final[int] = 100
 MAX_DATABASE_LEN: Final[int] = 50
 MAX_FEATURE_TYPES_LEN: Final[int] = 200
+# UniProt KW-NNNN / SL-NNNN are exactly 7 characters; cap modestly above
+# to leave headroom for any future numeric expansion without uncapping.
+MAX_VOCAB_ID_LEN: Final[int] = 12
 ALLOWED_RESPONSE_FORMATS: Final[frozenset[str]] = frozenset({"markdown", "json"})
 
 # Module-level lazy client. No lifespan. No ctx injection. Just works.
@@ -86,6 +98,18 @@ def _check_accession(value: str) -> None:
 def _check_format(value: str) -> None:
     if value not in ALLOWED_RESPONSE_FORMATS:
         raise _InputError(f"response_format must be one of {sorted(ALLOWED_RESPONSE_FORMATS)}")
+
+
+def _check_keyword_id(value: str) -> None:
+    _check_len("keyword_id", value, MAX_VOCAB_ID_LEN)
+    if not KEYWORD_ID_RE.match(value):
+        raise _InputError("keyword_id must match the UniProt format (e.g. KW-0007)")
+
+
+def _check_subcellular_location_id(value: str) -> None:
+    _check_len("location_id", value, MAX_VOCAB_ID_LEN)
+    if not SUBCELLULAR_LOCATION_ID_RE.match(value):
+        raise _InputError("location_id must match the UniProt format (e.g. SL-0086)")
 
 
 def _safe_error(tool: str, exc: BaseException) -> str:
@@ -317,6 +341,84 @@ async def uniprot_taxonomy_search(
         return _safe_error("uniprot_taxonomy_search", exc)
 
 
+@mcp.tool(
+    name="uniprot_get_keyword",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_keyword(keyword_id: str, response_format: str = "markdown") -> str:
+    """Fetch a UniProt keyword by ID (e.g. KW-0007 for Acetylation, KW-0539 for Nucleus).
+    Returns name, definition, category, synonyms, GO cross-refs, and parent/child hierarchy."""
+    try:
+        _check_keyword_id(keyword_id)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_keyword(keyword_id)
+        return fmt_keyword(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_get_keyword", exc)
+
+
+@mcp.tool(
+    name="uniprot_search_keywords",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_search_keywords(
+    query: str, size: int = 10, response_format: str = "markdown"
+) -> str:
+    """Search UniProt's controlled keyword vocabulary by name or definition.
+    Examples: 'acetylation', 'nucleus', 'kinase activity'."""
+    try:
+        _check_len("query", query, MAX_QUERY_LEN)
+        _check_format(response_format)
+        size = max(1, min(size, 500))
+        client = _client()
+        data = await client.search_keywords(query, size=size)
+        return fmt_keyword_search(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_search_keywords", exc)
+
+
+@mcp.tool(
+    name="uniprot_get_subcellular_location",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_subcellular_location(
+    location_id: str, response_format: str = "markdown"
+) -> str:
+    """Fetch a UniProt subcellular-location term by ID (e.g. SL-0086 Cell membrane, SL-0191 Nucleus).
+    Returns name, definition, category, GO cross-refs, and the is-a / part-of hierarchy."""
+    try:
+        _check_subcellular_location_id(location_id)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_subcellular_location(location_id)
+        return fmt_subcellular_location(data, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_get_subcellular_location", exc)
+
+
+@mcp.tool(
+    name="uniprot_search_subcellular_locations",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_search_subcellular_locations(
+    query: str, size: int = 10, response_format: str = "markdown"
+) -> str:
+    """Search UniProt's controlled subcellular-location vocabulary.
+    Examples: 'membrane', 'mitochondrion', 'cytoplasm'."""
+    try:
+        _check_len("query", query, MAX_QUERY_LEN)
+        _check_format(response_format)
+        size = max(1, min(size, 500))
+        client = _client()
+        data = await client.search_subcellular_locations(query, size=size)
+        return fmt_subcellular_location_search(
+            data, response_format, provenance=client.last_provenance
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_search_subcellular_locations", exc)
+
+
 def _self_test() -> int:
     """Quick end-to-end smoke check without needing an MCP client."""
     import asyncio
@@ -332,6 +434,10 @@ def _self_test() -> int:
         "uniprot_id_mapping",
         "uniprot_batch_entries",
         "uniprot_taxonomy_search",
+        "uniprot_get_keyword",
+        "uniprot_search_keywords",
+        "uniprot_get_subcellular_location",
+        "uniprot_search_subcellular_locations",
     }
 
     tools = getattr(mcp, "_tool_manager", None)

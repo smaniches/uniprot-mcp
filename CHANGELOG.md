@@ -7,11 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Provenance on every response.** New `Provenance` TypedDict and
+  `client.last_provenance` property capture the UniProt release
+  number, release date, retrieval timestamp, and resolved URL. All
+  formatters surface it as a Markdown footer, JSON envelope
+  (`{"data": ..., "provenance": ...}`), or PIR-style `;`-prefix
+  FASTA header (parser-safe for BLAST+, biopython, emboss).
+- **4 new tools** (controlled-vocabulary surface, Wave B/1):
+  `uniprot_get_keyword`, `uniprot_search_keywords`,
+  `uniprot_get_subcellular_location`,
+  `uniprot_search_subcellular_locations`. Tool surface 10 → 14.
+- **Threat model:** `docs/THREAT_MODEL.md` (12 STRIDE-shaped threats,
+  receipt-anchored to code paths).
+- **Anthropic Connectors Directory artifacts:** `SUPPORT.md` and
+  `PRIVACY.md` at repo root.
+- **MCP Registry manifest:** `server.json` (2025-09-29 schema).
+- **Merge plan:** `docs/MERGE_PLAN.md` (5-phase plan from
+  `hardening-v2` to public flip with rollback policy).
+- **Pending-items punch list:** `docs/PENDING_V1.md` (binary
+  done/not-done criteria for v1.0.1).
+- **Drift-prevention contract tests:** `.well-known/mcp.json`,
+  `server.json`, and `pyproject.toml` versions are now pinned in
+  lock-step against the registered tool surface.
+- **AUDIT follow-ups:** Hypothesis fuzz for `uniprot_search` query
+  construction, measured `Retry-After` delay tests across HTTP-date
+  / delta-seconds / missing-header / past-date cases.
+
 ### Changed
 - **Project layout:** migrated flat `server.py`/`client.py`/`formatters.py`
   to `src/uniprot_mcp/` (eliminates site-packages collision risk, makes
   `py.typed` PEP 561-effective, removes `sys.path` hack). Console script
   now wires `uniprot-mcp = "uniprot_mcp.server:main"`.
+- **CI:** every GitHub Action `uses:` reference is now SHA-pinned with
+  the human-readable tag preserved as a trailing comment. Dependabot's
+  `github-actions` ecosystem auto-bumps the pins weekly.
+- **CI:** `actions/attest-sbom@v1` now attests the CycloneDX SBOM
+  alongside the existing build-provenance attestation.
+- `.well-known/mcp.json` description expanded to mention provenance;
+  `toolDefaults` and `support` URL blocks added.
 - `smithery.yaml` now invokes the `uniprot-mcp` console script instead
   of a non-existent `Dockerfile`.
 - CI: `pip-audit --strict` no longer silently masked with `|| true`.

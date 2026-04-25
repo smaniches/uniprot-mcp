@@ -42,7 +42,11 @@
     "uniprot_get_cross_refs",
     "uniprot_id_mapping",
     "uniprot_batch_entries",
-    "uniprot_taxonomy_search"
+    "uniprot_taxonomy_search",
+    "uniprot_get_keyword",
+    "uniprot_search_keywords",
+    "uniprot_get_subcellular_location",
+    "uniprot_search_subcellular_locations"
   ],
   "toolDefaults": {
     "readOnlyHint": true,
