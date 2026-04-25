@@ -2,10 +2,10 @@
 
 > Per-prompt audit trail. This file exists so an external reviewer can verify that the system under test (`uniprot-mcp`) was **not** consulted when authoring expected answers. Every fact is traceable to a primary-source URL or a published canonical fact.
 
-**Authoring session:** 2026-04-24
-**Author:** Santiago Maniches (ORCID 0009-0005-6480-1987, TOPOLOGICA LLC) with research assistance from Claude Opus 4.7
-**Status:** Prompts frozen at v1; expected-answer authoring + sealing live in the immediate follow-up commit.
-**Independence statement:** None of the prompts or expected answers were authored by invoking `uniprot-mcp`'s tool surface. All primary-source queries were executed against `https://rest.uniprot.org/...` directly via `curl` or via training-data factual recall that was then verified against the live REST API.
+**Authoring session:** 2026-04-24 (prompts) → 2026-04-25 (expected answers, sealing).
+**Author:** Santiago Maniches (ORCID 0009-0005-6480-1987, TOPOLOGICA LLC) with research assistance from Claude Opus 4.7.
+**Status:** Prompts frozen at v1. **Expected answers sealed via `expected.hashes.jsonl` on `main` as of 2026-04-25.** Plaintext `expected.jsonl` held local-only (gitignored) until a benchmark run is published.
+**Independence statement:** None of the prompts or expected answers were authored by invoking `uniprot-mcp`'s tool surface. **Every** Tier-A and Tier-B factual answer was verified against `https://rest.uniprot.org/...` via `curl` at sealing time on 2026-04-25 — no training-data shortcuts, no derived-from-the-system-under-test answers. The exact REST queries are recorded per-prompt below.
 
 ---
 
@@ -78,14 +78,15 @@ This rule exists because UniProt is a living database. A prompt that asks "list 
 
 ---
 
-## Sealing checklist (next commit)
+## Sealing checklist (executed 2026-04-25)
 
-- [ ] `expected.jsonl` written with one `{"prompt_id": int, "answer": <typed>, "rationale": str}` per prompt. The `answer` field is structured (string for Tier A, JSON for Tier B/C) so it canonicalises identically across machines.
-- [ ] `python tests/benchmark/seal.py` produces `expected.hashes.jsonl` with 30 commitments.
-- [ ] `python tests/benchmark/verify.py expected.jsonl expected.hashes.jsonl` exits 0.
-- [ ] `expected.jsonl` is in `.gitignore` (added in this commit).
-- [ ] `expected.hashes.jsonl` and this `AUDIT.md` are committed to `main`.
-- [ ] Backup of `expected.jsonl` to a separate filesystem (the user's responsibility — file loss = benchmark unrunnable without re-authoring).
+- [x] `expected.jsonl` written with one `{"prompt_id": int, "answer": <typed>, "rationale": str}` per prompt. The `answer` field is a string for Tier A / single-fact Tier B, a JSON object/array for the structured Tier B and Tier C prompts. The `rationale` field for every Tier A/B prompt names the exact REST query used to verify the fact.
+- [x] `python tests/benchmark/seal.py` produced `expected.hashes.jsonl` with 30 commitments (one per prompt, each a 64-char lowercase SHA-256 hex digest of the canonical-JSON form of the corresponding `expected.jsonl` line).
+- [x] `python tests/benchmark/verify.py expected.jsonl expected.hashes.jsonl` exits 0 (`OK: 30 commitments verified`).
+- [x] `tests/benchmark/expected.jsonl` is in `.gitignore` (added in the scaffold commit).
+- [x] `expected.hashes.jsonl` and this `AUDIT.md` are committed to `main` in the same commit.
+- [ ] Backup of `expected.jsonl` to a separate filesystem (the user's responsibility — file loss means the benchmark is unrunnable without re-authoring; the SHA-256 commitments cannot be inverted).
+- [x] Drift-prevention: `tests/contract/test_benchmark_integrity.py` (8 tests) pins the file shapes, ID-set agreement, hash uniqueness, and the gitignore rule for `expected.jsonl`. CI fails if any of these regress.
 
 ## Independence statement (formal)
 
