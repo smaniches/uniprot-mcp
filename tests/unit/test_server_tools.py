@@ -97,6 +97,10 @@ def test_every_expected_tool_is_registered() -> None:
         "uniprot_resolve_interpro",
         "uniprot_resolve_chembl",
         "uniprot_get_evidence_summary",
+        "uniprot_compute_properties",
+        "uniprot_features_at_position",
+        "uniprot_lookup_variant",
+        "uniprot_get_disease_associations",
         "uniprot_provenance_verify",
     }
     tools = getattr(server.mcp, "_tool_manager", None)

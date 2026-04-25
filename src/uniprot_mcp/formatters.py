@@ -29,15 +29,18 @@ __all__ = [
     "fmt_citation",
     "fmt_citation_search",
     "fmt_crossrefs",
+    "fmt_disease_associations",
     "fmt_entry",
     "fmt_fasta",
     "fmt_features",
+    "fmt_features_at_position",
     "fmt_go",
     "fmt_idmapping",
     "fmt_interpro",
     "fmt_keyword",
     "fmt_keyword_search",
     "fmt_pdb",
+    "fmt_properties",
     "fmt_proteome",
     "fmt_proteome_search",
     "fmt_search",
@@ -48,6 +51,7 @@ __all__ = [
     "fmt_uniparc_search",
     "fmt_uniref",
     "fmt_uniref_search",
+    "fmt_variant_lookup",
     "fmt_variants",
     "is_swissprot",
 ]
@@ -1007,6 +1011,190 @@ def fmt_chembl(
         lines.append(
             "_No ChEMBL cross-reference on this entry — protein may not be a documented drug target._"
         )
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_properties(
+    data: dict[str, Any],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Format the derived sequence-chemistry record produced by
+    :func:`compute_protein_properties`."""
+    if fmt == "json":
+        return _json_envelope({"accession": accession, "properties": data}, provenance)
+    lines: list[str] = [f"## Sequence properties: {accession}", ""]
+    lines.append(f"**Length:** {data['length']} residues")
+    lines.append(f"**Molecular weight:** {data['molecular_weight']:.1f} Da")
+    lines.append(f"**Theoretical pI:** {data['theoretical_pi']:.2f}")
+    lines.append(
+        f"**Net charge at pH 7:** {data['net_charge_pH7']:+.1f} "
+        f"(positive = basic, negative = acidic)"
+    )
+    lines.append(
+        f"**GRAVY (Kyte-Doolittle hydropathy):** {data['gravy']:+.3f} "
+        f"({'hydrophobic' if data['gravy'] > 0 else 'hydrophilic'})"
+    )
+    lines.append(f"**Aromatic fraction (F+W+Y):** {data['aromaticity'] * 100:.1f}%")
+    e280 = data.get("extinction_coefficient_280nm")
+    if e280 is not None:
+        lines.append(
+            f"**Extinction coefficient at 280 nm:** {e280} M⁻¹·cm⁻¹ "
+            f"(1490·#Trp + 5500·#Tyr; assumes reduced cysteines)"
+        )
+    counts = data.get("amino_acid_counts") or {}
+    if counts:
+        ordered = ", ".join(f"{aa}:{counts[aa]}" for aa in sorted(counts) if counts[aa] > 0)
+        lines.append("")
+        lines.append(f"**Amino acid composition:** {ordered}")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_features_at_position(
+    features: list[Feature],
+    accession: str,
+    position: int,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Render the subset of features that overlap a residue position."""
+    if fmt == "json":
+        return _json_envelope(
+            {"accession": accession, "position": position, "features": features},
+            provenance,
+        )
+    lines: list[str] = [
+        f"## Features at residue {position} of {accession} ({len(features)} feature(s))",
+        "",
+    ]
+    if not features:
+        lines.append(f"_No annotated features overlap position {position}._")
+    else:
+        for feat in features:
+            ftype = str(feat.get("type", "?"))
+            loc = feat.get("location") or {}
+            start = (loc.get("start") or {}).get("value", "?")
+            end = (loc.get("end") or {}).get("value", "?")
+            desc = str(feat.get("description", "") or "").strip()
+            range_str = f"{start}-{end}" if start != end else f"{start}"
+            head = f"**{ftype}** [{range_str}]"
+            if desc:
+                head += f": {desc}"
+            lines.append(f"- {head}")
+            alt = feat.get("alternativeSequence") or {}
+            if isinstance(alt, dict) and alt:
+                orig = str(alt.get("originalSequence", "") or "")
+                alts = alt.get("alternativeSequences") or []
+                if orig and alts:
+                    lines.append(f"  Variant: {orig} → {'/'.join(str(a) for a in alts)}")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_variant_lookup(
+    matches: list[Feature],
+    accession: str,
+    change: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Render UniProt natural-variant matches for an HGVS-style change."""
+    if fmt == "json":
+        return _json_envelope(
+            {"accession": accession, "change": change, "matches": matches}, provenance
+        )
+    lines: list[str] = [
+        f"## Variant lookup: {accession} {change} ({len(matches)} match(es))",
+        "",
+    ]
+    if not matches:
+        lines.append(
+            f"_No UniProt natural-variant feature matches `{change}`. "
+            f"This does not mean the variant is benign — UniProt only annotates "
+            f"variants from the literature. See ClinVar / dbSNP for population data._"
+        )
+    else:
+        for m in matches:
+            loc = m.get("location") or {}
+            pos = (loc.get("start") or {}).get("value", "?")
+            alt = m.get("alternativeSequence") or {}
+            orig = str(alt.get("originalSequence", "") or "")
+            alts = alt.get("alternativeSequences") or []
+            mutation = f"{orig}{pos}{'/'.join(str(a) for a in alts)}" if orig else f"pos {pos}"
+            desc = str(m.get("description", "") or "").strip()
+            lines.append(f"### {mutation}")
+            if desc:
+                lines.append(f"{desc}")
+            evidences = m.get("evidences") or []
+            eco_codes = sorted(
+                {str(e.get("evidenceCode", "")) for e in evidences if e.get("evidenceCode")}
+            )
+            if eco_codes:
+                lines.append(f"**Evidence:** {', '.join(eco_codes)}")
+            lines.append("")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_disease_associations(
+    associations: list[dict[str, Any]],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Format the structured disease records extracted from an entry's
+    ``DISEASE``-type comments."""
+    if fmt == "json":
+        return _json_envelope({"accession": accession, "diseases": associations}, provenance)
+    lines: list[str] = [
+        f"## Disease associations: {accession} ({len(associations)} record(s))",
+        "",
+    ]
+    if not associations:
+        lines.append(
+            "_No DISEASE-type annotations on this entry. "
+            "Absence here does not imply the protein is disease-irrelevant — "
+            "see Open Targets / OMIM / DisGeNET for additional disease-gene evidence._"
+        )
+    else:
+        for d in associations:
+            name = str(d.get("name", "?") or "?")
+            disease_id = str(d.get("disease_id", "") or "")
+            acronym = str(d.get("acronym", "") or "")
+            head = f"### {name}"
+            extras: list[str] = []
+            if acronym:
+                extras.append(f"acronym {acronym}")
+            if disease_id:
+                extras.append(f"id {disease_id}")
+            if extras:
+                head += f"  ({', '.join(extras)})"
+            lines.append(head)
+            desc = str(d.get("description", "") or "").strip()
+            if desc:
+                lines.append(desc)
+            xrefs = d.get("cross_references") or []
+            if xrefs:
+                bits = [
+                    f"{x.get('database', '?')}:{x.get('id', '?')}" for x in xrefs if x.get("id")
+                ]
+                if bits:
+                    lines.append(f"**Cross-refs:** {', '.join(bits)}")
+            note = str(d.get("note", "") or "").strip()
+            if note:
+                lines.append(f"**Note:** {note[:280]}")
+            lines.append("")
     if provenance is not None:
         lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)

@@ -1,4 +1,4 @@
-"""TOPOLOGICA UniProt MCP Server. 28 tools. FastMCP. stdio transport.
+"""TOPOLOGICA UniProt MCP Server. 32 tools. FastMCP. stdio transport.
 
 Hardened against the common class of MCP-server defects:
 
@@ -32,6 +32,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import sys
 from typing import Final
 
@@ -60,15 +61,18 @@ from uniprot_mcp.formatters import (
     fmt_citation,
     fmt_citation_search,
     fmt_crossrefs,
+    fmt_disease_associations,
     fmt_entry,
     fmt_fasta,
     fmt_features,
+    fmt_features_at_position,
     fmt_go,
     fmt_idmapping,
     fmt_interpro,
     fmt_keyword,
     fmt_keyword_search,
     fmt_pdb,
+    fmt_properties,
     fmt_proteome,
     fmt_proteome_search,
     fmt_search,
@@ -79,8 +83,10 @@ from uniprot_mcp.formatters import (
     fmt_uniparc_search,
     fmt_uniref,
     fmt_uniref_search,
+    fmt_variant_lookup,
     fmt_variants,
 )
+from uniprot_mcp.proteinchem import compute_protein_properties
 
 logger = logging.getLogger("topologica.uniprot")
 logger.addHandler(logging.StreamHandler(sys.stderr))
@@ -107,6 +113,14 @@ MAX_UNIPARC_ID_LEN: Final[int] = 16
 MAX_PROTEOME_ID_LEN: Final[int] = 16
 # Citation IDs (PubMed) up to 12 digits; cap at 16.
 MAX_CITATION_ID_LEN: Final[int] = 16
+# HGVS-style protein change: <orig><pos><alt> e.g. R175H, R248*, V600E.
+# Realistic max position in any protein is ~38000 residues (titin); cap
+# generously at 8 chars total to allow stop ('*'), three-letter-style
+# stop ('Ter'), or simply position-only short forms.
+MAX_VARIANT_CHANGE_LEN: Final[int] = 16
+# Sequence-position upper bound. Titin (UniProt Q8WZ42) is the longest
+# human protein at 34,350 residues; round up generously.
+MAX_SEQUENCE_POSITION: Final[int] = 100_000
 # Provenance-verify URL cap. Real UniProt URLs are well under this.
 MAX_PROVENANCE_URL_LEN: Final[int] = 1_000
 # UniProt release tag is YYYY_MM (7 chars). 16 covers any plausible
@@ -183,6 +197,41 @@ def _check_citation_id(value: str) -> None:
         raise _InputError(
             "citation_id must be a numeric identifier (typically a PubMed ID, e.g. 12345678)"
         )
+
+
+def _check_position(value: int) -> None:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise _InputError("position must be a positive integer")
+    if value < 1:
+        raise _InputError("position must be a positive integer (residues are 1-indexed)")
+    if value > MAX_SEQUENCE_POSITION:
+        raise _InputError(
+            f"position exceeds {MAX_SEQUENCE_POSITION:,}; the longest human protein "
+            f"(titin) has 34,350 residues."
+        )
+
+
+# HGVS-style protein change: <single-letter-original><position><single-letter-alt
+# OR '*' for stop>. ``*`` is the unambiguous stop-codon convention.
+_VARIANT_CHANGE_RE = re.compile(r"\A([A-Z])([1-9][0-9]{0,4})([A-Z*])\Z")
+
+
+def _parse_variant_change(value: str) -> tuple[str, int, str]:
+    """Parse an HGVS-shorthand protein change into (original, position, alt).
+
+    Examples accepted: ``R175H``, ``V600E``, ``R248*`` (stop). Examples
+    rejected: ``p.R175H`` (HGVS prefix not supported here), ``R175del``,
+    ``A1B2`` (multiple residues), case-mixed.
+    """
+    _check_len("change", value, MAX_VARIANT_CHANGE_LEN)
+    m = _VARIANT_CHANGE_RE.match(value)
+    if m is None:
+        raise _InputError(
+            "change must be HGVS-shorthand <original><position><alt>, e.g. "
+            "R175H, V600E, or R248* (stop). Position is 1-indexed."
+        )
+    original, position_str, alt = m.group(1), m.group(2), m.group(3)
+    return original, int(position_str), alt
 
 
 def _safe_error(tool: str, exc: BaseException) -> str:
@@ -551,6 +600,180 @@ async def uniprot_search_uniref(
         return fmt_uniref_search(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
         return _safe_error("uniprot_search_uniref", exc)
+
+
+@mcp.tool(
+    name="uniprot_compute_properties",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_compute_properties(accession: str, response_format: str = "markdown") -> str:
+    """Derived sequence chemistry for a UniProt entry: molecular weight,
+    theoretical pI, GRAVY hydrophobicity, aromaticity, net charge at pH 7,
+    extinction coefficient at 280 nm, amino-acid composition. Computed
+    from the canonical FASTA via standard methods (Lehninger pK values,
+    Kyte-Doolittle hydropathy, Pace 1995 ε₂₈₀ formula). Pure-Python — no
+    additional external API call beyond the FASTA fetch."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        fasta = await client.get_fasta(accession)
+        # Drop the FASTA header and any PIR-style ;-comments; the
+        # remaining lines concatenated are the residues.
+        sequence = "".join(
+            line
+            for line in fasta.splitlines()
+            if not line.startswith(">") and not line.startswith(";")
+        )
+        properties = compute_protein_properties(sequence)
+        return fmt_properties(
+            dict(properties), accession, response_format, provenance=client.last_provenance
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_compute_properties", exc)
+
+
+@mcp.tool(
+    name="uniprot_features_at_position",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_features_at_position(
+    accession: str, position: int, response_format: str = "markdown"
+) -> str:
+    """List every UniProt feature that overlaps a residue position
+    (1-indexed). Answers the question 'what's at residue 175 of TP53?'
+    by intersecting the entry's features with the given position. Useful
+    for variant-effect interpretation — surfaces every domain, binding
+    site, modification, mutagenesis annotation, and natural variant at a
+    single residue in one call."""
+    try:
+        _check_accession(accession)
+        _check_position(position)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        all_features = data.get("features", []) or []
+        overlapping = []
+        for f in all_features:
+            loc = f.get("location") or {}
+            start = (loc.get("start") or {}).get("value")
+            end = (loc.get("end") or {}).get("value")
+            if not isinstance(start, int) or not isinstance(end, int):
+                continue
+            if start <= position <= end:
+                overlapping.append(f)
+        return fmt_features_at_position(
+            overlapping,
+            accession,
+            position,
+            response_format,
+            provenance=client.last_provenance,
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_features_at_position", exc)
+
+
+@mcp.tool(
+    name="uniprot_lookup_variant",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_lookup_variant(
+    accession: str, change: str, response_format: str = "markdown"
+) -> str:
+    """Look up an HGVS-shorthand amino-acid change (e.g. ``R175H``,
+    ``V600E``, ``R248*``) in the UniProt entry's natural-variant
+    annotations. Returns the matching variant feature(s) including the
+    UniProt-curated description (often a disease association). A null
+    result here does NOT mean a variant is benign — UniProt only
+    annotates literature-described variants; ClinVar / dbSNP carry
+    population-level data."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        original, position, alt = _parse_variant_change(change)
+        client = _client()
+        data = await client.get_entry(accession)
+        features = data.get("features", []) or []
+        matches = []
+        for f in features:
+            if f.get("type") != "Natural variant":
+                continue
+            loc = f.get("location") or {}
+            start = (loc.get("start") or {}).get("value")
+            if start != position:
+                continue
+            alt_seq = f.get("alternativeSequence") or {}
+            orig_recorded = str(alt_seq.get("originalSequence", "") or "")
+            alts_recorded = [str(a) for a in (alt_seq.get("alternativeSequences") or [])]
+            if orig_recorded.upper() == original.upper() and alt.upper() in {
+                a.upper() for a in alts_recorded
+            }:
+                matches.append(f)
+        return fmt_variant_lookup(
+            matches, accession, change, response_format, provenance=client.last_provenance
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_lookup_variant", exc)
+
+
+@mcp.tool(
+    name="uniprot_get_disease_associations",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_disease_associations(
+    accession: str, response_format: str = "markdown"
+) -> str:
+    """Structured disease associations for a UniProt entry. Returns the
+    diseases recorded in DISEASE-type comments with name, acronym,
+    UniProt disease ID, OMIM cross-reference, description, and the
+    annotation note. Critical for clinical interpretation — distinguishes
+    a UniProt-curated disease association (literature-anchored) from a
+    raw cross-reference. Empty result does not imply disease-irrelevant;
+    see Open Targets / OMIM / DisGeNET for population-level evidence."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        comments = data.get("comments", []) or []
+        associations: list[dict[str, object]] = []
+        for c in comments:
+            if c.get("commentType") != "DISEASE":
+                continue
+            disease = c.get("disease") or {}
+            if not disease:
+                continue
+            cross_refs = disease.get("diseaseCrossReference") or {}
+            xrefs_list: list[dict[str, str]] = []
+            if isinstance(cross_refs, dict) and cross_refs.get("id"):
+                xrefs_list.append(
+                    {
+                        "database": str(cross_refs.get("database", "?")),
+                        "id": str(cross_refs.get("id", "?")),
+                    }
+                )
+            associations.append(
+                {
+                    "name": str(disease.get("diseaseId", "")) or None,
+                    "disease_id": str(disease.get("diseaseAccession", "")) or None,
+                    "acronym": str(disease.get("acronym", "")) or None,
+                    "description": str(disease.get("description", "")) or None,
+                    "note": (
+                        " ".join(
+                            str(t.get("value", ""))
+                            for t in (c.get("note", {}) or {}).get("texts", []) or []
+                        )
+                        or None
+                    ),
+                    "cross_references": xrefs_list,
+                    "evidences": disease.get("evidences") or [],
+                }
+            )
+        return fmt_disease_associations(
+            associations, accession, response_format, provenance=client.last_provenance
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_get_disease_associations", exc)
 
 
 @mcp.tool(
@@ -1018,6 +1241,10 @@ def _self_test() -> int:
         "uniprot_resolve_interpro",
         "uniprot_resolve_chembl",
         "uniprot_get_evidence_summary",
+        "uniprot_compute_properties",
+        "uniprot_features_at_position",
+        "uniprot_lookup_variant",
+        "uniprot_get_disease_associations",
         "uniprot_provenance_verify",
     }
 

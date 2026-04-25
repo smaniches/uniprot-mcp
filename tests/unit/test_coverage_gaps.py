@@ -522,6 +522,10 @@ def test_self_test_extra_tool_warning(monkeypatch, capsys) -> None:
             "uniprot_resolve_interpro": None,
             "uniprot_resolve_chembl": None,
             "uniprot_get_evidence_summary": None,
+            "uniprot_compute_properties": None,
+            "uniprot_features_at_position": None,
+            "uniprot_lookup_variant": None,
+            "uniprot_get_disease_associations": None,
             "uniprot_provenance_verify": None,
             "unexpected_extra_tool": None,
         }
