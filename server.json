@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.smaniches/uniprot-mcp",
+  "description": "Reference-quality Model Context Protocol server for the UniProt protein knowledgebase. Ten tools cover entry retrieval, search, sequences, features, variants, GO terms, cross-references, ID mapping, batch retrieval, and taxonomy. Every response carries a verifiable Provenance record (UniProt release number, retrieval timestamp, resolved URL).",
+  "status": "active",
+  "repository": {
+    "url": "https://github.com/smaniches/uniprot-mcp",
+    "source": "github"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-04-19T00:00:00Z",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "pypi",
+      "name": "uniprot-mcp",
+      "version": "0.1.0",
+      "package_arguments": [],
+      "runtime_arguments": [],
+      "environment_variables": []
+    }
+  ],
+  "remotes": []
+}
