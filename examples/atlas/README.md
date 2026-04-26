@@ -100,17 +100,74 @@ the live API returns at query time, with provenance.
 
 ## Atlas index
 
-The 10 v1.1.0 atlas entries:
+The v1.1.0 atlas entries (25 to start; the disease universe is open and
+the atlas grows over time). Cross-references vary per entry — MONDO
+applies for human Mendelian disease but not for pathogen drug-targets;
+PharmGKB / CPIC apply for pharmacogenomic genes; ARO / CARD apply for
+antibiotic-resistance enzymes. Each entry surfaces the
+context-appropriate ontologies.
 
-| File | Gene | UniProt | MONDO | Disease class |
+### Hereditary cancer & DNA-repair
+
+| File | Gene | UniProt | Primary cross-ref | Theme |
 |---|---|---|---|---|
-| [tp53.md](tp53.md) | TP53 | P04637 | MONDO:0007254 (Li-Fraumeni syndrome) | hereditary cancer |
-| [brca1.md](brca1.md) | BRCA1 | P38398 | MONDO:0011535 (HBOC1) | hereditary cancer |
-| [cftr.md](cftr.md) | CFTR | P13569 | MONDO:0009061 (cystic fibrosis) | rare disease |
-| [htt.md](htt.md) | HTT | P42858 | MONDO:0007739 (Huntington disease) | rare disease |
-| [dmd.md](dmd.md) | DMD | P11532 | MONDO:0010679 (Duchenne muscular dystrophy) | rare disease |
-| [hbb.md](hbb.md) | HBB | P68871 | MONDO:0011382 (sickle cell disease) | rare disease |
-| [pah.md](pah.md) | PAH | P00439 | MONDO:0009861 (phenylketonuria) | metabolic |
-| [app.md](app.md) | APP | P05067 | MONDO:0004975 (Alzheimer disease) | neurodegenerative |
-| [egfr.md](egfr.md) | EGFR | P00533 | MONDO:0005233 (NSCLC) | solid-tumour target |
-| [tem1.md](tem1.md) | TEM-1 | P62593 | n/a (pathogen target) | infectious-disease target |
+| [tp53.md](tp53.md) | TP53 | P04637 | MONDO:0007254 (Li-Fraumeni) | germline + somatic; canonical clinical-variant case |
+| [brca1.md](brca1.md) | BRCA1 | P38398 | MONDO:0011535 (HBOC1) | dossier; PARPi synthetic lethality |
+| [brca2.md](brca2.md) | BRCA2 | P51587 | MONDO:0011544 (HBOC2) | PARPi axis; long-protein AlphaFold |
+| [mlh1.md](mlh1.md) | MLH1 | P40692 | MONDO:0007648 (Lynch 2) | MMR-deficiency → checkpoint inhibitors |
+
+### Solid-tumour drivers
+
+| File | Gene | UniProt | Primary cross-ref | Theme |
+|---|---|---|---|---|
+| [egfr.md](egfr.md) | EGFR | P00533 | MONDO:0005233 (NSCLC) | RTK; L858R / T790M; TKI generations |
+| [kras.md](kras.md) | KRAS | P01116 | MONDO:0005192 (PDAC) | "undruggable" → covalent G12C inhibitors |
+| [braf.md](braf.md) | BRAF | P15056 | MONDO:0005105 (melanoma) | V600E + MEK combination therapy |
+| [erbb2.md](erbb2.md) | ERBB2/HER2 | P04626 | MONDO:0007254 | amplification + ADC ecosystem (T-DXd) |
+
+### Single-gene rare disease
+
+| File | Gene | UniProt | Primary cross-ref | Theme |
+|---|---|---|---|---|
+| [cftr.md](cftr.md) | CFTR | P13569 | MONDO:0009061 (cystic fibrosis) | F508del; ETI corrector/potentiator |
+| [htt.md](htt.md) | HTT | P42858 | MONDO:0007739 (Huntington) | polyQ expansion; HTT-lowering ASOs |
+| [dmd.md](dmd.md) | DMD | P11532 | MONDO:0010679 (DMD) | exon-skipping ASO matchmaking |
+| [hbb.md](hbb.md) | HBB | P68871 | MONDO:0011382 (sickle cell) | E6V / E7V numbering; voxelotor + gene therapy |
+| [smn1.md](smn1.md) | SMN1 | Q16637 | MONDO:0011127 (SMA1) | nusinersen + risdiplam + onasemnogene |
+| [fbn1.md](fbn1.md) | FBN1 | P35555 | MONDO:0007947 (Marfan) | cbEGF Ca2+ coordination; losartan |
+| [nf1.md](nf1.md) | NF1 | P21359 | MONDO:0018975 (NF1) | RasGAP loss → MEK inhibition (selumetinib) |
+
+### Metabolic & lysosomal
+
+| File | Gene | UniProt | Primary cross-ref | Theme |
+|---|---|---|---|---|
+| [pah.md](pah.md) | PAH | P00439 | MONDO:0009861 (PKU) | iron + BH4 cofactor; sapropterin responsiveness |
+| [gba.md](gba.md) | GBA | P04062 | MONDO:0009207 (GD1) | Gaucher ERT/SRT; +PD risk modifier |
+
+### Neurodegenerative
+
+| File | Gene | UniProt | Primary cross-ref | Theme |
+|---|---|---|---|---|
+| [app.md](app.md) | APP | P05067 | MONDO:0004975 (Alzheimer) | secretase processing; Aβ-mAbs |
+| [snca.md](snca.md) | SNCA | P37840 | MONDO:0008199 (PD1) | IDP → Lewy bodies; aggregation modulators |
+
+### Cardiovascular & laminopathies
+
+| File | Gene | UniProt | Primary cross-ref | Theme |
+|---|---|---|---|---|
+| [myh7.md](myh7.md) | MYH7 | P12883 | MONDO:0024533 (HCM1) | sarcomeric; mavacamten |
+| [lmna.md](lmna.md) | LMNA | P02545 | MONDO:0008034 (HGPS) | nine-phenotype laminopathy; lonafarnib |
+
+### Pharmacogenomics
+
+| File | Gene | UniProt | Primary cross-ref | Theme |
+|---|---|---|---|---|
+| [cyp2d6.md](cyp2d6.md) | CYP2D6 | P10635 | PharmGKB / CPIC | 25% of clinical drugs; star-allele system |
+| [vkorc1.md](vkorc1.md) | VKORC1 | Q9BQB6 | PharmGKB / CPIC | warfarin dosing (with CYP2C9) |
+| [g6pd.md](g6pd.md) | G6PD | P11413 | PharmGKB | oxidative-drug avoidance; tafenoquine precaution |
+
+### Infectious-disease drug-resistance
+
+| File | Gene | UniProt | Primary cross-ref | Theme |
+|---|---|---|---|---|
+| [tem1.md](tem1.md) | *bla* (TEM-1) | P62593 | ARO:3000014 (CARD) | β-lactamase; covalent Ser-70 inhibitors |
