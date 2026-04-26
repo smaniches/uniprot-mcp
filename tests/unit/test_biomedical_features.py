@@ -178,9 +178,7 @@ _ENTRY_RICH = {
 
 def _mock_entry(router: respx.MockRouter) -> None:
     router.get("/uniprotkb/P12345").mock(
-        return_value=httpx.Response(
-            200, json=_ENTRY_RICH, headers={"X-UniProt-Release": "2026_01"}
-        )
+        return_value=httpx.Response(200, json=_ENTRY_RICH, headers={"X-UniProt-Release": "2026_01"})
     )
 
 

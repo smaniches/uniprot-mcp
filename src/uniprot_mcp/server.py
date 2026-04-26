@@ -1207,9 +1207,7 @@ def _filter_features_by_type(
     name="uniprot_get_active_sites",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_active_sites(
-    accession: str, response_format: str = "markdown"
-) -> str:
+async def uniprot_get_active_sites(accession: str, response_format: str = "markdown") -> str:
     """Return the active sites, binding sites, metal-binding residues,
     and DNA-binding regions annotated on a UniProt entry. Filtered view
     over the entry's feature array — this is the residue-level chemistry
@@ -1233,9 +1231,7 @@ async def uniprot_get_active_sites(
     name="uniprot_get_processing_features",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_processing_features(
-    accession: str, response_format: str = "markdown"
-) -> str:
+async def uniprot_get_processing_features(accession: str, response_format: str = "markdown") -> str:
     """Return the maturation and processing features (signal peptide,
     propeptide, transit peptide, initiator methionine, chain, peptide).
     These describe how the translated polypeptide is cleaved and

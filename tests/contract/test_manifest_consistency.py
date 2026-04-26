@@ -129,3 +129,55 @@ def test_server_json_pypi_distribution_name() -> None:
         f"pyproject.toml project.name ({pyproject_name!r}) disagree. "
         f"Clients following the MCP Registry would install the wrong package."
     )
+
+
+def test_docs_tools_md_lists_every_registered_tool() -> None:
+    """Every tool registered on the FastMCP instance must appear in
+    ``docs/tools.md``. The reference page is human-curated for prose
+    quality (the "Question it answers" column needs editorial care),
+    but a tool that exists in code and not in docs is a documentation
+    bug — and documentation bugs are bugs."""
+    docs_path = REPO_ROOT / "docs" / "tools.md"
+    assert docs_path.exists(), f"missing {docs_path}"
+    body = docs_path.read_text(encoding="utf-8")
+    registered = _registered_tools()
+    missing = sorted(t for t in registered if f"`{t}`" not in body)
+    assert not missing, (
+        f"docs/tools.md is missing tool(s): {missing}. The reference "
+        f"page must mention every registered tool by backticked name. "
+        f"Add a row in the appropriate family table."
+    )
+
+
+def test_readme_lists_every_registered_tool() -> None:
+    """The README is the public face of the project. Every tool must
+    be findable in it — backticked, not just textual — so a reader can
+    grep the README for the tool they're about to use."""
+    readme_path = REPO_ROOT / "README.md"
+    assert readme_path.exists(), f"missing {readme_path}"
+    body = readme_path.read_text(encoding="utf-8")
+    registered = _registered_tools()
+    missing = sorted(t for t in registered if f"`{t}`" not in body)
+    assert not missing, (
+        f"README.md is missing tool(s): {missing}. Add to the "
+        f"appropriate family table in the Tools section."
+    )
+
+
+def test_changelog_v1_1_0_section_exists() -> None:
+    """The CHANGELOG must enumerate the v1.1.0 additions explicitly.
+    Pinning this guards against silently shipping a feature without
+    documenting it in the changelog — a regression that would
+    immediately violate the Keep-A-Changelog discipline this project
+    declared in v1.0.1."""
+    changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## [1.1.0]" in changelog, (
+        "CHANGELOG.md is missing the [1.1.0] section. Did you forget to document the release?"
+    )
+    # The three v1.1.0 tools must be named in the section.
+    for tool in (
+        "uniprot_get_active_sites",
+        "uniprot_get_processing_features",
+        "uniprot_get_ptms",
+    ):
+        assert tool in changelog, f"CHANGELOG.md does not mention {tool}"

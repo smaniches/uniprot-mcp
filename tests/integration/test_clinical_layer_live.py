@@ -207,9 +207,7 @@ async def test_get_proteome_human_live() -> None:
 
 
 async def test_search_proteomes_live() -> None:
-    out = await uniprot_search_proteomes(
-        "organism_id:9606", size=3, response_format="json"
-    )
+    out = await uniprot_search_proteomes("organism_id:9606", size=3, response_format="json")
     payload = json.loads(out)
     assert len(payload["data"].get("results", [])) > 0
 
@@ -360,9 +358,7 @@ async def test_target_dossier_for_p04637_live() -> None:
     assert len(dossier["diseases"]) > 0
 
 
-async def test_replay_from_cache_live(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_replay_from_cache_live(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """End-to-end cache flow: configure cache dir, populate it via a
     direct ProvenanceCache write (the client does not auto-write —
     the cache fills via explicit calls in the future cache-on-write
