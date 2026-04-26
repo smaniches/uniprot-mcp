@@ -1,0 +1,33 @@
+Re-deriving 30 answers from https://rest.uniprot.org ...
+  prompt  1: OK — exact match
+  prompt  2: OK — exact match
+  prompt  3: OK — exact match
+  prompt  4: OK — exact match
+  prompt  5: OK — exact match
+  prompt  6: OK — exact match
+  prompt  7: OK — exact match
+  prompt  8: OK — exact match
+  prompt  9: OK — exact match
+  prompt 10: OK — exact match
+  prompt 11: OK — exact match
+  prompt 12: OK — exact match
+  prompt 13: OK — exact match
+  prompt 14: OK — exact match
+  prompt 15: OK — exact match
+  prompt 16: OK — exact match
+  prompt 17: OK — exact match
+  prompt 18: OK — exact match
+  prompt 19: OK — exact match
+  prompt 20: OK — exact match
+  prompt 21: OK — exact match
+  prompt 22: OK — exact match
+  prompt 23: OK — exact match
+  prompt 24: OK — exact match
+  prompt 25: OK — exact match
+  prompt 26: OK — exact match
+  prompt 27: OK — exact match
+  prompt 28: OK — set-inclusion verified
+  prompt 29: OK — set-inclusion verified
+  prompt 30: OK — exact match
+
+OK: all 30 prompts verified against https://rest.uniprot.org

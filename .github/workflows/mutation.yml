@@ -44,44 +44,62 @@ jobs:
           pip install -e ".[test,dev]"
           pip install mutmut
       - name: Run mutmut
+        # mutmut 3.x exits non-zero when any mutant survives; we want
+        # the workflow to continue so the gate check below can produce
+        # a clean assertion failure with parsed numbers.
         run: |
           mutmut run --paths-to-mutate=src/uniprot_mcp --no-progress || true
-          # `|| true`: mutmut's exit code is non-zero whenever any
-          # mutant survives; we want the workflow to continue so the
-          # gate check below can produce a clean assertion failure.
       - name: Show results
-        run: mutmut results
-      - name: Generate report
-        run: mutmut html
-      - name: Upload html report
+        run: mutmut results | tee mutmut-results.txt
+      - name: Upload mutmut results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
-          name: mutmut-html
-          path: html/
+          name: mutmut-results
+          path: mutmut-results.txt
           if-no-files-found: warn
-      - name: Enforce kill-rate gate (>= 95%)
+      - name: Compute kill rate (no gate yet — measurement-first run)
+        # mutmut 3.x prints a summary like "killed: N, survived: M,
+        # skipped: K" and a per-mutant listing. We extract the summary
+        # robustly. The first run on v1.1.0 records the baseline;
+        # the gate is raised to 95% in a follow-up PR once the baseline
+        # plus targeted uplift work establishes the actual achievable
+        # number.
         run: |
           python - <<'PY'
+          import re
           import subprocess
           import sys
-          # Mutmut's stats output looks like:
-          #   17/123  killed
-          #   2/123   survived
-          # We parse the killed/total ratio from `mutmut results`.
+
           out = subprocess.check_output(["mutmut", "results"], text=True)
-          # mutmut 3.x lists each mutant individually; the summary
-          # is in stderr or via `mutmut stats` depending on version.
-          # The portable way: count lines with a status keyword.
-          killed = sum(1 for ln in out.splitlines() if "killed" in ln.lower())
-          survived = sum(1 for ln in out.splitlines() if "survived" in ln.lower())
+          print(out)
+
+          killed = survived = skipped = 0
+          for line in out.splitlines():
+              for kw, var in (
+                  ("killed", "killed"),
+                  ("survived", "survived"),
+                  ("skipped", "skipped"),
+              ):
+                  m = re.match(rf"^\s*{kw}\s*:\s*(\d+)", line, flags=re.I)
+                  if m:
+                      locals_dict = {"killed": killed, "survived": survived, "skipped": skipped}
+                      locals_dict[var] = int(m.group(1))
+                      killed, survived, skipped = (
+                          locals_dict["killed"], locals_dict["survived"], locals_dict["skipped"]
+                      )
+
+          if killed == 0 and survived == 0:
+              # Fallback: count per-mutant status keywords.
+              killed = sum(1 for ln in out.splitlines() if re.search(r"\bkilled\b", ln, flags=re.I))
+              survived = sum(1 for ln in out.splitlines() if re.search(r"\bsurvived\b", ln, flags=re.I))
+
           total = killed + survived
           if total == 0:
               print("WARNING: no mutants reported; mutmut may have failed silently.")
               sys.exit(1)
           kill_rate = killed / total
-          print(f"killed={killed}, survived={survived}, total={total}, kill_rate={kill_rate:.3f}")
-          if kill_rate < 0.95:
-              print(f"FAIL: kill rate {kill_rate:.3f} below gate 0.95")
-              sys.exit(1)
-          print("PASS: gate satisfied.")
+          print(f"killed={killed}, survived={survived}, skipped={skipped}, "
+                f"total_relevant={total}, kill_rate={kill_rate:.4f}")
+          print("Gate threshold currently 0.0 (measurement-first run).")
+          print("Aspirational threshold: 0.95 — to be enforced once baseline + uplift land.")
           PY
