@@ -42,13 +42,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[test,dev]"
-          pip install mutmut
+          # Pin to mutmut 2.x: stable, well-documented `--paths-to-mutate`
+          # flag and `mutmut results` summary format. mutmut 3.x changed
+          # the CLI substantially (no `--paths-to-mutate`, no `mutmut html`,
+          # config must come from pyproject.toml [tool.mutmut]). Pin until
+          # the 3.x ecosystem stabilises.
+          pip install "mutmut>=2.5,<3.0"
       - name: Run mutmut
-        # mutmut 3.x exits non-zero when any mutant survives; we want
+        # mutmut 2.x exits non-zero when any mutant survives; we want
         # the workflow to continue so the gate check below can produce
         # a clean assertion failure with parsed numbers.
         run: |
-          mutmut run --paths-to-mutate=src/uniprot_mcp --no-progress || true
+          mutmut run --paths-to-mutate=src/uniprot_mcp || true
       - name: Show results
         run: mutmut results | tee mutmut-results.txt
       - name: Upload mutmut results
@@ -57,13 +62,17 @@ jobs:
           name: mutmut-results
           path: mutmut-results.txt
           if-no-files-found: warn
-      - name: Compute kill rate (no gate yet — measurement-first run)
-        # mutmut 3.x prints a summary like "killed: N, survived: M,
-        # skipped: K" and a per-mutant listing. We extract the summary
-        # robustly. The first run on v1.1.0 records the baseline;
-        # the gate is raised to 95% in a follow-up PR once the baseline
-        # plus targeted uplift work establishes the actual achievable
-        # number.
+      - name: Compute kill rate (measurement-first run, no gate yet)
+        # mutmut 2.x's `mutmut results` prints a summary block
+        #   "Survived 🙁 (NN)"
+        #   "Timeout ⏰ (NN)"
+        #   "Suspicious 🤔 (NN)"
+        #   "Skipped 🔇 (NN)"
+        #   "Killed 🎉 (NN)"
+        # plus per-mutant listings. We parse the parenthesised counts
+        # from the headers. First run on v1.1.0 records the baseline;
+        # the gate is raised to 95% once baseline + uplift work
+        # establishes the actual achievable number.
         run: |
           python - <<'PY'
           import re
@@ -73,33 +82,27 @@ jobs:
           out = subprocess.check_output(["mutmut", "results"], text=True)
           print(out)
 
-          killed = survived = skipped = 0
-          for line in out.splitlines():
-              for kw, var in (
-                  ("killed", "killed"),
-                  ("survived", "survived"),
-                  ("skipped", "skipped"),
-              ):
-                  m = re.match(rf"^\s*{kw}\s*:\s*(\d+)", line, flags=re.I)
-                  if m:
-                      locals_dict = {"killed": killed, "survived": survived, "skipped": skipped}
-                      locals_dict[var] = int(m.group(1))
-                      killed, survived, skipped = (
-                          locals_dict["killed"], locals_dict["survived"], locals_dict["skipped"]
-                      )
+          def count(label: str) -> int:
+              # mutmut 2.x: "Survived 🙁 (NN)" or "Killed 🎉 (NN)"
+              m = re.search(rf"{label}[^\(]*\((\d+)\)", out, flags=re.I)
+              return int(m.group(1)) if m else 0
 
-          if killed == 0 and survived == 0:
-              # Fallback: count per-mutant status keywords.
-              killed = sum(1 for ln in out.splitlines() if re.search(r"\bkilled\b", ln, flags=re.I))
-              survived = sum(1 for ln in out.splitlines() if re.search(r"\bsurvived\b", ln, flags=re.I))
+          killed = count("Killed")
+          survived = count("Survived")
+          timeout = count("Timeout")
+          suspicious = count("Suspicious")
+          skipped = count("Skipped")
 
-          total = killed + survived
+          total = killed + survived + timeout + suspicious  # exclude skipped
           if total == 0:
               print("WARNING: no mutants reported; mutmut may have failed silently.")
               sys.exit(1)
           kill_rate = killed / total
-          print(f"killed={killed}, survived={survived}, skipped={skipped}, "
-                f"total_relevant={total}, kill_rate={kill_rate:.4f}")
+          print(
+              f"\nSUMMARY: killed={killed}, survived={survived}, timeout={timeout}, "
+              f"suspicious={suspicious}, skipped={skipped}, total_relevant={total}, "
+              f"kill_rate={kill_rate:.4f}"
+          )
           print("Gate threshold currently 0.0 (measurement-first run).")
           print("Aspirational threshold: 0.95 — to be enforced once baseline + uplift land.")
           PY
