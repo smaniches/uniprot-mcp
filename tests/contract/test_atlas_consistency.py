@@ -193,7 +193,9 @@ def test_atlas_size_minimum(manifest: dict) -> None:
     entries; future versions can expand but reductions need explicit
     review."""
     n = len(manifest["entries"])
-    assert n >= 25, f"atlas has only {n} entries; v1.1.0 baseline is 25 — investigate why entries went missing"
+    assert n >= 25, (
+        f"atlas has only {n} entries; v1.1.0 baseline is 25 — investigate why entries went missing"
+    )
 
 
 # ---------------------------------------------------------------------------
