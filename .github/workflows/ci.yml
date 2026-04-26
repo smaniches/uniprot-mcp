@@ -43,7 +43,14 @@ jobs:
       - name: Bandit (security lint)
         run: bandit -r src/uniprot_mcp
       - name: pip-audit (CVE scan)
-        run: pip-audit --strict
+        # CVE-2026-3219 is a vulnerability in `pip` itself, with no
+        # fix version published yet. `pip` is a bootstrap toolchain
+        # component on the runner, not a runtime dependency of
+        # `uniprot-mcp-server` (it isn't installed into a user's env
+        # by `pip install uniprot-mcp-server`). When pip ships a
+        # fixed version, remove this ignore. Tracked in CHANGELOG
+        # under v1.1.0 known-issues.
+        run: pip-audit --strict --ignore-vuln CVE-2026-3219
 
   test:
     name: Tests (${{ matrix.os }} · Python ${{ matrix.python }})
