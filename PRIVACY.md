@@ -57,6 +57,7 @@ Nothing else leaves the process.
 | Third party | What they see | Why |
 |---|---|---|
 | **UniProt** ([uniprot.org](https://www.uniprot.org), [rest.uniprot.org](https://rest.uniprot.org)) | Source IP, User-Agent, the request path / query string. UniProt's privacy policy: https://www.uniprot.org/help/privacy. | Required: this server's job is to query UniProt. |
+| **AlphaFold-DB** ([alphafold.ebi.ac.uk](https://alphafold.ebi.ac.uk)) | Source IP, User-Agent, the UniProt accession appearing in the request path. EBI privacy policy: https://www.ebi.ac.uk/data-protection/privacy-notice/embl-ebi-public-website. | Used **only** by `uniprot_get_alphafold_confidence` to retrieve the public per-model pLDDT confidence summary (no structure download, no per-residue trace at this time). Other tools never call this origin. |
 
 There are **no** other third parties — no Google Analytics, no Sentry, no CloudFlare front-end, no Anthropic / OpenAI / any-LLM-vendor integrations beyond the MCP protocol itself.
 

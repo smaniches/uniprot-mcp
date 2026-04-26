@@ -25,6 +25,7 @@ Xref = dict[str, Any]
 
 __all__ = [
     "fmt_alphafold",
+    "fmt_alphafold_confidence",
     "fmt_chembl",
     "fmt_citation",
     "fmt_citation_search",
@@ -43,6 +44,7 @@ __all__ = [
     "fmt_properties",
     "fmt_proteome",
     "fmt_proteome_search",
+    "fmt_publications",
     "fmt_search",
     "fmt_subcellular_location",
     "fmt_subcellular_location_search",
@@ -1011,6 +1013,160 @@ def fmt_chembl(
         lines.append(
             "_No ChEMBL cross-reference on this entry — protein may not be a documented drug target._"
         )
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_alphafold_confidence(
+    record: dict[str, Any],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Format the AlphaFold pLDDT-confidence summary.
+
+    The AlphaFold prediction-metadata endpoint already aggregates pLDDT
+    into four bands (``fractionPlddtVeryHigh``, ``fractionPlddtConfident``,
+    ``fractionPlddtLow``, ``fractionPlddtVeryLow``) plus the global mean
+    in ``globalMetricValue``. We surface these directly so the agent can
+    answer 'can I trust this model?' without parsing the structure file.
+
+    pLDDT band semantics (per the AlphaFold-DB FAQ):
+      pLDDT ≥ 90    very high   (model very likely correct)
+      70 ≤ pLDDT < 90  confident   (well-modelled core)
+      50 ≤ pLDDT < 70  low         (low confidence; surface or flexible)
+      pLDDT < 50    very low    (treat as disordered)
+    """
+    if fmt == "json":
+        return _json_envelope({"accession": accession, "alphafold": record}, provenance)
+    if not record:
+        lines: list[str] = [f"## AlphaFold confidence: {accession}", ""]
+        lines.append("_No AlphaFold model found for this accession._")
+        if provenance is not None:
+            lines.extend(_provenance_md_footer(provenance))
+        return "\n".join(lines)
+
+    entry_id = str(record.get("entryId", "?") or "?")
+    organism = str(record.get("organismScientificName", "") or "")
+    gene = str(record.get("gene", "") or "")
+    version = record.get("latestVersion")
+    seq_end = record.get("uniprotEnd") or record.get("sequenceEnd")
+    global_mean = record.get("globalMetricValue")
+    f_very_high = record.get("fractionPlddtVeryHigh")
+    f_confident = record.get("fractionPlddtConfident")
+    f_low = record.get("fractionPlddtLow")
+    f_very_low = record.get("fractionPlddtVeryLow")
+    cif_url = str(record.get("cifUrl", "") or "")
+    pdb_url = str(record.get("pdbUrl", "") or "")
+    pae_image_url = str(record.get("paeImageUrl", "") or "")
+
+    title_extra = f": {organism}" if organism else ""
+    lines = [f"## AlphaFold confidence — {entry_id}{title_extra}", ""]
+    if gene:
+        lines.append(f"**Gene:** {gene}")
+    if seq_end is not None:
+        lines.append(f"**Residues modelled:** 1-{seq_end}")
+    if version is not None:
+        lines.append(f"**Model version:** v{version}")
+
+    if global_mean is not None:
+        try:
+            band_label = _plddt_band(float(global_mean))
+        except (TypeError, ValueError):
+            band_label = "?"
+        lines.append(
+            f"**Global pLDDT (mean):** {global_mean:.1f}  ({band_label})"
+            if isinstance(global_mean, (int, float))
+            else f"**Global pLDDT (mean):** {global_mean}"
+        )
+
+    bands_present = any(f is not None for f in (f_very_high, f_confident, f_low, f_very_low))
+    if bands_present:
+        lines.extend(["", "**pLDDT band distribution:**"])
+        for label, frac in (
+            ("Very high (≥ 90)", f_very_high),
+            ("Confident (70-90)", f_confident),
+            ("Low (50-70)", f_low),
+            ("Very low (< 50)", f_very_low),
+        ):
+            if isinstance(frac, (int, float)):
+                lines.append(f"- {label}: {frac * 100:5.1f}%")
+            elif frac is not None:
+                lines.append(f"- {label}: {frac}")
+
+    if cif_url:
+        lines.extend(["", f"**CIF:** {cif_url}"])
+    if pdb_url:
+        lines.append(f"**PDB:** {pdb_url}")
+    if pae_image_url:
+        lines.append(f"**PAE image:** {pae_image_url}")
+
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def _plddt_band(score: float) -> str:
+    """Map a pLDDT score to its semantic band label."""
+    if score >= 90:
+        return "very high"
+    if score >= 70:
+        return "confident"
+    if score >= 50:
+        return "low"
+    return "very low"
+
+
+def fmt_publications(
+    publications: list[dict[str, Any]],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Render the structured publication list extracted from a UniProt
+    entry's ``references`` block."""
+    if fmt == "json":
+        return _json_envelope({"accession": accession, "publications": publications}, provenance)
+    lines: list[str] = [
+        f"## Publications cited by {accession} ({len(publications)} reference(s))",
+        "",
+    ]
+    if not publications:
+        lines.append("_No publications listed on this entry._")
+    else:
+        for p in publications[:50]:
+            title = str(p.get("title", "") or "").strip()
+            authors = p.get("authors") or []
+            year = p.get("year") or ""
+            journal = str(p.get("journal", "") or "")
+            pmid = p.get("pubmed_id") or ""
+            doi = p.get("doi") or ""
+            head_bits: list[str] = []
+            if pmid:
+                head_bits.append(f"PMID:{pmid}")
+            if doi:
+                head_bits.append(f"doi:{doi}")
+            if year:
+                head_bits.append(str(year))
+            head = " · ".join(head_bits) if head_bits else "(no identifier)"
+            lines.append(f"### {head}")
+            if title:
+                lines.append(f"_{title}_")
+            if authors:
+                sample = ", ".join(str(a) for a in authors[:6])
+                more = f" (+{len(authors) - 6} more)" if len(authors) > 6 else ""
+                lines.append(f"{sample}{more}")
+            if journal:
+                lines.append(journal)
+            positions = p.get("reference_positions") or []
+            if positions:
+                lines.append(f"**Cited for:** {'; '.join(str(x) for x in positions[:3])}")
+            lines.append("")
+        if len(publications) > 50:
+            lines.append(f"... (+{len(publications) - 50} more)")
     if provenance is not None:
         lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)

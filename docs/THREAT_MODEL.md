@@ -69,6 +69,17 @@ We **do not** defend against full host compromise (root on the user's machine). 
 
 **Deferred hardening.** Add an explicit allowlist (`url.startswith("https://rest.uniprot.org/")` or relative-path-only) before following the `redirectURL`. Tracked for `v1.1`. Until then: a TLS-pinned UniProt with a reputable public API origin is the best available trust anchor.
 
+### T3b — Cross-origin allowlist for non-UniProt endpoints
+
+**Scenario.** `uniprot_get_alphafold_confidence` consults `https://alphafold.ebi.ac.uk` — the only origin outside `rest.uniprot.org` that uniprot-mcp calls. A future tool could be tempted to widen the allowlist further (NCBI eutils for ClinVar, PDB REST, etc.), and a careless addition would expand the SSRF surface beyond what the threat model accounts for.
+
+**Mitigations.**
+- The set of permissible cross-origin endpoints is enumerated in `src/uniprot_mcp/client.py` as named constants (`ALPHAFOLD_API_BASE`, …). Adding a new origin requires modifying that file *and* this threat-model entry *and* `PRIVACY.md` in the same commit; reviewers reject any cross-origin call that does not appear in all three.
+- Each cross-origin call uses a fresh `httpx.AsyncClient` with `follow_redirects=True` and a hardcoded base URL — redirects to a different origin are accepted by httpx but mitigated by the fact that the URL we construct is built from a literal accession that has already passed `_check_accession`.
+- AlphaFold-DB does not require an API key; we are not at risk of credential exfiltration on this origin.
+
+**Residual risk.** A compromise of `alphafold.ebi.ac.uk` itself (e.g. EBI infrastructure breach) would let an attacker return malicious metadata. The provenance subsystem records the source URL + canonical SHA-256 of the response, so a poisoned answer is *detectable* by `uniprot_provenance_verify`, but not *prevented*.
+
 ### T4 — Regex DoS via pathological input
 
 **Scenario.** A crafted query string triggers catastrophic backtracking and stalls a worker.

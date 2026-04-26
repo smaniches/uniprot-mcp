@@ -1,4 +1,4 @@
-"""TOPOLOGICA UniProt MCP Server. 32 tools. FastMCP. stdio transport.
+"""TOPOLOGICA UniProt MCP Server. 34 tools. FastMCP. stdio transport.
 
 Hardened against the common class of MCP-server defects:
 
@@ -57,6 +57,7 @@ from uniprot_mcp.client import (
 )
 from uniprot_mcp.formatters import (
     fmt_alphafold,
+    fmt_alphafold_confidence,
     fmt_chembl,
     fmt_citation,
     fmt_citation_search,
@@ -75,6 +76,7 @@ from uniprot_mcp.formatters import (
     fmt_properties,
     fmt_proteome,
     fmt_proteome_search,
+    fmt_publications,
     fmt_search,
     fmt_subcellular_location,
     fmt_subcellular_location_search,
@@ -600,6 +602,102 @@ async def uniprot_search_uniref(
         return fmt_uniref_search(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
         return _safe_error("uniprot_search_uniref", exc)
+
+
+@mcp.tool(
+    name="uniprot_get_alphafold_confidence",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_alphafold_confidence(
+    accession: str, response_format: str = "markdown"
+) -> str:
+    """Fetch AlphaFold-DB pLDDT confidence summary for a UniProt accession.
+    Returns the global mean pLDDT score plus the four-band distribution
+    (very high ≥ 90 / confident 70-90 / low 50-70 / very low < 50) so the
+    agent can decide whether to trust the model. Critical for any
+    structural-biology workflow that builds on a predicted model: a
+    target with 95 % residues 'very high' is publication-grade; a target
+    with 40 % 'very low' is largely disordered and structural inference
+    is unsafe.
+
+    This tool calls https://alphafold.ebi.ac.uk — declared in PRIVACY.md
+    as a third party. Provenance carries source = AlphaFoldDB."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        record = await client.get_alphafold_summary(accession)
+        return fmt_alphafold_confidence(
+            record, accession, response_format, provenance=client.last_provenance
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_get_alphafold_confidence", exc)
+
+
+@mcp.tool(
+    name="uniprot_get_publications",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_publications(accession: str, response_format: str = "markdown") -> str:
+    """List the publications UniProt cites on an entry, with PubMed IDs,
+    DOIs, titles, authors, journal, year, and the 'reference position'
+    annotation (the experimental work each citation supports — e.g.
+    'CRYSTALLIZATION', 'PHOSPHORYLATION AT SER-15', 'INVOLVEMENT IN
+    LI-FRAUMENI SYNDROME'). Pure composition over the entry's
+    ``references`` block — no extra HTTP call beyond the entry fetch."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        publications = _extract_publications(data)
+        return fmt_publications(
+            publications, accession, response_format, provenance=client.last_provenance
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_get_publications", exc)
+
+
+def _extract_publications(entry: dict[str, object]) -> list[dict[str, object]]:
+    """Pull a structured publication list out of a UniProt entry's
+    ``references`` field. Each citation may carry one or more
+    ``citationCrossReferences`` (PubMed, DOI); we surface both when
+    present plus the ``referencePositions`` (curated list of the
+    experiments each reference supports)."""
+    out: list[dict[str, object]] = []
+    references = entry.get("references") or []
+    if not isinstance(references, list):
+        return out
+    for ref in references:
+        if not isinstance(ref, dict):
+            continue
+        citation = ref.get("citation") or {}
+        if not isinstance(citation, dict):
+            continue
+        xrefs = citation.get("citationCrossReferences") or []
+        pmid = ""
+        doi = ""
+        for x in xrefs if isinstance(xrefs, list) else []:
+            if not isinstance(x, dict):
+                continue
+            db = str(x.get("database", ""))
+            xid = str(x.get("id", ""))
+            if db == "PubMed" and xid:
+                pmid = xid
+            elif db == "DOI" and xid:
+                doi = xid
+        out.append(
+            {
+                "title": str(citation.get("title", "") or ""),
+                "authors": list(citation.get("authors") or []),
+                "journal": str(citation.get("journal", "") or ""),
+                "year": str(citation.get("publicationDate") or citation.get("year") or "") or None,
+                "pubmed_id": pmid or None,
+                "doi": doi or None,
+                "reference_positions": list(ref.get("referencePositions") or []),
+            }
+        )
+    return out
 
 
 @mcp.tool(
@@ -1245,6 +1343,8 @@ def _self_test() -> int:
         "uniprot_features_at_position",
         "uniprot_lookup_variant",
         "uniprot_get_disease_associations",
+        "uniprot_get_alphafold_confidence",
+        "uniprot_get_publications",
         "uniprot_provenance_verify",
     }
 

@@ -64,6 +64,8 @@
     "uniprot_features_at_position",
     "uniprot_lookup_variant",
     "uniprot_get_disease_associations",
+    "uniprot_get_alphafold_confidence",
+    "uniprot_get_publications",
     "uniprot_provenance_verify"
   ],
   "toolDefaults": {

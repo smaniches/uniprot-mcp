@@ -36,6 +36,10 @@ from typing import Any, TypedDict
 import httpx
 
 BASE_URL = "https://rest.uniprot.org"
+# Curated allowlist of cross-origin endpoints uniprot-mcp may consult.
+# Each entry expands the threat surface (declared in docs/THREAT_MODEL.md
+# §T3) and is documented in PRIVACY.md as a third party.
+ALPHAFOLD_API_BASE = "https://alphafold.ebi.ac.uk"
 TIMEOUT = 30.0
 MAX_RETRIES = 3
 MAX_RETRY_AFTER_SECONDS = 120.0  # cap server-dictated waits
@@ -160,6 +164,7 @@ class Provenance(TypedDict):
 
 __all__ = [
     "ACCESSION_RE",
+    "ALPHAFOLD_API_BASE",
     "BASE_URL",
     "CITATION_ID_RE",
     "KEYWORD_ID_RE",
@@ -468,6 +473,47 @@ class UniProtClient:
     async def get_citation(self, citation_id: str) -> dict[str, Any]:
         data: dict[str, Any] = (await self._req("GET", f"/citations/{citation_id}")).json()
         return data
+
+    async def get_alphafold_summary(self, accession: str) -> dict[str, Any]:
+        """Fetch AlphaFold-DB prediction metadata for a UniProt accession.
+
+        This is a *cross-origin* call to ``https://alphafold.ebi.ac.uk`` —
+        the only origin uniprot-mcp consults outside ``rest.uniprot.org``.
+        The endpoint returns global pLDDT statistics
+        (``globalMetricValue`` plus four ``fractionPlddt*`` bands) without
+        needing to download the full structure file. Provenance carries
+        ``source = "AlphaFoldDB"`` and the model version as ``release``.
+        """
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(TIMEOUT),
+            headers={"User-Agent": UA, "Accept": "application/json"},
+            follow_redirects=True,
+        ) as ext:
+            resp = await ext.get(f"{ALPHAFOLD_API_BASE}/api/prediction/{accession}")
+            resp.raise_for_status()
+            payload: list[dict[str, Any]] = resp.json()
+        if not payload:
+            self._last_provenance = Provenance(
+                source="AlphaFoldDB",
+                release=None,
+                release_date=None,
+                retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                url=str(resp.url),
+                response_sha256=canonical_response_hash(resp),
+            )
+            return {}
+        record: dict[str, Any] = payload[0]
+        version_value = record.get("latestVersion")
+        version = f"v{version_value}" if version_value is not None else None
+        self._last_provenance = Provenance(
+            source="AlphaFoldDB",
+            release=version,
+            release_date=str(record.get("modelCreatedDate") or "") or None,
+            retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            url=str(resp.url),
+            response_sha256=canonical_response_hash(resp),
+        )
+        return record
 
     async def search_citations(self, query: str, size: int = 10) -> dict[str, Any]:
         data: dict[str, Any] = (
