@@ -40,6 +40,7 @@ __all__ = [
     "fmt_interpro",
     "fmt_keyword",
     "fmt_keyword_search",
+    "fmt_orthology",
     "fmt_pdb",
     "fmt_properties",
     "fmt_proteome",
@@ -48,6 +49,7 @@ __all__ = [
     "fmt_search",
     "fmt_subcellular_location",
     "fmt_subcellular_location_search",
+    "fmt_target_dossier",
     "fmt_taxonomy",
     "fmt_uniparc",
     "fmt_uniparc_search",
@@ -1013,6 +1015,238 @@ def fmt_chembl(
         lines.append(
             "_No ChEMBL cross-reference on this entry — protein may not be a documented drug target._"
         )
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+_ORTHOLOGY_DB_LABELS: dict[str, str] = {
+    "KEGG": "KEGG Orthology",
+    "OMA": "OMA Browser (orthologs only)",
+    "OrthoDB": "OrthoDB hierarchical clusters",
+    "eggNOG": "eggNOG orthologous groups",
+    "HOGENOM": "HOGENOM (Bact/Arch ortholog families)",
+    "PhylomeDB": "PhylomeDB phylogeny-based orthologs",
+    "InParanoid": "InParanoid pairwise orthologs",
+    "TreeFam": "TreeFam (curated tree families)",
+    "GeneTree": "Ensembl Compara GeneTree",
+    "PAN-GO": "Phylogenetic Annotation of GO terms",
+    "PANTHER": "PANTHER family / subfamily classification",
+    "OrthoInspector": "OrthoInspector-derived orthologs",
+}
+
+
+def fmt_orthology(
+    grouped: dict[str, list[str]],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Render orthology cross-references grouped by database.
+
+    Different orthology databases use different inference methods;
+    surfacing them side-by-side lets the agent reason about consensus
+    (e.g. KEGG and OrthoDB agreeing). The label dict above carries a
+    short description of each method so the user can interpret the
+    grouping rather than just see opaque IDs.
+    """
+    if fmt == "json":
+        return _json_envelope({"accession": accession, "orthology": grouped}, provenance)
+    total = sum(len(ids) for ids in grouped.values())
+    lines: list[str] = [
+        f"## Orthology: {accession} ({len(grouped)} database(s), {total} cross-ref(s))",
+        "",
+    ]
+    if not grouped:
+        lines.append(
+            "_No orthology cross-references on this entry. "
+            "If a closely-related species ortholog is needed, try OMA / OrthoDB / "
+            "Ensembl Compara directly._"
+        )
+    else:
+        for db in sorted(grouped):
+            ids = grouped[db]
+            label = _ORTHOLOGY_DB_LABELS.get(db, db)
+            shown = ", ".join(ids[:8])
+            extra = f" (+{len(ids) - 8} more)" if len(ids) > 8 else ""
+            lines.append(f"### {db} — {label}")
+            lines.append(f"{shown}{extra}")
+            lines.append("")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_target_dossier(
+    dossier: dict[str, Any],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """One-call comprehensive target characterisation. Built by composing
+    seven lookups against the same UniProt entry plus one FASTA fetch
+    for derived chemistry. Section headings:
+
+      Identity / Function / Sequence chemistry / Structural evidence /
+      Drug-target context / Disease associations / Variants /
+      Functional annotations / Cross-references summary
+    """
+    if fmt == "json":
+        return _json_envelope({"accession": accession, "dossier": dossier}, provenance)
+    lines: list[str] = [
+        f"# Target dossier: {accession}",
+        "",
+        "_Comprehensive single-call characterisation. "
+        "Each section is a structured view of the UniProt entry.  Provenance "
+        "footer carries the underlying entry's release tag and SHA-256._",
+        "",
+    ]
+
+    # === Identity ===
+    identity = dossier.get("identity") or {}
+    lines.append("## Identity")
+    if identity.get("name"):
+        lines.append(f"**Protein:** {identity['name']}")
+    if identity.get("gene"):
+        lines.append(f"**Gene:** {identity['gene']}")
+    if identity.get("organism"):
+        lines.append(f"**Organism:** {identity['organism']}")
+    if identity.get("length") is not None:
+        lines.append(f"**Length:** {identity['length']} aa")
+    if identity.get("reviewed"):
+        lines.append(f"**Curation:** {identity['reviewed']}")
+    if identity.get("entry_id"):
+        lines.append(f"**Entry ID:** {identity['entry_id']}")
+    lines.append("")
+
+    # === Function ===
+    function = dossier.get("function") or ""
+    if function:
+        lines.append("## Function")
+        lines.append(str(function)[:600])
+        lines.append("")
+
+    # === Sequence chemistry ===
+    chem = dossier.get("chemistry") or {}
+    if chem:
+        lines.append("## Sequence chemistry (derived)")
+        if chem.get("molecular_weight") is not None:
+            lines.append(f"- Molecular weight: {chem['molecular_weight']:.1f} Da")
+        if chem.get("theoretical_pi") is not None:
+            lines.append(f"- Theoretical pI: {chem['theoretical_pi']:.2f}")
+        if chem.get("gravy") is not None:
+            lines.append(f"- GRAVY: {chem['gravy']:+.3f}")
+        if chem.get("aromaticity") is not None:
+            lines.append(f"- Aromaticity (F+W+Y): {chem['aromaticity'] * 100:.1f}%")
+        if chem.get("net_charge_pH7") is not None:
+            lines.append(f"- Net charge at pH 7: {chem['net_charge_pH7']:+.1f}")
+        if chem.get("extinction_coefficient_280nm") is not None:
+            lines.append(
+                f"- Extinction coefficient (280 nm): "
+                f"{chem['extinction_coefficient_280nm']} M⁻¹·cm⁻¹"
+            )
+        lines.append("")
+
+    # === Structural evidence ===
+    structure = dossier.get("structure") or {}
+    if structure:
+        lines.append("## Structural evidence")
+        n_pdb = structure.get("pdb_count") or 0
+        if n_pdb:
+            best = structure.get("best_pdb") or {}
+            tail = ""
+            if best.get("id"):
+                tail = (
+                    f" (best: {best['id']}"
+                    f"{', ' + best['method'] if best.get('method') else ''}"
+                    f"{', ' + best['resolution'] if best.get('resolution') else ''}"
+                    ")"
+                )
+            lines.append(f"- PDB structures: {n_pdb}{tail}")
+        else:
+            lines.append("- PDB structures: 0 (no experimental structure on file)")
+        af_id = structure.get("alphafold_model_id")
+        if af_id:
+            lines.append(
+                f"- AlphaFold model: `{af_id}` "
+                f"(call `uniprot_get_alphafold_confidence` for pLDDT bands)"
+            )
+        else:
+            lines.append("- AlphaFold model: not cross-referenced from UniProt")
+        n_interpro = structure.get("interpro_count") or 0
+        if n_interpro:
+            lines.append(f"- InterPro signatures: {n_interpro}")
+        lines.append("")
+
+    # === Drug-target context ===
+    drug = dossier.get("drug_target") or {}
+    if drug:
+        lines.append("## Drug-target context")
+        chembls = drug.get("chembl_ids") or []
+        if chembls:
+            shown = ", ".join(chembls[:5])
+            extra = f" (+{len(chembls) - 5} more)" if len(chembls) > 5 else ""
+            lines.append(f"- ChEMBL targets: {shown}{extra}")
+        else:
+            lines.append("- ChEMBL targets: none — no documented bioactivity data on this protein")
+        if drug.get("drugbank_count") is not None:
+            lines.append(f"- DrugBank cross-references: {drug['drugbank_count']}")
+        lines.append("")
+
+    # === Disease associations ===
+    diseases = dossier.get("diseases") or []
+    if diseases:
+        lines.append(f"## Disease associations ({len(diseases)})")
+        for d in diseases[:10]:
+            name = d.get("name", "?")
+            mim = d.get("mim_id")
+            tail = f" (MIM:{mim})" if mim else ""
+            lines.append(f"- **{name}**{tail}")
+        if len(diseases) > 10:
+            lines.append(f"- ... (+{len(diseases) - 10} more)")
+        lines.append("")
+
+    # === Variants ===
+    variants = dossier.get("variants") or {}
+    if variants:
+        lines.append("## Variants")
+        n = variants.get("count") or 0
+        lines.append(f"- Natural variants annotated: {n}")
+        lines.append("")
+
+    # === Functional annotations ===
+    func = dossier.get("functional_annotations") or {}
+    if func:
+        lines.append("## Functional annotations")
+        if func.get("go_molecular_function"):
+            lines.append("**GO Molecular Function:**")
+            for term in func["go_molecular_function"][:5]:
+                lines.append(f"- {term}")
+        if func.get("subcellular_locations"):
+            lines.append("**Subcellular locations:**")
+            for loc in func["subcellular_locations"][:5]:
+                lines.append(f"- {loc}")
+        if func.get("evidence_distinct_codes") is not None:
+            lines.append(
+                f"**Evidence codes:** {func['evidence_distinct_codes']} distinct ECO codes "
+                f"(call `uniprot_get_evidence_summary` for the full breakdown)"
+            )
+        lines.append("")
+
+    # === Cross-references summary ===
+    xref = dossier.get("cross_reference_summary") or {}
+    if xref:
+        lines.append("## Cross-references")
+        lines.append(
+            f"- {xref.get('total', 0)} cross-references across "
+            f"{xref.get('database_count', 0)} databases"
+        )
+        if xref.get("top_databases"):
+            lines.append(f"- Top databases: {', '.join(xref['top_databases'][:8])}")
+        lines.append("")
+
     if provenance is not None:
         lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)

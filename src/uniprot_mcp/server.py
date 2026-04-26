@@ -1,4 +1,4 @@
-"""TOPOLOGICA UniProt MCP Server. 34 tools. FastMCP. stdio transport.
+"""TOPOLOGICA UniProt MCP Server. 36 tools. FastMCP. stdio transport.
 
 Hardened against the common class of MCP-server defects:
 
@@ -34,7 +34,7 @@ import logging
 import os
 import re
 import sys
-from typing import Final
+from typing import Any, Final
 
 import httpx
 from mcp.server.fastmcp import FastMCP
@@ -72,6 +72,7 @@ from uniprot_mcp.formatters import (
     fmt_interpro,
     fmt_keyword,
     fmt_keyword_search,
+    fmt_orthology,
     fmt_pdb,
     fmt_properties,
     fmt_proteome,
@@ -80,6 +81,7 @@ from uniprot_mcp.formatters import (
     fmt_search,
     fmt_subcellular_location,
     fmt_subcellular_location_search,
+    fmt_target_dossier,
     fmt_taxonomy,
     fmt_uniparc,
     fmt_uniparc_search,
@@ -602,6 +604,292 @@ async def uniprot_search_uniref(
         return fmt_uniref_search(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
         return _safe_error("uniprot_search_uniref", exc)
+
+
+_ORTHOLOGY_DATABASES: Final[frozenset[str]] = frozenset(
+    {
+        "KEGG",
+        "OMA",
+        "OrthoDB",
+        "eggNOG",
+        "HOGENOM",
+        "PhylomeDB",
+        "InParanoid",
+        "TreeFam",
+        "GeneTree",
+        "PAN-GO",
+        "PANTHER",
+        "OrthoInspector",
+    }
+)
+
+
+@mcp.tool(
+    name="uniprot_resolve_orthology",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_resolve_orthology(accession: str, response_format: str = "markdown") -> str:
+    """Group every orthology cross-reference in a UniProt entry by source
+    database (KEGG / OMA / OrthoDB / eggNOG / HOGENOM / PhylomeDB /
+    InParanoid / TreeFam / GeneTree / PAN-GO / PANTHER / OrthoInspector).
+    Different databases use different inference methods; surfacing them
+    side-by-side lets the agent reason about consensus when comparing
+    orthologs across species. Pure-Python — no extra HTTP call beyond
+    the entry fetch."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        xrefs = data.get("uniProtKBCrossReferences", []) or []
+        grouped: dict[str, list[str]] = {}
+        for x in xrefs:
+            db = str(x.get("database", "") or "")
+            if db in _ORTHOLOGY_DATABASES:
+                xid = str(x.get("id", "") or "")
+                if xid:
+                    grouped.setdefault(db, []).append(xid)
+        return fmt_orthology(grouped, accession, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_resolve_orthology", exc)
+
+
+@mcp.tool(
+    name="uniprot_target_dossier",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_target_dossier(accession: str, response_format: str = "markdown") -> str:
+    """One-call comprehensive characterisation of a UniProt entry,
+    structured for drug-discovery / clinical workflows. Composes nine
+    views over the same entry plus one FASTA fetch (so two upstream
+    network calls, not nine):
+
+      Identity  ·  Function  ·  Sequence chemistry  ·  Structural
+      evidence (PDB count + best-resolution + AlphaFold model id +
+      InterPro count)  ·  Drug-target context (ChEMBL ids, DrugBank
+      count)  ·  Disease associations (with MIM IDs)  ·  Variants
+      count  ·  Functional annotations (top GO MF, subcellular, ECO
+      diversity)  ·  Cross-references summary
+
+    For per-residue pLDDT confidence call ``uniprot_get_alphafold_confidence``
+    separately. For full disease detail call
+    ``uniprot_get_disease_associations``. The dossier is the entry-
+    level summary that decides which deeper tools are worth calling."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        # Sequence chemistry needs the FASTA. One extra request.
+        try:
+            fasta = await client.get_fasta(accession)
+            sequence = "".join(
+                line
+                for line in fasta.splitlines()
+                if not line.startswith(">") and not line.startswith(";")
+            )
+            chemistry = dict(compute_protein_properties(sequence))
+            chemistry.pop("amino_acid_counts", None)  # too verbose for the dossier
+        except Exception:  # pragma: no cover — fasta-fetch failure is non-fatal
+            chemistry = {}
+        dossier = _assemble_target_dossier(data, chemistry)
+        return fmt_target_dossier(
+            dossier, accession, response_format, provenance=client.last_provenance
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_target_dossier", exc)
+
+
+def _assemble_target_dossier(entry: dict[str, Any], chemistry: dict[str, Any]) -> dict[str, Any]:
+    """Assemble the structured dossier from a single UniProt entry.
+
+    Pure-data manipulation — no I/O. Each section is a dict with the
+    fields the formatter expects; missing data renders as "n/a" sections
+    rather than crashes.
+    """
+    pd_block = entry.get("proteinDescription") or {}
+    if isinstance(pd_block, dict):
+        rec = pd_block.get("recommendedName") or {}
+        full_name = (rec.get("fullName") or {}).get("value", "") if isinstance(rec, dict) else ""
+    else:
+        full_name = ""
+    genes = entry.get("genes") or []
+    gene_name = ""
+    if genes and isinstance(genes, list) and isinstance(genes[0], dict):
+        g = genes[0].get("geneName") or {}
+        if isinstance(g, dict):
+            gene_name = str(g.get("value", "") or "")
+    organism = entry.get("organism") or {}
+    organism_name = ""
+    if isinstance(organism, dict):
+        organism_name = str(organism.get("scientificName", "") or "")
+    sequence = entry.get("sequence") or {}
+    seq_length = sequence.get("length") if isinstance(sequence, dict) else None
+    entry_type = str(entry.get("entryType", "") or "")
+    reviewed = (
+        "Swiss-Prot (reviewed)"
+        if entry_type.startswith("UniProtKB reviewed")
+        else "TrEMBL (unreviewed)"
+        if entry_type
+        else None
+    )
+
+    # Function comment
+    function_text = ""
+    for c in entry.get("comments") or []:
+        if isinstance(c, dict) and c.get("commentType") == "FUNCTION":
+            for t in c.get("texts") or []:
+                if isinstance(t, dict) and t.get("value"):
+                    function_text = str(t["value"])
+                    break
+            if function_text:
+                break
+
+    # Cross-reference helpers
+    xrefs = entry.get("uniProtKBCrossReferences") or []
+    if not isinstance(xrefs, list):
+        xrefs = []
+
+    def _by_db(db_name: str) -> list[dict[str, Any]]:
+        return [x for x in xrefs if isinstance(x, dict) and x.get("database") == db_name]
+
+    def _props(x: dict[str, Any]) -> dict[str, str]:
+        return {
+            str(p.get("key", "")): str(p.get("value", ""))
+            for p in (x.get("properties") or [])
+            if isinstance(p, dict)
+        }
+
+    pdbs = _by_db("PDB")
+    best_pdb: dict[str, Any] = {}
+    best_resolution_value: float | None = None
+    for x in pdbs:
+        props = _props(x)
+        res_str = props.get("Resolution", "")
+        try:
+            res_val = float(res_str.split()[0])
+        except (ValueError, IndexError):
+            continue
+        if best_resolution_value is None or res_val < best_resolution_value:
+            best_resolution_value = res_val
+            best_pdb = {
+                "id": x.get("id"),
+                "method": props.get("Method"),
+                "resolution": res_str,
+            }
+
+    af_xrefs = _by_db("AlphaFoldDB")
+    af_id = af_xrefs[0].get("id") if af_xrefs else None
+
+    interpros = _by_db("InterPro")
+    chembls = _by_db("ChEMBL")
+    drugbank = _by_db("DrugBank")
+
+    # Disease associations
+    diseases: list[dict[str, Any]] = []
+    for c in entry.get("comments") or []:
+        if not isinstance(c, dict) or c.get("commentType") != "DISEASE":
+            continue
+        d = c.get("disease") or {}
+        if not isinstance(d, dict) or not d:
+            continue
+        x = d.get("diseaseCrossReference") or {}
+        mim = ""
+        if isinstance(x, dict) and x.get("database") == "MIM":
+            mim = str(x.get("id", ""))
+        diseases.append({"name": d.get("diseaseId"), "mim_id": mim or None})
+
+    # Variants count
+    variant_count = sum(
+        1
+        for f in (entry.get("features") or [])
+        if isinstance(f, dict) and f.get("type") == "Natural variant"
+    )
+
+    # GO molecular function
+    go_mf: list[str] = []
+    for x in xrefs:
+        if not (isinstance(x, dict) and x.get("database") == "GO"):
+            continue
+        props = _props(x)
+        term = props.get("GoTerm", "")
+        if term.startswith("F:"):
+            go_mf.append(term[2:])
+        if len(go_mf) >= 5:
+            break
+
+    # Subcellular locations
+    subcell_locs: list[str] = []
+    for c in entry.get("comments") or []:
+        if isinstance(c, dict) and c.get("commentType") == "SUBCELLULAR LOCATION":
+            for loc in c.get("subcellularLocations") or []:
+                if isinstance(loc, dict):
+                    name = (loc.get("location") or {}).get("value")
+                    if name:
+                        subcell_locs.append(str(name))
+
+    # Distinct ECO codes
+    eco_codes: set[str] = set()
+
+    def _walk(node: object) -> None:
+        if isinstance(node, dict):
+            evs = node.get("evidences")
+            if isinstance(evs, list):
+                for ev in evs:
+                    if isinstance(ev, dict):
+                        code = str(ev.get("evidenceCode", "") or "")
+                        if code:
+                            eco_codes.add(code)
+            for v in node.values():
+                _walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                _walk(v)
+
+    _walk(entry)
+
+    # Cross-reference summary
+    db_counts: dict[str, int] = {}
+    for x in xrefs:
+        if isinstance(x, dict):
+            db = str(x.get("database", "?"))
+            db_counts[db] = db_counts.get(db, 0) + 1
+    top_dbs = [db for db, _ in sorted(db_counts.items(), key=lambda kv: -kv[1])][:8]
+
+    return {
+        "identity": {
+            "name": full_name or None,
+            "gene": gene_name or None,
+            "organism": organism_name or None,
+            "length": seq_length,
+            "reviewed": reviewed,
+            "entry_id": entry.get("primaryAccession"),
+        },
+        "function": function_text,
+        "chemistry": chemistry,
+        "structure": {
+            "pdb_count": len(pdbs),
+            "best_pdb": best_pdb,
+            "alphafold_model_id": af_id,
+            "interpro_count": len(interpros),
+        },
+        "drug_target": {
+            "chembl_ids": [str(x.get("id", "") or "") for x in chembls if x.get("id")],
+            "drugbank_count": len(drugbank),
+        },
+        "diseases": diseases,
+        "variants": {"count": variant_count},
+        "functional_annotations": {
+            "go_molecular_function": go_mf,
+            "subcellular_locations": subcell_locs[:5],
+            "evidence_distinct_codes": len(eco_codes),
+        },
+        "cross_reference_summary": {
+            "total": len(xrefs),
+            "database_count": len(db_counts),
+            "top_databases": top_dbs,
+        },
+    }
 
 
 @mcp.tool(
@@ -1345,6 +1633,8 @@ def _self_test() -> int:
         "uniprot_get_disease_associations",
         "uniprot_get_alphafold_confidence",
         "uniprot_get_publications",
+        "uniprot_resolve_orthology",
+        "uniprot_target_dossier",
         "uniprot_provenance_verify",
     }
 

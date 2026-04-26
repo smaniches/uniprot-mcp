@@ -103,6 +103,8 @@ def test_every_expected_tool_is_registered() -> None:
         "uniprot_get_disease_associations",
         "uniprot_get_alphafold_confidence",
         "uniprot_get_publications",
+        "uniprot_resolve_orthology",
+        "uniprot_target_dossier",
         "uniprot_provenance_verify",
     }
     tools = getattr(server.mcp, "_tool_manager", None)
