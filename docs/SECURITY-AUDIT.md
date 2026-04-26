@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-04-25
 **Auditor:** Santiago Maniches (with mechanical assistance from Claude Opus 4.7)
-**Target:** branch `hardening-v2` head `46cf081`, 38 tools, 357 offline + 4 live integration tests
+**Target:** branch `hardening-v2` head `46cf081`, 38 tools, 357 offline + 4 live integration tests (audit anchored at this commit; subsequent commits expand to 41 tools and 402 offline + 31 live tests — see CHANGELOG)
 **License:** Apache-2.0
 
 This is the formal security audit performed in the run-up to the
@@ -180,7 +180,7 @@ python -m sigstore verify identity --cert-identity \
 
 | Third party | What it sees | Necessity |
 |---|---|---|
-| `rest.uniprot.org` | source IP, User-Agent (`uniprot-mcp/1.0.1`), request path/query | Required — this is what the server proxies |
+| `rest.uniprot.org` | source IP, User-Agent (`uniprot-mcp/1.1.0`), request path/query | Required — this is what the server proxies |
 | `alphafold.ebi.ac.uk` | source IP, User-Agent, the UniProt accession in the path | Optional — used only by `uniprot_get_alphafold_confidence` |
 | `eutils.ncbi.nlm.nih.gov` | source IP, User-Agent, the gene symbol (and optional HGVS shorthand) in query | Optional — used only by `uniprot_resolve_clinvar` |
 

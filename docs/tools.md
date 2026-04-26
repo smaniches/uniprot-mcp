@@ -1,6 +1,6 @@
 # Tools reference
 
-`uniprot-mcp` ships **38 tools** across eight families. All
+`uniprot-mcp` ships **41 tools** across eight families. All
 read-only (`readOnlyHint: true`). All but `uniprot_replay_from_cache`
 interact with at least one upstream service (`openWorldHint: true`).
 
@@ -59,7 +59,16 @@ strings. Gateway-only — no calls leave the UniProt origin.
 | `uniprot_resolve_interpro` | InterPro signatures: id + entry name. |
 | `uniprot_resolve_chembl` | ChEMBL drug-target id + EBI target-card URL. |
 
-## Clinical bioinformatics (4)
+## Biomedical features (7)
+
+Pure-Python compositions over the entry — no extra origin. The first
+four answer per-residue and per-variant questions; the last three are
+the v1.1.0 expansion targeting drug discovery, therapeutic-protein
+engineering, and pathogen-secretion analysis. Each is a structured
+filter over the entry's `features` array — it groups by feature type,
+shows the residue range and description for each member, and emits an
+honest empty-set advisory pointing at adjacent databases when the entry
+has no annotations of that kind.
 
 | Tool | Purpose |
 |---|---|
@@ -67,6 +76,9 @@ strings. Gateway-only — no calls leave the UniProt origin.
 | `uniprot_features_at_position` | Every feature overlapping a residue position (1-indexed). Critical for variant-effect interpretation. |
 | `uniprot_lookup_variant` | HGVS-shorthand match (`R175H`, `V600E`, `R248*`) against UniProt's natural-variant features. |
 | `uniprot_get_disease_associations` | Structured disease records from DISEASE-type comments: name + MIM cross-ref + description. |
+| `uniprot_get_active_sites` | Catalytic and ligand-binding residues: active sites, binding sites, sites, metal binding, DNA binding. The residue-level chemistry — input to enzyme drug-design and antibiotic-target-validation workflows. |
+| `uniprot_get_processing_features` | Maturation features: signal peptide, propeptide, transit peptide, initiator methionine, chain, peptide. Therapeutic-protein engineering and pathogen-secretion-system analysis. |
+| `uniprot_get_ptms` | Post-translational modifications: modified residues, glycosylation, lipidation, disulfide bonds, cross-links. |
 
 ## Cross-origin enrichment (3)
 

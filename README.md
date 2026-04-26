@@ -4,12 +4,12 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![MCP compatible](https://img.shields.io/badge/MCP-compatible-6e56cf.svg)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-357_offline_%2B_4_live-success)](#testing)
+[![Tests](https://img.shields.io/badge/tests-402_offline_%2B_4_live-success)](#testing)
 [![Provenance: SHA-256 + verify](https://img.shields.io/badge/provenance-SHA--256_+_verify-blue)](#provenance--verification)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
 
 A reference-quality **Model Context Protocol** server for the
-[UniProt](https://www.uniprot.org) protein knowledgebase. **38 tools**
+[UniProt](https://www.uniprot.org) protein knowledgebase. **41 tools**
 across 8 families. Every successful response carries a verifiable
 `Provenance` record — UniProt release, retrieval timestamp, resolved
 URL, and a SHA-256 of the canonical response body — that the agent
@@ -24,7 +24,7 @@ call: `uniprot_provenance_verify`.
 
 | | uniprot-mcp | Vanilla LLM + WebFetch | A typical bio-MCP |
 |---|---|---|---|
-| Tool surface | **38 tools, 8 families** | none — caller writes URLs | usually 5–10 |
+| Tool surface | **41 tools, 8 families** | none — caller writes URLs | usually 5–10 |
 | Provenance on every response | release • date • URL • SHA-256 | none | sometimes URL only |
 | Per-query auditability | `uniprot_provenance_verify` re-checks any prior response | not possible | not possible |
 | Release pinning | `--pin-release=YYYY_MM` raises on drift | n/a | n/a |
@@ -47,7 +47,7 @@ upstream has drifted.
 
 ---
 
-## Tools (38)
+## Tools (41)
 
 Eight endpoint families. All read-only (`readOnlyHint: true`). All
 but `uniprot_replay_from_cache` interact with at least one upstream
@@ -108,9 +108,14 @@ records (typed lists / objects, not passthrough strings).
 | `uniprot_resolve_interpro` | InterPro signatures: id + entry name. |
 | `uniprot_resolve_chembl` | ChEMBL drug-target id + EBI target-card URL. |
 
-### Clinical bioinformatics (4)
+### Biomedical features (7)
 
-Pure-Python compositions over the entry — no extra origin.
+Pure-Python compositions over the entry — no extra origin. The first
+four answer per-residue and per-variant questions; the last three are
+the v1.1.0 expansion targeting drug discovery, therapeutic-protein
+engineering, and pathogen-secretion analysis: each is a filter over the
+entry's `features` array, with a structured grouping by feature type
+and an honest empty-set advisory.
 
 | Tool | Purpose |
 |---|---|
@@ -118,6 +123,9 @@ Pure-Python compositions over the entry — no extra origin.
 | `uniprot_features_at_position` | Every feature overlapping a residue position. Critical for variant-effect interpretation. |
 | `uniprot_lookup_variant` | HGVS-shorthand match (`R175H`, `V600E`, `R248*`) against UniProt's natural-variant features. |
 | `uniprot_get_disease_associations` | Structured disease records from DISEASE-type comments: name + acronym + UniProt disease ID + OMIM cross-ref + description. |
+| `uniprot_get_active_sites` | Catalytic and ligand-binding residues: active sites, binding sites, sites, metal binding, DNA binding. The residue-level chemistry of the protein. |
+| `uniprot_get_processing_features` | Maturation features: signal peptide, propeptide, transit peptide, initiator methionine, chain, peptide. Essential for therapeutic-protein engineering and pathogen-secretion analysis. |
+| `uniprot_get_ptms` | Post-translational modifications: modified residues (phospho/acetyl/methyl), glycosylation, lipidation (GPI/prenyl/palmitoyl), disulfide bonds, cross-links. |
 
 ### Cross-origin enrichment (3)
 
@@ -302,7 +310,7 @@ claude mcp add uniprot -- uniprot-mcp
 
 ```bash
 uniprot-mcp --self-test
-# [tools] registered: 38/38
+# [tools] registered: 41/41
 # [live] P04637 -> TP53 OK
 # [PASS]
 ```
@@ -374,7 +382,7 @@ export UNIPROT_MCP_CACHE_DIR=~/sealed-cache
 | Integration | `tests/integration/` | Live UniProt + AlphaFold; opt-in via `--integration`. |
 | Benchmark | `tests/benchmark/` | 30 SHA-256-committed prompts + reproducible verifier. |
 
-**357 offline + 4 live integration tests, all green.** Mypy (strict),
+**402 offline + 31 live integration tests, all green.** Mypy (strict),
 ruff (check + format), bandit (0 issues at any severity), pip-audit
 (`--strict`, no known vulnerabilities) all clean. Mutation testing
 (`mutmut`) gate ≥ 95 % kill, populated post-billing-reset.

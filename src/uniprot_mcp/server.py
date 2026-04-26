@@ -1,4 +1,4 @@
-"""TOPOLOGICA UniProt MCP Server. 38 tools. FastMCP. stdio transport.
+"""TOPOLOGICA UniProt MCP Server. 41 tools. FastMCP. stdio transport.
 
 Hardened against the common class of MCP-server defects:
 
@@ -61,6 +61,10 @@ from uniprot_mcp.client import (
     canonical_response_hash,
 )
 from uniprot_mcp.formatters import (
+    ACTIVE_SITE_FEATURE_TYPES,
+    PROCESSING_FEATURE_TYPES,
+    PTM_FEATURE_TYPES,
+    fmt_active_sites,
     fmt_alphafold,
     fmt_alphafold_confidence,
     fmt_chembl,
@@ -80,9 +84,11 @@ from uniprot_mcp.formatters import (
     fmt_keyword_search,
     fmt_orthology,
     fmt_pdb,
+    fmt_processing_features,
     fmt_properties,
     fmt_proteome,
     fmt_proteome_search,
+    fmt_ptms,
     fmt_publications,
     fmt_search,
     fmt_subcellular_location,
@@ -1182,6 +1188,95 @@ async def uniprot_features_at_position(
         )
     except Exception as exc:
         return _safe_error("uniprot_features_at_position", exc)
+
+
+def _filter_features_by_type(
+    features: list[dict[str, Any]], allowed_types: frozenset[str]
+) -> list[dict[str, Any]]:
+    """Return the subset of features whose ``type`` is in ``allowed_types``.
+
+    Shared filter for the active-sites, processing, and PTM tools. Kept
+    here (server module) rather than in formatters because it is a
+    server-side selection: the formatters render whatever is handed to
+    them, and the property tests rely on the server tools and the
+    formatters using the same canonical type sets."""
+    return [f for f in features if str(f.get("type", "")) in allowed_types]
+
+
+@mcp.tool(
+    name="uniprot_get_active_sites",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_active_sites(
+    accession: str, response_format: str = "markdown"
+) -> str:
+    """Return the active sites, binding sites, metal-binding residues,
+    and DNA-binding regions annotated on a UniProt entry. Filtered view
+    over the entry's feature array — this is the residue-level chemistry
+    of the protein, the input to enzyme drug-design and antibiotic
+    target-validation workflows."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        features = data.get("features", []) or []
+        filtered = _filter_features_by_type(features, ACTIVE_SITE_FEATURE_TYPES)
+        return fmt_active_sites(
+            filtered, accession, response_format, provenance=client.last_provenance
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_get_active_sites", exc)
+
+
+@mcp.tool(
+    name="uniprot_get_processing_features",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_processing_features(
+    accession: str, response_format: str = "markdown"
+) -> str:
+    """Return the maturation and processing features (signal peptide,
+    propeptide, transit peptide, initiator methionine, chain, peptide).
+    These describe how the translated polypeptide is cleaved and
+    targeted into its mature form — essential for therapeutic-protein
+    engineering and pathogen-secretion-system analysis."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        features = data.get("features", []) or []
+        filtered = _filter_features_by_type(features, PROCESSING_FEATURE_TYPES)
+        return fmt_processing_features(
+            filtered, accession, response_format, provenance=client.last_provenance
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_get_processing_features", exc)
+
+
+@mcp.tool(
+    name="uniprot_get_ptms",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_get_ptms(accession: str, response_format: str = "markdown") -> str:
+    """Return the post-translational modification features (modified
+    residues, glycosylation sites, lipidation sites, disulfide bonds,
+    cross-links). PTMs are functionally critical: they switch enzymes
+    on, target proteins for degradation, anchor them to membranes, and
+    fold them via disulfides. The empty case carries an honest pointer
+    to mass-spec databases (PhosphoSitePlus, GlyConnect) for additional
+    evidence."""
+    try:
+        _check_accession(accession)
+        _check_format(response_format)
+        client = _client()
+        data = await client.get_entry(accession)
+        features = data.get("features", []) or []
+        filtered = _filter_features_by_type(features, PTM_FEATURE_TYPES)
+        return fmt_ptms(filtered, accession, response_format, provenance=client.last_provenance)
+    except Exception as exc:
+        return _safe_error("uniprot_get_ptms", exc)
 
 
 @mcp.tool(

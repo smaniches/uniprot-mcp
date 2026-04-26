@@ -5,6 +5,53 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-25
+
+Biomedical-features expansion. Three new filtered-feature tools target
+the active research domains of the v1.x release line: enzyme drug
+design, therapeutic-protein engineering, and pathogen-secretion-system
+analysis. Tool surface 38 -> 41. The new tools project the same
+`features` array a UniProt entry already carries — they are pure
+filters with structured grouping and an honest empty-set advisory, not
+new endpoints.
+
+### Added
+
+- **`uniprot_get_active_sites`** — returns the catalytic and
+  ligand-binding residues from an entry: active sites, binding sites,
+  sites, metal-binding residues, and DNA-binding regions. The honest
+  empty-set advisory points out that absence of these features does
+  not imply non-druggability — the entry may be sparsely curated, or
+  the function may be allosteric. The set of upstream feature types is
+  exposed as `formatters.ACTIVE_SITE_FEATURE_TYPES`, the single source
+  of truth shared with the property tests.
+- **`uniprot_get_processing_features`** — returns the maturation
+  features that describe how a translated polypeptide is cleaved and
+  targeted: signal peptide, propeptide, transit peptide, initiator
+  methionine, chain, peptide. Critical for therapeutic-protein
+  engineering (the mature chain after signal-peptide cleavage is
+  what reaches the patient) and for understanding pathogen secretion
+  systems (signal peptides drive Gram-negative type-II / type-V
+  secretion). Type set: `PROCESSING_FEATURE_TYPES`.
+- **`uniprot_get_ptms`** — returns the post-translational modification
+  features: modified residues (phosphorylation / acetylation /
+  methylation), glycosylation sites, lipidation sites (GPI anchors,
+  prenylation, palmitoylation), disulfide bonds, and cross-links
+  (isopeptide / SUMO / ubiquitin). Empty-set advisory points
+  PhosphoSitePlus / GlyConnect for additional mass-spec evidence the
+  UniProt curators may not yet have integrated. Type set:
+  `PTM_FEATURE_TYPES`.
+
+### Changed
+
+- Manifest descriptions (`.well-known/mcp.json`, `server.json`) updated
+  to reflect 41 tools and the renamed "biomedical features" family.
+- Version bumped 1.0.1 -> 1.1.0 across all locked-in-step files
+  (pyproject.toml, .well-known/mcp.json, server.json, CITATION.cff,
+  client.py UA string, docs/SECURITY-AUDIT.md privacy note).
+  `uniprot_mcp.__version__` reads via `importlib.metadata` so this
+  bump propagates automatically once the wheel is rebuilt.
+
 ## [1.0.1] - 2026-04-25
 
 First public release. Closes the AUDIT.md follow-up list, raises every
@@ -155,6 +202,7 @@ wheel's metadata via `importlib.metadata`, so it cannot drift from
 - `batch_entries` no longer returns HTTP 400 when one malformed accession
   is mixed into an otherwise valid batch.
 
-[Unreleased]: https://github.com/smaniches/uniprot-mcp/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/smaniches/uniprot-mcp/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.0
 [1.0.1]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.0.1
 [0.1.0]: https://github.com/smaniches/uniprot-mcp/releases/tag/v0.1.0

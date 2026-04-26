@@ -2,7 +2,7 @@
 
 > A reference-quality **Model Context Protocol** server for the
 > [UniProt](https://www.uniprot.org) protein knowledgebase.
-> **38 tools.** Every successful response carries a verifiable
+> **41 tools.** Every successful response carries a verifiable
 > `Provenance` record (release · timestamp · URL · canonical SHA-256)
 > that the agent (or a third party, a year later) can re-check with
 > `uniprot_provenance_verify`.
@@ -31,7 +31,7 @@ Together these mean a regulated user can take any prior `uniprot-mcp`
 answer and prove — **without contacting the author** — that UniProt
 still returns the same bytes.
 
-## Tool surface (38)
+## Tool surface (41)
 
 | Family | Tools | Question it answers |
 |---|---|---|
@@ -40,7 +40,7 @@ still returns the same bytes.
 | **Sequence archives & clusters** | 4 | "what's in this UniRef cluster / UniParc record?" |
 | **Proteomes & literature** | 4 | "what is the human reference proteome / who cites this entry?" |
 | **Structured cross-DB resolvers** | 4 | "what PDB / AlphaFold / InterPro / ChEMBL records exist?" |
-| **Clinical bioinformatics** | 4 | "what's at residue 175 / is R175H known / what diseases / what's the chemistry?" |
+| **Biomedical features** | 7 | "what's at residue 175 / is R175H known / what diseases / what's the chemistry / where are the active sites / how is it processed / what PTMs?" |
 | **Cross-origin enrichment** | 3 | "AlphaFold pLDDT / ClinVar significance / publications" |
 | **Composition + provenance** | 5 | "give me a full target dossier / verify a recorded provenance / replay from cache / orthology / evidence-quality summary" |
 
@@ -80,8 +80,8 @@ uniprot-mcp --self-test
 
 | Layer | State |
 |---|---|
-| Tool surface | **38 tools** across 8 families |
-| Tests | **357 offline + 4 live integration** |
+| Tool surface | **41 tools** across 8 families |
+| Tests | **402 offline + 31 live integration** |
 | Static analysis | **mypy strict** + **ruff** + **bandit** + **pip-audit** clean |
 | Provenance verification | **Live round-trip-tested against real UniProt** |
 | Pre-registered benchmark | **30 SHA-256 commitments on `main`** |

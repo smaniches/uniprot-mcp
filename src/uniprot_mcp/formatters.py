@@ -24,6 +24,10 @@ Feature = dict[str, Any]
 Xref = dict[str, Any]
 
 __all__ = [
+    "ACTIVE_SITE_FEATURE_TYPES",
+    "PROCESSING_FEATURE_TYPES",
+    "PTM_FEATURE_TYPES",
+    "fmt_active_sites",
     "fmt_alphafold",
     "fmt_alphafold_confidence",
     "fmt_chembl",
@@ -43,9 +47,11 @@ __all__ = [
     "fmt_keyword_search",
     "fmt_orthology",
     "fmt_pdb",
+    "fmt_processing_features",
     "fmt_properties",
     "fmt_proteome",
     "fmt_proteome_search",
+    "fmt_ptms",
     "fmt_publications",
     "fmt_search",
     "fmt_subcellular_location",
@@ -60,6 +66,63 @@ __all__ = [
     "fmt_variants",
     "is_swissprot",
 ]
+
+
+# --------------------------------------------------------------------- #
+# Biomedical feature categories                                         #
+#                                                                       #
+# These constants enumerate the UniProt feature-type strings that fall  #
+# into each functional bucket. Strings match UniProt's annotation       #
+# manual (https://www.uniprot.org/help/sequence_annotation). Keeping    #
+# them as module-level frozensets means the server tools, the           #
+# formatters, and the property tests all share a single source of       #
+# truth — a feature type cannot be in two buckets, and adding a new     #
+# bucket member requires changing exactly one line.                     #
+# --------------------------------------------------------------------- #
+
+ACTIVE_SITE_FEATURE_TYPES: frozenset[str] = frozenset(
+    {
+        "Active site",
+        "Binding site",
+        "Site",
+        "Metal binding",
+        "DNA binding",
+    }
+)
+"""Catalytic and ligand-binding residues. Useful for enzyme drug
+design and antibiotic-target validation: the residues that actually
+do the chemistry, plus the residues that hold ligands and ions in
+place."""
+
+PROCESSING_FEATURE_TYPES: frozenset[str] = frozenset(
+    {
+        "Signal peptide",
+        "Propeptide",
+        "Transit peptide",
+        "Initiator methionine",
+        "Chain",
+        "Peptide",
+    }
+)
+"""Maturation features: which residues are cleaved, which form the
+mature chain, which target the protein to a compartment. Critical
+for therapeutic-protein engineering and for understanding pathogen
+secretion-system targets."""
+
+PTM_FEATURE_TYPES: frozenset[str] = frozenset(
+    {
+        "Modified residue",
+        "Glycosylation",
+        "Lipidation",
+        "Disulfide bond",
+        "Cross-link",
+    }
+)
+"""Post-translational modifications. Phosphorylation /
+acetylation / methylation (Modified residue), N- and O-linked
+glycans (Glycosylation), GPI anchors and prenylation (Lipidation),
+intramolecular disulfides (Disulfide bond), and isopeptide /
+SUMO / ubiquitin tags (Cross-link)."""
 
 
 def is_swissprot(entry: Entry) -> bool:
@@ -1694,3 +1757,130 @@ def fmt_fasta(fasta_text: str, *, provenance: Provenance | None = None) -> str:
     # well-formed regardless of whether `fasta_text` already ended in \n.
     sep = "" if fasta_text.startswith("\n") else "\n"
     return header + sep + fasta_text
+
+
+# --------------------------------------------------------------------- #
+# Filtered-feature formatters: active sites, processing, PTMs           #
+# --------------------------------------------------------------------- #
+
+
+def _fmt_filtered_features(
+    features: list[Feature],
+    accession: str,
+    title: str,
+    empty_note: str,
+    fmt: str,
+    provenance: Provenance | None,
+) -> str:
+    """Render a filtered subset of features grouped by type. Shared
+    implementation for the active-sites, processing-features, and PTM
+    formatters: the only thing that varies between callers is the
+    title, the empty-set advisory, and the upstream filter."""
+    if fmt == "json":
+        return _json_envelope({"accession": accession, "features": features}, provenance)
+    lines: list[str] = [f"## {title}: {accession} ({len(features)} feature(s))", ""]
+    if not features:
+        lines.append(f"_{empty_note}_")
+    else:
+        by_type: dict[str, list[Feature]] = {}
+        for feat in features:
+            by_type.setdefault(str(feat.get("type", "?")), []).append(feat)
+        for ftype in sorted(by_type):
+            feats = by_type[ftype]
+            lines.append(f"### {ftype} ({len(feats)})")
+            for feat in feats:
+                loc = feat.get("location") or {}
+                start = (loc.get("start") or {}).get("value", "?")
+                end = (loc.get("end") or {}).get("value", "?")
+                desc = str(feat.get("description", "") or "").strip()
+                ligand = feat.get("ligand") or {}
+                ligand_name = (
+                    str(ligand.get("name", "") or "").strip() if isinstance(ligand, dict) else ""
+                )
+                range_str = f"{start}-{end}" if start != end else f"{start}"
+                head = f"- **{range_str}**"
+                tail_bits: list[str] = []
+                if desc:
+                    tail_bits.append(desc)
+                if ligand_name:
+                    tail_bits.append(f"ligand: {ligand_name}")
+                if tail_bits:
+                    head += "  " + " — ".join(tail_bits)
+                lines.append(head)
+            lines.append("")
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_active_sites(
+    features: list[Feature],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Render catalytic and ligand-binding features (active sites,
+    binding sites, sites, metal-binding residues, DNA-binding regions).
+    The set of feature types is :data:`ACTIVE_SITE_FEATURE_TYPES`."""
+    return _fmt_filtered_features(
+        features,
+        accession,
+        title="Active and binding sites",
+        empty_note=(
+            "No active-site, binding-site, metal-binding, or DNA-binding features "
+            "annotated. Absence here does not imply non-druggability — the entry "
+            "may be sparsely curated, or the function may be allosteric."
+        ),
+        fmt=fmt,
+        provenance=provenance,
+    )
+
+
+def fmt_processing_features(
+    features: list[Feature],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Render maturation and processing features (signal peptide,
+    propeptide, transit peptide, initiator methionine, chain, peptide).
+    The set of feature types is :data:`PROCESSING_FEATURE_TYPES`."""
+    return _fmt_filtered_features(
+        features,
+        accession,
+        title="Processing and maturation",
+        empty_note=(
+            "No signal peptide, propeptide, transit peptide, initiator-methionine, "
+            "chain, or peptide features annotated. The mature protein is likely the "
+            "full sequence as translated, but verify against the entry's chain "
+            "annotation if therapeutic engineering is downstream."
+        ),
+        fmt=fmt,
+        provenance=provenance,
+    )
+
+
+def fmt_ptms(
+    features: list[Feature],
+    accession: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Render post-translational modification features (modified
+    residue, glycosylation, lipidation, disulfide bond, cross-link).
+    The set of feature types is :data:`PTM_FEATURE_TYPES`."""
+    return _fmt_filtered_features(
+        features,
+        accession,
+        title="Post-translational modifications",
+        empty_note=(
+            "No PTM features annotated. The protein may be unmodified, or the entry "
+            "may be sparsely curated for PTMs. Mass-spectrometry-curated databases "
+            "(PhosphoSitePlus, GlyConnect) may have additional evidence."
+        ),
+        fmt=fmt,
+        provenance=provenance,
+    )

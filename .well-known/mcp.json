@@ -1,8 +1,8 @@
 {
   "$schema": "https://modelcontextprotocol.io/schema/mcp.json",
   "name": "uniprot-mcp",
-  "version": "1.0.1",
-  "description": "Reference-quality Model Context Protocol server for the UniProt protein knowledgebase. 38 tools across 8 families: search/lookup, structural (PDB cross-refs, AlphaFold pLDDT bands), variants & disease (ClinVar bridge, position-aware variant lookup, OMIM), position-aware features (active sites, signal peptides, modified residues, natural variants), composition dossier (sequence chemistry, drug-target context, disease associations), orthology, local provenance cache with replay, and per-query provenance verification (release-aware SHA-256 of canonical bytes). Every successful response carries a verifiable Provenance record (UniProt release number, release date, retrieval timestamp, resolved URL, SHA-256 digest) surfaced as a Markdown footer, JSON envelope, or PIR-style FASTA header. All tools are read-only and require no API key.",
+  "version": "1.1.0",
+  "description": "Reference-quality Model Context Protocol server for the UniProt protein knowledgebase. 41 tools across 8 families: search/lookup, structural (PDB cross-refs, AlphaFold pLDDT bands), variants & disease (ClinVar bridge, position-aware variant lookup, OMIM), biomedical features (position-aware feature intersection, active and binding sites, processing and maturation, post-translational modifications), composition dossier (sequence chemistry, drug-target context, disease associations), orthology, local provenance cache with replay, and per-query provenance verification (release-aware SHA-256 of canonical bytes). Every successful response carries a verifiable Provenance record (UniProt release number, release date, retrieval timestamp, resolved URL, SHA-256 digest) surfaced as a Markdown footer, JSON envelope, or PIR-style FASTA header. All tools are read-only and require no API key.",
   "homepage": "https://github.com/smaniches/uniprot-mcp",
   "license": "Apache-2.0",
   "author": {
@@ -70,7 +70,10 @@
     "uniprot_resolve_clinvar",
     "uniprot_target_dossier",
     "uniprot_replay_from_cache",
-    "uniprot_provenance_verify"
+    "uniprot_provenance_verify",
+    "uniprot_get_active_sites",
+    "uniprot_get_processing_features",
+    "uniprot_get_ptms"
   ],
   "toolDefaults": {
     "readOnlyHint": true,

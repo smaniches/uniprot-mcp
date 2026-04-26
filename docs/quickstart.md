@@ -48,7 +48,7 @@ on Windows it lives under `%APPDATA%\Claude\`):
 ```
 
 Restart Claude Desktop. Type `/mcp` in any conversation; you should
-see the 38 tools listed.
+see the 41 tools listed.
 
 For **strict release pinning** (any drift raises an error):
 
