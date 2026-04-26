@@ -229,7 +229,17 @@ def _check_position(value: int) -> None:
 
 # HGVS-style protein change: <single-letter-original><position><single-letter-alt
 # OR '*' for stop>. ``*`` is the unambiguous stop-codon convention.
-_VARIANT_CHANGE_RE = re.compile(r"\A([A-Z])([1-9][0-9]{0,4})([A-Z*])\Z")
+# Restrict to the 20 standard amino acid letters for both the original
+# residue and the alternative residue. The previous regex accepted any
+# uppercase letter, which silently allowed non-amino-acid inputs like
+# `X1A` or `B5J` (caught by the Hypothesis property test). Stop codon
+# `*` is permitted only for the alternative residue (canonical
+# nonsense-mutation HGVS shorthand). UniProt's natural-variant
+# annotations only ever use these 20 letters + `*`.
+_AMINO_ACID_LETTERS = "ACDEFGHIKLMNPQRSTVWY"
+_VARIANT_CHANGE_RE = re.compile(
+    rf"\A([{_AMINO_ACID_LETTERS}])([1-9][0-9]{{0,4}})([{_AMINO_ACID_LETTERS}*])\Z"
+)
 
 
 def _parse_variant_change(value: str) -> tuple[str, int, str]:
