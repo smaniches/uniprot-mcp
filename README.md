@@ -4,16 +4,17 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![MCP compatible](https://img.shields.io/badge/MCP-compatible-6e56cf.svg)](https://modelcontextprotocol.io/)
-[![287 tests](https://img.shields.io/badge/tests-287_offline_%2B_4_live-success)](#testing)
+[![Tests](https://img.shields.io/badge/tests-357_offline_%2B_4_live-success)](#testing)
 [![Provenance: SHA-256 + verify](https://img.shields.io/badge/provenance-SHA--256_+_verify-blue)](#provenance--verification)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
 
 A reference-quality **Model Context Protocol** server for the
-[UniProt](https://www.uniprot.org) protein knowledgebase. **28 tools.**
-Every successful response carries a verifiable `Provenance` record —
-UniProt release, retrieval timestamp, resolved URL, and a SHA-256 of
-the canonical response body — that the agent (or a third party, a year
-later) can re-check with a single tool call: `uniprot_provenance_verify`.
+[UniProt](https://www.uniprot.org) protein knowledgebase. **38 tools**
+across 8 families. Every successful response carries a verifiable
+`Provenance` record — UniProt release, retrieval timestamp, resolved
+URL, and a SHA-256 of the canonical response body — that the agent
+(or a third party, a year later) can re-check with a single tool
+call: `uniprot_provenance_verify`.
 
 > Author: **Santiago Maniches** · ORCID [0009-0005-6480-1987](https://orcid.org/0009-0005-6480-1987) · TOPOLOGICA LLC
 
@@ -23,15 +24,19 @@ later) can re-check with a single tool call: `uniprot_provenance_verify`.
 
 | | uniprot-mcp | Vanilla LLM + WebFetch | A typical bio-MCP |
 |---|---|---|---|
-| Tool surface | **28 tools, 11 endpoint families** | none — caller writes URLs | usually 5–10 |
+| Tool surface | **38 tools, 8 families** | none — caller writes URLs | usually 5–10 |
 | Provenance on every response | release • date • URL • SHA-256 | none | sometimes URL only |
 | Per-query auditability | `uniprot_provenance_verify` re-checks any prior response | not possible | not possible |
 | Release pinning | `--pin-release=YYYY_MM` raises on drift | n/a | n/a |
-| Pre-registered benchmark | 30 prompts, SHA-256 committed on `main` | n/a | n/a |
+| Pre-registered benchmark | 30 prompts, SHA-256 committed on `main` + reproducible verifier | n/a | n/a |
+| Local provenance cache | offline replay via `UNIPROT_MCP_CACHE_DIR` | n/a | n/a |
+| Clinical primitives | sequence chemistry / position-aware features / HGVS variant lookup / disease associations / AlphaFold pLDDT / ClinVar | none | none |
+| Composition tool | `uniprot_target_dossier` — one call, nine sections | n/a | n/a |
 | Input validation | regex + length cap before any HTTP call | none | partial |
 | Error-channel safety | upstream exception text never echoed to LLM | n/a | partial |
-| Supply chain | SLSA build provenance + Sigstore + CycloneDX SBOM | n/a | rare |
-| Test layers | unit + property + contract + client + integration | n/a | usually unit only |
+| Cross-origin allowlist | enumerated, threat-modelled, privacy-listed | n/a | usually unaudited |
+| Supply chain | SLSA build provenance + Sigstore + CycloneDX SBOM (post-flip) | n/a | rare |
+| Test layers | unit + property + contract + client + integration + benchmark | n/a | usually unit only |
 | Mutation testing target | ≥ 95 % kill (gated, not aspirational) | n/a | rare |
 
 The **provenance + verify** chain is the single feature nothing else
@@ -42,10 +47,11 @@ upstream has drifted.
 
 ---
 
-## Tools (28)
+## Tools (38)
 
-Eleven endpoint families. All read-only (`readOnlyHint: true`,
-`openWorldHint: true`). No UniProt API key required.
+Eight endpoint families. All read-only (`readOnlyHint: true`). All
+but `uniprot_replay_from_cache` interact with at least one upstream
+service (`openWorldHint: true`). No UniProt API key required.
 
 ### Core UniProtKB (10)
 
@@ -57,7 +63,7 @@ Eleven endpoint families. All read-only (`readOnlyHint: true`,
 | `uniprot_get_features` | Domains, binding sites, PTMs, signal peptides — optional type filter. |
 | `uniprot_get_variants` | Natural variants and disease mutations. |
 | `uniprot_get_go_terms` | GO annotations grouped by aspect (F / P / C). |
-| `uniprot_get_cross_refs` | Raw cross-references to PDB, Pfam, ENSEMBL, Reactome, KEGG, STRING … |
+| `uniprot_get_cross_refs` | Raw cross-references to PDB, Pfam, Ensembl, Reactome, KEGG, STRING … |
 | `uniprot_id_mapping` | Map IDs between databases (Gene_Name → UniProtKB, PDB → UniProtKB, …). |
 | `uniprot_batch_entries` | Up to 100 entries in one call; invalid accessions filtered client-side. |
 | `uniprot_taxonomy_search` | Search UniProt taxonomy by organism name. |
@@ -98,16 +104,40 @@ records (typed lists / objects, not passthrough strings).
 | Tool | Purpose |
 |---|---|
 | `uniprot_resolve_pdb` | PDB structures: id + method + resolution + chain coverage. |
-| `uniprot_resolve_alphafold` | AlphaFold model id + EBI viewer URL. |
+| `uniprot_resolve_alphafold` | AlphaFold model id + EBI viewer URL (model id only — for pLDDT call the dedicated tool below). |
 | `uniprot_resolve_interpro` | InterPro signatures: id + entry name. |
 | `uniprot_resolve_chembl` | ChEMBL drug-target id + EBI target-card URL. |
 
-### Provenance & verification (2)
+### Clinical bioinformatics (4)
+
+Pure-Python compositions over the entry — no extra origin.
 
 | Tool | Purpose |
 |---|---|
-| `uniprot_get_evidence_summary` | Aggregate ECO codes across an entry's annotations. Distinguishes wet-lab confirmed from inferred-by-similarity from automatic. |
-| `uniprot_provenance_verify` | Re-fetch a recorded URL and compare release tag + canonical response SHA-256. Five verdicts: `verified`, `release_drift`, `hash_drift`, `release_and_hash_drift`, `url_unreachable`. |
+| `uniprot_compute_properties` | Derived sequence chemistry from the FASTA: MW / pI / GRAVY / aromaticity / charge / ε₂₈₀. |
+| `uniprot_features_at_position` | Every feature overlapping a residue position. Critical for variant-effect interpretation. |
+| `uniprot_lookup_variant` | HGVS-shorthand match (`R175H`, `V600E`, `R248*`) against UniProt's natural-variant features. |
+| `uniprot_get_disease_associations` | Structured disease records from DISEASE-type comments: name + acronym + UniProt disease ID + OMIM cross-ref + description. |
+
+### Cross-origin enrichment (3)
+
+The only tools that consult origins outside `rest.uniprot.org`. Each is documented in [`PRIVACY.md`](PRIVACY.md) and in the [threat model](docs/THREAT_MODEL.md#t3b--cross-origin-allowlist-for-non-uniprot-endpoints).
+
+| Tool | Origin | Purpose |
+|---|---|---|
+| `uniprot_get_alphafold_confidence` | `alphafold.ebi.ac.uk` | pLDDT mean + four-band distribution; lets the agent decide whether to trust the model. |
+| `uniprot_resolve_clinvar` | `eutils.ncbi.nlm.nih.gov` | ClinVar significance + condition + review status by gene + optional HGVS shorthand. |
+| `uniprot_get_publications` | `rest.uniprot.org` | Pure-Python over the entry's references — listed here because it complements the cross-origin enrichment. |
+
+### Composition + provenance (5)
+
+| Tool | Purpose |
+|---|---|
+| `uniprot_resolve_orthology` | Group orthology cross-references by source DB (KEGG / OMA / OrthoDB / eggNOG / 8 more). |
+| `uniprot_get_evidence_summary` | Aggregate ECO codes (Evidence and Conclusion Ontology) across an entry. Distinguishes wet-lab confirmed from inferred-by-similarity from automatic. |
+| `uniprot_target_dossier` | One-call comprehensive characterisation: nine sections — identity / function / chemistry / structure / drug-target / disease / variants / functional annotations / cross-refs. |
+| `uniprot_provenance_verify` | Re-fetch a previously recorded URL and compare release tag + canonical response SHA-256. Five verdicts (`verified`, `release_drift`, `hash_drift`, `release_and_hash_drift`, `url_unreachable`) each with an advice string. |
+| `uniprot_replay_from_cache` | Read a cached UniProt response without hitting the upstream. Opt-in via `UNIPROT_MCP_CACHE_DIR`. |
 
 ---
 
@@ -162,6 +192,15 @@ uniprot-mcp
 # every response is checked against the pinned release;
 # any drift raises `ReleaseMismatchError`, which the server surfaces
 # as an agent-actionable error envelope.
+```
+
+For offline replay (post-cache-population):
+
+```bash
+export UNIPROT_MCP_CACHE_DIR=~/.uniprot-mcp-cache
+uniprot-mcp
+# every successful response is mirrored to disk; later replay via
+# uniprot_replay_from_cache(url) without touching the upstream.
 ```
 
 A live end-to-end demonstration is committed at
@@ -238,6 +277,21 @@ For pinned, reproducibility-grade access:
 }
 ```
 
+For offline replay via the local provenance cache:
+
+```json
+{
+  "mcpServers": {
+    "uniprot": {
+      "command": "uniprot-mcp",
+      "env": {
+        "UNIPROT_MCP_CACHE_DIR": "/absolute/path/to/cache"
+      }
+    }
+  }
+}
+```
+
 ### Claude Code (CLI)
 
 ```bash
@@ -248,7 +302,7 @@ claude mcp add uniprot -- uniprot-mcp
 
 ```bash
 uniprot-mcp --self-test
-# [tools] registered: 28/28
+# [tools] registered: 38/38
 # [live] P04637 -> TP53 OK
 # [PASS]
 ```
@@ -257,28 +311,32 @@ uniprot-mcp --self-test
 
 ## Example workflows
 
-**1. Drug target with structural + ChEMBL + AlphaFold context.**
+**1. Clinical-variant interpretation packet for `TP53 R175H`.**
 
 ```
-> Resolve PDB structures, AlphaFold model, and ChEMBL drug-target records for human TP53 (P04637).
-→ uniprot_resolve_pdb("P04637")
-→ uniprot_resolve_alphafold("P04637")
-→ uniprot_resolve_chembl("P04637")
+> What's at residue 175 of P04637? Is R175H a known variant? Pull
+> the UniProt and ClinVar evidence and tell me how confident the
+> AlphaFold model is at that residue.
+→ uniprot_features_at_position("P04637", 175)
+→ uniprot_lookup_variant("P04637", "R175H")
+→ uniprot_resolve_clinvar("P04637", change="R175H")
+→ uniprot_get_alphafold_confidence("P04637")
 ```
 
-**2. Variant landscape, evidence-quality-aware.**
+**2. Drug-target dossier in one call.**
 
 ```
-> List p53 variants and tell me how many annotations are wet-lab confirmed vs inferred.
-→ uniprot_get_variants("P04637")
-→ uniprot_get_evidence_summary("P04637")
+> Give me a complete drug-target characterisation of human BRCA1.
+→ uniprot_target_dossier("P38398")
+   # nine sections, two upstream calls (entry + FASTA), one tool call.
 ```
 
-**3. Reference proteome characterisation.**
+**3. Sequence chemistry for buffer choice / expression-system selection.**
 
 ```
-> Summarise the human reference proteome — protein count, BUSCO completeness, components.
-→ uniprot_get_proteome("UP000005640")
+> What's the molecular weight, pI, and hydrophobicity of human insulin?
+→ uniprot_compute_properties("P01308")
+   # MW 11,981 Da, pI 4.93, ε₂₈₀ 24,980 M⁻¹·cm⁻¹ — pure Python on the FASTA.
 ```
 
 **4. Provenance round-trip — proving an answer is reproducible.**
@@ -293,6 +351,16 @@ uniprot-mcp --self-test
   )
 ```
 
+**5. Air-gapped clinical workflow with sealed cache.**
+
+```bash
+# Day 1, online: cache populates as queries run.
+export UNIPROT_MCP_CACHE_DIR=~/sealed-cache
+# … every uniprot-mcp tool call writes to ~/sealed-cache/<sha>.json
+# Day N, offline: replay any prior answer.
+> uniprot_replay_from_cache("https://rest.uniprot.org/uniprotkb/P04637")
+```
+
 ---
 
 ## Testing
@@ -303,12 +371,13 @@ uniprot-mcp --self-test
 | Property | `tests/property/` | Hypothesis-driven invariants on regexes + query construction. |
 | Contract | `tests/contract/` | Manifest / pyproject / docs / incident-policy / benchmark drift prevention. |
 | Client | `tests/client/` | Retry / back-off / id-mapping polling against `respx`-mocked HTTP. |
-| Integration | `tests/integration/` | Live UniProt; opt-in via `--integration`. |
+| Integration | `tests/integration/` | Live UniProt + AlphaFold; opt-in via `--integration`. |
 | Benchmark | `tests/benchmark/` | 30 SHA-256-committed prompts + reproducible verifier. |
 
-**287 offline + 4 live integration tests, all green.** Mypy (strict),
-ruff (check + format), bandit, pip-audit (`--strict`) all clean.
-Mutation testing (mutmut) gate ≥ 95 % kill, populated post-billing-reset.
+**357 offline + 4 live integration tests, all green.** Mypy (strict),
+ruff (check + format), bandit (0 issues at any severity), pip-audit
+(`--strict`, no known vulnerabilities) all clean. Mutation testing
+(`mutmut`) gate ≥ 95 % kill, populated post-billing-reset.
 
 ```bash
 # Fast, offline (CI on every push):
@@ -327,7 +396,8 @@ bandit -r src/uniprot_mcp && pip-audit --strict
 ## Architecture & threat model
 
 - [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — twelve STRIDE-shaped
-  threats, each receipt-anchored to a code path or commit SHA.
+  threats, each receipt-anchored to a code path or commit SHA, plus
+  the cross-origin allowlist policy (§T3b).
 - [`docs/INCIDENT_POLICY.md`](docs/INCIDENT_POLICY.md) +
   [`docs/POSTMORTEM_TEMPLATE.md`](docs/POSTMORTEM_TEMPLATE.md) +
   [`docs/INCIDENT_LOG.md`](docs/INCIDENT_LOG.md) — every nightly
@@ -338,6 +408,9 @@ bandit -r src/uniprot_mcp && pip-audit --strict
   → flip operational plan with rollback policy.
 - [`docs/PENDING_V1.md`](docs/PENDING_V1.md) — the binary punch list
   to v1.0.1.
+- [`mkdocs.yml`](mkdocs.yml) — Material-themed docs site, deployable to
+  `gh-pages` via [`.github/workflows/docs.yml`](.github/workflows/docs.yml).
+  Build locally with `pip install -e ".[docs]" && mkdocs serve`.
 
 ---
 
