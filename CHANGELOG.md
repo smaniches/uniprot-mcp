@@ -15,6 +15,27 @@ analysis. Tool surface 38 -> 41. The new tools project the same
 filters with structured grouping and an honest empty-set advisory, not
 new endpoints.
 
+### Known issues
+
+- **Coverage regression vs v1.0.0.** Measured branch+line coverage at
+  v1.0.0 release was 100%. The v1.0.1 -> v1.1.0 work added
+  ~2,000 lines of formatter + server code without per-commit
+  coverage gating, dropping measured coverage to 91.85%. The CI gate
+  is temporarily aligned at 91 to match the floor. Uplift back to 99
+  is planned for v1.2.0; PRs that further reduce coverage are
+  rejected by review until the uplift lands.
+- **Deferred SSRF hardening on `id_mapping_results` redirectURL.**
+  Threat-model entry T3 commits to an explicit allowlist
+  (`url.startswith("https://rest.uniprot.org/")` or relative-path
+  only) before following the upstream-supplied redirect. Currently
+  relies on httpx's same-origin redirect policy. Risk is low
+  (requires compromised UniProt response) but acknowledged.
+- **CVE-2026-3219 in `pip` itself** is acknowledged in CI via
+  `--ignore-vuln`. `pip` is a bootstrap toolchain component on the
+  GitHub-hosted runner, not a runtime dependency of
+  `uniprot-mcp-server` — the CVE is not exposed by `pip install
+  uniprot-mcp-server`. Remove the ignore once pip ships a fix.
+
 ### Added
 
 - **`uniprot_get_active_sites`** — returns the catalytic and
