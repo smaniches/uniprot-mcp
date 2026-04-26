@@ -3,12 +3,13 @@
 ## Install
 
 ```bash
-# Once published to PyPI:
-pip install uniprot-mcp
+# From PyPI (distribution name is uniprot-mcp-server,
+# the installed console script is uniprot-mcp):
+pip install uniprot-mcp-server
 # or in an isolated environment:
-uvx uniprot-mcp
+uvx --from uniprot-mcp-server uniprot-mcp
 
-# From source (today):
+# From source:
 git clone https://github.com/smaniches/uniprot-mcp.git
 cd uniprot-mcp
 pip install -e .

@@ -145,8 +145,8 @@ Within 24 h of the flip, verify:
 
 | Check | How |
 |---|---|
-| PyPI page renders correctly | https://pypi.org/project/uniprot-mcp/1.0.1/ |
-| `pip install uniprot-mcp` from a clean venv works | `python -m venv /tmp/v && /tmp/v/bin/pip install uniprot-mcp && /tmp/v/bin/uniprot-mcp --self-test` |
+| PyPI page renders correctly | https://pypi.org/project/uniprot-mcp-server/1.0.1/ |
+| `pip install uniprot-mcp-server` from a clean venv works | `python -m venv /tmp/v && /tmp/v/bin/pip install uniprot-mcp-server && /tmp/v/bin/uniprot-mcp --self-test` |
 | Sigstore signature verifies | `python -m sigstore verify identity --cert-identity 'https://github.com/smaniches/uniprot-mcp/.github/workflows/release.yml@refs/tags/v1.0.1' dist/*.whl` |
 | SLSA attestation verifies | `gh attestation verify dist/*.whl --repo smaniches/uniprot-mcp` |
 | SBOM attestation verifies | `gh attestation verify dist/*.whl --repo smaniches/uniprot-mcp --predicate-type https://cyclonedx.org/bom` |

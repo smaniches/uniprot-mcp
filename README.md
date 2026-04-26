@@ -237,9 +237,9 @@ per-prompt source attribution and the formal independence statement
 ## Install
 
 ```bash
-pip install uniprot-mcp        # once published
+pip install uniprot-mcp-server   # PyPI distribution
 # or, for a pinned, isolated install:
-uvx uniprot-mcp
+uvx --from uniprot-mcp-server uniprot-mcp
 ```
 
 From source:

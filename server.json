@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "io.github.smaniches/uniprot-mcp",
-  "description": "Reference-quality Model Context Protocol server for the UniProt protein knowledgebase. Ten tools cover entry retrieval, search, sequences, features, variants, GO terms, cross-references, ID mapping, batch retrieval, and taxonomy. Every response carries a verifiable Provenance record (UniProt release number, retrieval timestamp, resolved URL).",
+  "description": "Reference-quality Model Context Protocol server for the UniProt protein knowledgebase. 38 tools across 8 families: search/lookup, structural (PDB, AlphaFold pLDDT), variants & disease (ClinVar bridge, position lookup, OMIM), position-aware features (active sites, signal peptides, modified residues), composition dossier (sequence chemistry, drug-target context), orthology, local cache & replay, and per-query provenance verification (release-aware SHA-256 of canonical bytes). Every response carries a verifiable provenance record (UniProt release number, retrieval timestamp, resolved URL, SHA-256 digest).",
   "status": "active",
   "repository": {
     "url": "https://github.com/smaniches/uniprot-mcp",
@@ -15,7 +15,7 @@
   "packages": [
     {
       "registry_name": "pypi",
-      "name": "uniprot-mcp",
+      "name": "uniprot-mcp-server",
       "version": "1.0.1",
       "package_arguments": [],
       "runtime_arguments": [],

@@ -2,12 +2,23 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "uniprot-mcp: A Model Context Protocol server for the UniProt protein knowledgebase"
 abstract: >-
-  uniprot-mcp is a Model Context Protocol (MCP) server exposing ten
-  tools that query the UniProt REST API from LLM-driven agents such as
-  Claude. It wraps entry retrieval, sequence download, feature and
-  variant inspection, GO annotation, cross-reference lookup, ID mapping,
-  batch retrieval, and taxonomy search, with strict accession validation,
-  retry and back-off, and snapshot-tested formatters.
+  uniprot-mcp is a Model Context Protocol (MCP) server that exposes the
+  UniProt protein knowledgebase to LLM-driven agents such as Claude. It
+  ships 38 read-only tools across eight families: search and lookup;
+  structural cross-references (PDB, AlphaFold per-residue pLDDT bands);
+  variants and disease (ClinVar bridge, position-aware variant lookup,
+  OMIM); position-aware features (active sites, signal peptides, modified
+  residues, natural variants); composition dossier (sequence chemistry,
+  drug-target context, disease associations); orthology; a local
+  provenance cache with replay; and per-query provenance verification.
+  Every response carries a verifiable provenance record - the UniProt
+  release number, release date, retrieval timestamp, resolved URL, and
+  a release-aware SHA-256 digest of the canonical response bytes. Strict
+  accession and identifier validation, retry and back-off, snapshot-tested
+  formatters, agent-safe error envelopes, and a cross-origin allowlist
+  policy round out the operational hardening. Distributed on PyPI as
+  "uniprot-mcp-server"; the installed console script and MCP server
+  identity are both "uniprot-mcp".
 type: software
 authors:
   - family-names: "Maniches"
@@ -15,8 +26,8 @@ authors:
     email: "santiago.maniches@gmail.com"
     orcid: "https://orcid.org/0009-0005-6480-1987"
     affiliation: "TOPOLOGICA LLC"
-version: 0.1.0
-date-released: "2026-04-18"
+version: 1.0.1
+date-released: "2026-04-25"
 license: Apache-2.0
 repository-code: "https://github.com/smaniches/uniprot-mcp"
 url: "https://github.com/smaniches/uniprot-mcp"
@@ -26,6 +37,10 @@ keywords:
   - uniprot
   - bioinformatics
   - proteins
+  - drug-discovery
+  - clinical-genomics
+  - reproducibility
+  - provenance
   - llm-tools
   - anthropic-claude
 references:

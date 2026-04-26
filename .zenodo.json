@@ -1,0 +1,57 @@
+{
+  "title": "uniprot-mcp: A Model Context Protocol server for the UniProt protein knowledgebase",
+  "description": "<p>uniprot-mcp is a Model Context Protocol (MCP) server that exposes the UniProt protein knowledgebase to LLM-driven agents such as Claude. It ships 38 read-only tools across eight families: search and lookup; structural cross-references (PDB, AlphaFold per-residue pLDDT bands); variants and disease (ClinVar bridge, position-aware variant lookup, OMIM); position-aware features (active sites, signal peptides, modified residues, natural variants); composition dossier (sequence chemistry, drug-target context, disease associations); orthology; a local provenance cache with replay; and per-query provenance verification.</p><p>Every response carries a verifiable provenance record - the UniProt release number, release date, retrieval timestamp, resolved URL, and a release-aware SHA-256 digest of the canonical response bytes - so any answer can be re-verified against a current UniProt response or replayed offline from cache.</p><p>The PyPI distribution is published as <code>uniprot-mcp-server</code>; the installed console script and MCP server identity are both <code>uniprot-mcp</code>. The package is Apache-2.0 licensed and ships with a pre-registered SHA-256-committed benchmark, SLSA build provenance, Sigstore signing, and a CycloneDX SBOM for supply-chain auditability.</p>",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "Apache-2.0",
+  "creators": [
+    {
+      "name": "Maniches, Santiago",
+      "affiliation": "TOPOLOGICA LLC",
+      "orcid": "0009-0005-6480-1987"
+    }
+  ],
+  "keywords": [
+    "model-context-protocol",
+    "mcp",
+    "uniprot",
+    "bioinformatics",
+    "proteins",
+    "swiss-prot",
+    "drug-discovery",
+    "clinical-genomics",
+    "alphafold",
+    "clinvar",
+    "reproducibility",
+    "provenance",
+    "llm-tools",
+    "anthropic-claude"
+  ],
+  "communities": [
+    {"identifier": "fairsoftware"}
+  ],
+  "related_identifiers": [
+    {
+      "scheme": "url",
+      "identifier": "https://github.com/smaniches/uniprot-mcp",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    },
+    {
+      "scheme": "url",
+      "identifier": "https://pypi.org/project/uniprot-mcp-server/",
+      "relation": "isIdenticalTo",
+      "resource_type": "software"
+    },
+    {
+      "scheme": "doi",
+      "identifier": "10.1093/nar/gkae1010",
+      "relation": "cites",
+      "resource_type": "publication-article"
+    }
+  ],
+  "references": [
+    "The UniProt Consortium. UniProt: the Universal Protein Knowledgebase in 2025. Nucleic Acids Research (2025). doi:10.1093/nar/gkae1010"
+  ],
+  "notes": "Provenance and reproducibility primitives - release-pinning, canonical SHA-256 hashing, per-query verification, local replay cache - make every tool call independently auditable years after capture. See docs/provenance-guide.md in the repository for details."
+}

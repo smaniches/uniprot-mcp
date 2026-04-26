@@ -58,7 +58,7 @@ still returns the same bytes.
 See the [quickstart guide](quickstart.md). One-liner:
 
 ```bash
-pip install uniprot-mcp        # once published; meanwhile from-source pip install -e .
+pip install uniprot-mcp-server   # PyPI distribution; console script is `uniprot-mcp`
 uniprot-mcp --self-test
 ```
 

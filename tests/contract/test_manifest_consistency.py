@@ -89,3 +89,43 @@ def test_pyproject_version_matches_well_known() -> None:
         f"pyproject.toml version ({pyproject_version}) and .well-known/mcp.json "
         f"version ({well_known['version']}) disagree."
     )
+
+
+def test_runtime_version_matches_well_known() -> None:
+    """``uniprot_mcp.__version__`` must match the manifest. The package's
+    ``__version__`` is sourced from importlib.metadata so the only way it
+    can drift is if the installed distribution disagrees with pyproject —
+    which is exactly the failure mode this test catches."""
+    import uniprot_mcp
+
+    well_known = json.loads((REPO_ROOT / ".well-known" / "mcp.json").read_text(encoding="utf-8"))
+    runtime = uniprot_mcp.__version__
+    assert runtime == well_known["version"], (
+        f"uniprot_mcp.__version__ ({runtime}) and .well-known/mcp.json "
+        f"version ({well_known['version']}) disagree. The installed wheel's "
+        f"metadata is the source of truth — rebuild after a version bump."
+    )
+
+
+def test_server_json_pypi_distribution_name() -> None:
+    """``server.json`` declares the PyPI distribution name in
+    ``packages[0].name``. It must match ``pyproject.toml.project.name`` —
+    otherwise the MCP Registry tells clients to install a wrong package."""
+    import tomllib
+
+    pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    pyproject_name = pyproject["project"]["name"]
+    server_json_path = REPO_ROOT / "server.json"
+    if not server_json_path.exists():
+        pytest.skip("server.json absent")
+    server_json = json.loads(server_json_path.read_text(encoding="utf-8"))
+    pypi_pkg = next(
+        (p for p in server_json.get("packages", []) if p.get("registry_name") == "pypi"),
+        None,
+    )
+    assert pypi_pkg is not None, "server.json declares no pypi package"
+    assert pypi_pkg["name"] == pyproject_name, (
+        f"server.json packages[pypi].name ({pypi_pkg['name']!r}) and "
+        f"pyproject.toml project.name ({pyproject_name!r}) disagree. "
+        f"Clients following the MCP Registry would install the wrong package."
+    )

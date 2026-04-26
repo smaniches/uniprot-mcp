@@ -9,12 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 First public release. Closes the AUDIT.md follow-up list, raises every
 formatter to provenance-aware output, expands the tool surface from
-10 to 28, ships a pre-registered SHA-256-committed benchmark with a
-third-party-reproducible verifier, ships `uniprot_provenance_verify`
-for per-query auditability, and ships `--pin-release` for strict
-reproducibility. Total commits between v0.1.0 (private baseline) and
-v1.0.1: 16 in the public-flip prep session, plus the audit-remediation
-history.
+10 to 38 across 8 families (search/lookup, structural, variants and
+disease, position-aware features, composition dossier, orthology, local
+cache and replay, and per-query provenance verification), ships a
+pre-registered SHA-256-committed benchmark with a third-party-reproducible
+verifier, ships `uniprot_provenance_verify` for per-query auditability,
+and ships `--pin-release` for strict reproducibility.
+
+**Distribution.** Published on PyPI as `uniprot-mcp-server`
+(`pip install uniprot-mcp-server`); the installed console script and the
+MCP server identity are both `uniprot-mcp`. The Python import path is
+`uniprot_mcp`. `uniprot_mcp.__version__` is sourced from the installed
+wheel's metadata via `importlib.metadata`, so it cannot drift from
+`pyproject.toml`; a contract test asserts it matches the manifest.
 
 ### Added
 - **Provenance verification (`uniprot_provenance_verify` tool).**
