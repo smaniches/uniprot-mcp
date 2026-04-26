@@ -1,0 +1,78 @@
+site_name: uniprot-mcp
+site_description: Reference-quality Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification.
+site_author: Santiago Maniches
+site_url: https://smaniches.github.io/uniprot-mcp/
+repo_url: https://github.com/smaniches/uniprot-mcp
+repo_name: smaniches/uniprot-mcp
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - tables
+  - toc:
+      permalink: true
+  - footnotes
+  - attr_list
+  - md_in_html
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Tools: tools.md
+  - Recipes:
+      - Clinical variant interpretation: recipes/clinical-variant-interpretation.md
+      - Drug-target dossier: recipes/drug-target-dossier.md
+      - Structural confidence (AlphaFold pLDDT): recipes/structural-confidence.md
+  - Provenance & verification: provenance-guide.md
+  - Operations:
+      - Threat model: THREAT_MODEL.md
+      - Incident policy: INCIDENT_POLICY.md
+      - Incident log: INCIDENT_LOG.md
+      - Merge plan: MERGE_PLAN.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/smaniches/uniprot-mcp
+    - icon: fontawesome/brands/orcid
+      link: https://orcid.org/0009-0005-6480-1987
+
+extra_css:
+  - stylesheets/custom.css
+
+# Files in docs/ that should not appear in the published site even if
+# referenced from other markdown — e.g. operational PENDING_V1 lives
+# in docs/ for git-history reasons but is not user-facing.
+exclude_docs: |
+  PENDING_V1.md
+  POSTMORTEM_TEMPLATE.md

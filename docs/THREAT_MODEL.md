@@ -170,7 +170,7 @@ We **do not** defend against full host compromise (root on the user's machine). 
 
 ## Reporting a finding
 
-See [`SECURITY.md`](../SECURITY.md). Encrypted contact (PGP / Signal) on request.
+See [`SECURITY.md`](https://github.com/smaniches/uniprot-mcp/blob/main/SECURITY.md). Encrypted contact (PGP / Signal) on request.
 
 ## Audit trail
 

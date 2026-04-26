@@ -57,6 +57,10 @@ dev = [
     "pip-audit>=2.7",
     "pre-commit>=3.7",
 ]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+]
 
 [project.urls]
 Homepage = "https://github.com/smaniches/uniprot-mcp"
