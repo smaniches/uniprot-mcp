@@ -88,31 +88,66 @@ parallel job in `.github/workflows/mutation.yml`. After every
 scheduled or on-demand run, copy the table from the
 `mutmut-summary` workflow artefact into the table below.
 
-### v1.1.0 baseline (commit `652a600`+, run kicked off 2026-04-26 19:23 UTC)
+### v1.1.0 baseline (run 24965548283, kicked off 2026-04-26 19:50 UTC)
 
-The matrix run is in flight as of this writing. Results table to be
-populated when complete:
+Per-module measured kill rates from the matrix workflow. Some
+modules in the first run hit the 90-minute per-job timeout because
+mutmut 2.x's default mutation generation produces many candidates
+on large modules like `formatters.py` (1,150 statements) and
+`server.py` (908 statements). The two small completed modules give
+honest baseline data:
 
-| module | killed | survived | timeout | suspicious | skipped | kill rate |
-|---|---|---|---|---|---|---|
-| `__init__` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| `proteinchem` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| `cache` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| `client` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| `formatters` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| `server` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| **TOTAL** | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| module | killed | survived | timeout | suspicious | skipped | total | kill rate |
+|---|---|---|---|---|---|---|---|
+| `__init__` | 0 | 0 | 0 | 0 | 0 | 0 | n/a — file too small to generate mutants (mostly imports) |
+| `cache` | 0 | 7 | 0 | 0 | 0 | 7 | **0.00 %** — tests cover the API but not the operator-level mutations mutmut introduces |
+| `proteinchem` | _matrix run incomplete; see v1.1.x action item below_ |
+| `client` | _matrix run incomplete; see v1.1.x action item below_ |
+| `formatters` | _matrix run incomplete; see v1.1.x action item below_ |
+| `server` | _matrix run incomplete; see v1.1.x action item below_ |
 
-**Run URL:** https://github.com/smaniches/uniprot-mcp/actions/workflows/mutation.yml
+**What the cache 0 % tells us, honestly:** the 14 unit tests in
+`tests/unit/test_cache.py` exercise the cache's API surface (write
++ read + atomic-rename + cache-dir-from-env) but they don't catch
+the operator-level mutations mutmut introduces (e.g. flipping
+`>=` to `>`, replacing `0o600` file-mode constants with other
+modes, changing `.replace()` argument order). This is honest data
+that drives the v1.1.x uplift work below; it is **not** a defect
+in cache.py itself. The cache works; the *test suite for cache*
+doesn't catch this class of mutation. The remediation is more
+tests, not changing the gate.
 
-After the matrix completes, the per-module YAML summaries are
-downloadable as workflow artefacts named `mutmut-<module>`. The
-aggregation job's `mutmut-summary` artefact contains the
-already-formatted Markdown table for direct paste into this file.
+**Action item for v1.1.x — cache module uplift:**
+
+1. Run `mutmut show 1`, `mutmut show 8`, `mutmut show 15` (etc.)
+   locally to see each surviving mutant's diff.
+2. For each surviving mutant, write a test that fails when the
+   mutated cache.py is in place.
+3. Re-run the workflow on a fix branch; verify kill rate ≥ 0.95
+   on cache before merging.
+
+**Action item for v1.1.x — large-module measurement strategy:**
+
+The 90-minute job timeout is too tight for `formatters.py` and
+`server.py` under the current `pytest tests/unit tests/property
+tests/client tests/contract` runner per mutant. Two options for
+v1.1.x:
+
+- **Per-test-file scoping**: change the runner to only the test
+  files that import the mutated module (e.g. `pytest
+  tests/unit/test_biomedical_features.py` for the
+  formatters.py biomedical-features additions). Drops per-mutant
+  cost by 10–20×.
+- **Bisect mutation scope**: split each large module into
+  per-section matrix entries (e.g. `formatters.py` → "lines
+  1–600", "lines 601–1200", "lines 1201–1900") so each fits in
+  the 90-min budget.
 
 ### Historical runs
 
-(empty — this is the first measurement)
+| Run | Date | Modules completed | Notes |
+|---|---|---|---|
+| [24965548283](https://github.com/smaniches/uniprot-mcp/actions/runs/24965548283) | 2026-04-26 | `__init__`, `cache` (2/6) | First matrix; 4 modules timed out at 90 min |
 
 ## Why this matters for adoption
 
