@@ -1,4 +1,4 @@
-"""TOPOLOGICA UniProt MCP Server. 37 tools. FastMCP. stdio transport.
+"""TOPOLOGICA UniProt MCP Server. 38 tools. FastMCP. stdio transport.
 
 Hardened against the common class of MCP-server defects:
 
@@ -40,6 +40,11 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
+from uniprot_mcp.cache import (
+    CACHE_DIR_ENV,
+    ProvenanceCache,
+    cache_dir_from_env,
+)
 from uniprot_mcp.client import (
     ACCESSION_RE,
     CITATION_ID_RE,
@@ -894,6 +899,65 @@ def _assemble_target_dossier(entry: dict[str, Any], chemistry: dict[str, Any]) -
 
 
 @mcp.tool(
+    name="uniprot_replay_from_cache",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
+)
+async def uniprot_replay_from_cache(url: str, response_format: str = "markdown") -> str:
+    """Read a previously-cached UniProt response without hitting the
+    upstream. The local provenance cache is opt-in via the
+    ``UNIPROT_MCP_CACHE_DIR`` environment variable; when unset, this
+    tool always reports cache-disabled.
+
+    Useful for: reproducing a year-old answer from a sealed cache
+    snapshot; working offline / behind air-gaps; reducing UniProt's
+    load when running benchmarks twice.
+
+    Returns the cached body text wrapped in the recorded Provenance.
+    The annotation ``openWorldHint=False`` reflects that this tool
+    consults the local file system only — no upstream call."""
+    try:
+        _check_len("url", url, MAX_PROVENANCE_URL_LEN)
+        _check_format(response_format)
+        cache_dir = cache_dir_from_env()
+        if cache_dir is None:
+            return (
+                "## Cache replay\n\n"
+                f"_Provenance cache is disabled. Set `{CACHE_DIR_ENV}=/path/to/cache` "
+                "to opt in, then re-run any UniProt tool to populate the cache._"
+            )
+        cache = ProvenanceCache(cache_dir)
+        entry = cache.read(url)
+        if entry is None:
+            return f"## Cache replay\n\n_No cache entry for `{url}` under `{cache_dir}`._"
+        if response_format == "json":
+            return json.dumps(entry, indent=2, ensure_ascii=False)
+        body = str(entry.get("body_text", "") or "")
+        prov = entry.get("provenance") or {}
+        body_truncated = body[:4000]
+        truncation_note = (
+            "" if len(body) <= 4000 else f"\n_(truncated; full body is {len(body)} bytes)_"
+        )
+        lines = [
+            f"## Cache replay  —  `{url}`",
+            "",
+            "**Body (verbatim from cache):**",
+            "",
+            "```",
+            body_truncated,
+            "```" + truncation_note,
+            "",
+            "**Recorded provenance:**",
+            "",
+            "```json",
+            json.dumps(prov, indent=2, ensure_ascii=False),
+            "```",
+        ]
+        return "\n".join(lines)
+    except Exception as exc:
+        return _safe_error("uniprot_replay_from_cache", exc)
+
+
+@mcp.tool(
     name="uniprot_resolve_clinvar",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
@@ -1697,6 +1761,7 @@ def _self_test() -> int:
         "uniprot_resolve_orthology",
         "uniprot_resolve_clinvar",
         "uniprot_target_dossier",
+        "uniprot_replay_from_cache",
         "uniprot_provenance_verify",
     }
 

@@ -531,6 +531,7 @@ def test_self_test_extra_tool_warning(monkeypatch, capsys) -> None:
             "uniprot_resolve_orthology": None,
             "uniprot_resolve_clinvar": None,
             "uniprot_target_dossier": None,
+            "uniprot_replay_from_cache": None,
             "uniprot_provenance_verify": None,
             "unexpected_extra_tool": None,
         }

@@ -106,6 +106,7 @@ def test_every_expected_tool_is_registered() -> None:
         "uniprot_resolve_orthology",
         "uniprot_resolve_clinvar",
         "uniprot_target_dossier",
+        "uniprot_replay_from_cache",
         "uniprot_provenance_verify",
     }
     tools = getattr(server.mcp, "_tool_manager", None)

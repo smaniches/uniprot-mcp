@@ -69,6 +69,7 @@
     "uniprot_resolve_orthology",
     "uniprot_resolve_clinvar",
     "uniprot_target_dossier",
+    "uniprot_replay_from_cache",
     "uniprot_provenance_verify"
   ],
   "toolDefaults": {
