@@ -1,5 +1,5 @@
 site_name: uniprot-mcp
-site_description: Reference-quality Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification.
+site_description: Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, sealed pre-registered benchmark, and SLSA + Sigstore + SBOM supply-chain hygiene.
 site_author: Santiago Maniches
 site_url: https://smaniches.github.io/uniprot-mcp/
 repo_url: https://github.com/smaniches/uniprot-mcp
@@ -58,6 +58,7 @@ nav:
       - Threat model: THREAT_MODEL.md
       - Security audit: SECURITY-AUDIT.md
       - Mutation testing: MUTATION_SCORES.md
+      - Competitive landscape: COMPETITIVE_LANDSCAPE.md
       - Incident policy: INCIDENT_POLICY.md
       - Incident log: INCIDENT_LOG.md
       - Merge plan: MERGE_PLAN.md

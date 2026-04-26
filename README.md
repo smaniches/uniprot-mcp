@@ -8,13 +8,22 @@
 [![Provenance: SHA-256 + verify](https://img.shields.io/badge/provenance-SHA--256_+_verify-blue)](#provenance--verification)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
 
-A reference-quality **Model Context Protocol** server for the
-[UniProt](https://www.uniprot.org) protein knowledgebase. **41 tools**
-across 8 families. Every successful response carries a verifiable
+A **Model Context Protocol** server for the
+[UniProt](https://www.uniprot.org) protein knowledgebase with
+**per-query provenance verification**. **41 tools** across 8
+families. Apache-2.0. Every successful response carries a verifiable
 `Provenance` record — UniProt release, retrieval timestamp, resolved
 URL, and a SHA-256 of the canonical response body — that the agent
 (or a third party, a year later) can re-check with a single tool
 call: `uniprot_provenance_verify`.
+
+The wedge: **per-response SHA-256 + verify primitive + release pinning
++ offline replay** is, to the best of my survey of public MCPs as of
+2026-04-26, absent from every other bio-MCP server I could find
+(BioMCP, Augmented-Nature/UniProt-MCP, biothings-mcp, gget-mcp, and
+others). If you are a regulated-bio-pharma user who needs to prove,
+years later, that a UniProt-derived claim still holds, this is the
+mechanism. Comparison and citations: [docs/COMPETITIVE_LANDSCAPE.md](docs/COMPETITIVE_LANDSCAPE.md).
 
 > Author: **Santiago Maniches** · ORCID [0009-0005-6480-1987](https://orcid.org/0009-0005-6480-1987) · TOPOLOGICA LLC
 
@@ -37,13 +46,14 @@ call: `uniprot_provenance_verify`.
 | Cross-origin allowlist | enumerated, threat-modelled, privacy-listed | n/a | usually unaudited |
 | Supply chain | SLSA build provenance + Sigstore + CycloneDX SBOM (post-flip) | n/a | rare |
 | Test layers | unit + property + contract + client + integration + benchmark | n/a | usually unit only |
-| Mutation testing target | ≥ 95 % kill (gated, not aspirational) | n/a | rare |
+| Mutation testing | weekly + on-demand workflow; baseline measurement on v1.1.0; ≥ 95 % gate planned post-baseline | n/a | rare |
 
-The **provenance + verify** chain is the single feature nothing else
-in the bio-MCP space currently has. A regulated user can take any
+The **provenance + verify** chain is, in my 2026-04-26 survey, absent
+from every other bio-MCP I could find. A regulated user can take any
 prior `uniprot-mcp` answer and prove — without contacting the author
 — that UniProt still returns the same bytes, or detect exactly how the
-upstream has drifted.
+upstream has drifted. If you find a counter-example I missed, please
+file an issue and I will update the comparison.
 
 ---
 
