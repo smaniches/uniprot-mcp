@@ -29,6 +29,22 @@ mechanism. Comparison and citations: [docs/COMPETITIVE_LANDSCAPE.md](docs/COMPET
 
 ---
 
+## For researchers — where to start
+
+If you are a biomedical researcher visiting this repo, the highest-signal places to look are:
+
+| Resource | What it gives you |
+|---|---|
+| **[`examples/atlas/`](examples/atlas/)** | 25 disease & target worked examples — TP53, BRCA1, CFTR, HTT, EGFR, BRAF, KRAS, TEM-1 β-lactamase, more — each linking the canonical UniProt accession to MONDO / OMIM / PharmGKB / ARO IDs and the relevant tool sequence. JSON-LD manifest at `examples/atlas/atlas.json` for machine consumption. Methodology (how compiled, what's verified, what's community-reviewable) at `examples/atlas/METHODOLOGY.md`. |
+| **[`examples/01..04.jsonl`](examples/)** | Full Claude-Desktop transcripts of clinical-variant interpretation (TP53 R175H), drug-target dossier (BRCA1), provenance verification a year later, pathogen drug-discovery (TEM-1). |
+| **[`tests/benchmark/`](tests/benchmark/)** | Pre-registered 30-prompt benchmark with SHA-256 commitments on `main`. The 2026-04-26 v1.1.0 run verified 30/30 against live UniProt — transcript at `tests/benchmark/run-2026-04-26-v1.1.0/`. |
+| **[`scripts/replicate.sh`](scripts/replicate.sh)** | One-command verification that the published PyPI wheel was built from this exact repo (cross-checks SHA-256 across PyPI / GitHub Release / SLSA attestation; runs `--self-test`; re-runs the benchmark live). POSIX + `scripts/replicate.ps1` for Windows. |
+| **[`docs/COMPETITIVE_LANDSCAPE.md`](docs/COMPETITIVE_LANDSCAPE.md)** | Honest 14-server survey of the bio-MCP space (April 2026) and the specific differentiation this server claims. |
+
+Issues / corrections welcome at https://github.com/smaniches/uniprot-mcp/issues. The atlas in particular is community-reviewable — see METHODOLOGY.md for what is machine-verified vs what needs human review.
+
+---
+
 ## What makes this different
 
 | | uniprot-mcp | Vanilla LLM + WebFetch | A typical bio-MCP |
