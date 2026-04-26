@@ -16,26 +16,41 @@ weekly schedule; the gate is enforced in CI.
 
 ## Gate
 
-**>= 95% kill rate on every release.** The 5% buffer absorbs
-equivalent-mutant noise — mutations that produce semantically
+**Aspirational: ≥ 95% kill rate on every release.** The 5% buffer
+absorbs equivalent-mutant noise — mutations that produce semantically
 identical code (e.g. `x and y` -> `y and x` on commutative operations,
 constants only used as a sentinel comparison).
 
-If the gate fails, the workflow fails and the PR cannot merge to main.
-The remediation is to **write a test**, not to lower the gate.
+**Current state (v1.1.0): measurement-first.** The gate threshold is
+temporarily 0.0 — we record the actual measured kill rate per module
+without failing the workflow on it, so we can establish an honest
+baseline. Once the baseline plus a targeted uplift PR have been
+recorded, the gate is raised to 0.95 and enforced.
+
+If the eventual gate fails, the workflow fails and the PR cannot
+merge to main. The remediation is to **write a test**, not to lower
+the gate.
 
 ## Tool
 
-[mutmut](https://github.com/boxed/mutmut) 3.x. Selected over `cosmic-ray`
-and `mutpy` for ergonomics and active maintenance.
+[mutmut](https://github.com/boxed/mutmut) **2.x** (pinned). Selected
+over `cosmic-ray` and `mutpy` for ergonomics and CI ecosystem.
+mutmut 3.x changed the CLI substantially (no `--paths-to-mutate`
+flag, removed `mutmut html`, config-only via `[tool.mutmut]`); we
+pin to 2.x until the 3.x ecosystem settles.
 
 ## Scope
 
-- `src/uniprot_mcp/` — every module.
+- `src/uniprot_mcp/` — every module, **measured per-module via the
+  Actions matrix workflow**. Per-module results land in the table
+  below.
 - Test suite for kill-detection: `pytest tests/unit tests/property
   tests/client tests/contract` (the **offline** suite — mutmut runs
   must not contact the live UniProt API; integration tests are
   excluded).
+- `--use-coverage`: each mutant only re-runs the tests that actually
+  exercise the mutated line. Massive wall-time reduction over the
+  default "run the full suite per mutant" mode.
 
 ## Excluded mutations
 
@@ -68,24 +83,36 @@ mutmut show <mutant_id> # diff of a specific surviving mutant
 
 ## Scores
 
-The first column is the kill rate, the second is the run date, the
-third is the commit hash, the fourth is the workflow-run URL.
+Per-module kill rates from the matrix workflow. Each row is one
+parallel job in `.github/workflows/mutation.yml`. After every
+scheduled or on-demand run, copy the table from the
+`mutmut-summary` workflow artefact into the table below.
 
-| Kill rate | Date | Commit | Run |
-|---|---|---|---|
-| _pending first CI run_ | — | — | — |
+### v1.1.0 baseline (commit `652a600`+, run kicked off 2026-04-26 19:23 UTC)
 
-The first run will fire on the first scheduled Monday after the public
-flip + Actions billing reset. Until then, the gate is **declared but
-not yet measured**, in line with the project's no-overclaim principle:
-the suite is engineered to satisfy it (100% line + branch coverage on
-`src/`, 408 offline tests, 31 live tests, property tests over every
-validator, contract tests pinning the manifest), but the actual mutmut
-number does not yet exist as a measured artefact.
+The matrix run is in flight as of this writing. Results table to be
+populated when complete:
 
-When the first run lands the row above will record the real number.
-If it is below 0.95, the surviving mutants will be enumerated in a
-follow-up table and a remediation PR will land within a week.
+| module | killed | survived | timeout | suspicious | skipped | kill rate |
+|---|---|---|---|---|---|---|
+| `__init__` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| `proteinchem` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| `cache` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| `client` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| `formatters` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| `server` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| **TOTAL** | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+
+**Run URL:** https://github.com/smaniches/uniprot-mcp/actions/workflows/mutation.yml
+
+After the matrix completes, the per-module YAML summaries are
+downloadable as workflow artefacts named `mutmut-<module>`. The
+aggregation job's `mutmut-summary` artefact contains the
+already-formatted Markdown table for direct paste into this file.
+
+### Historical runs
+
+(empty — this is the first measurement)
 
 ## Why this matters for adoption
 
