@@ -37,7 +37,11 @@ jobs:
       - name: Bandit (security lint)
         run: bandit -r src/uniprot_mcp
       - name: pip-audit (CVE scan)
-        run: pip-audit --strict
+        # `--skip-editable` excludes the editable install of this
+        # project itself; pip-audit cannot audit a working-tree
+        # install (no PyPI snapshot to compare against). The flag
+        # leaves every actual dependency wired through the audit.
+        run: pip-audit --strict --skip-editable
 
   test:
     name: Tests (${{ matrix.os }} · Python ${{ matrix.python }})
