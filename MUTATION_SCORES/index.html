@@ -895,10 +895,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v110-baseline-commit-652a600-run-kicked-off-2026-04-26-1923-utc" class="md-nav__link">
+  <a href="#v110-baseline-run-24965548283-kicked-off-2026-04-26-1950-utc" class="md-nav__link">
     <span class="md-ellipsis">
       
-        v1.1.0 baseline (commit 652a600+, run kicked off 2026-04-26 19:23 UTC)
+        v1.1.0 baseline (run 24965548283, kicked off 2026-04-26 19:50 UTC)
       
     </span>
   </a>
@@ -1165,10 +1165,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v110-baseline-commit-652a600-run-kicked-off-2026-04-26-1923-utc" class="md-nav__link">
+  <a href="#v110-baseline-run-24965548283-kicked-off-2026-04-26-1950-utc" class="md-nav__link">
     <span class="md-ellipsis">
       
-        v1.1.0 baseline (commit 652a600+, run kicked off 2026-04-26 19:23 UTC)
+        v1.1.0 baseline (run 24965548283, kicked off 2026-04-26 19:50 UTC)
       
     </span>
   </a>
@@ -1301,9 +1301,13 @@ either:</p>
 parallel job in <code>.github/workflows/mutation.yml</code>. After every
 scheduled or on-demand run, copy the table from the
 <code>mutmut-summary</code> workflow artefact into the table below.</p>
-<h3 id="v110-baseline-commit-652a600-run-kicked-off-2026-04-26-1923-utc">v1.1.0 baseline (commit <code>652a600</code>+, run kicked off 2026-04-26 19:23 UTC)<a class="headerlink" href="#v110-baseline-commit-652a600-run-kicked-off-2026-04-26-1923-utc" title="Permanent link">&para;</a></h3>
-<p>The matrix run is in flight as of this writing. Results table to be
-populated when complete:</p>
+<h3 id="v110-baseline-run-24965548283-kicked-off-2026-04-26-1950-utc">v1.1.0 baseline (run 24965548283, kicked off 2026-04-26 19:50 UTC)<a class="headerlink" href="#v110-baseline-run-24965548283-kicked-off-2026-04-26-1950-utc" title="Permanent link">&para;</a></h3>
+<p>Per-module measured kill rates from the matrix workflow. Some
+modules in the first run hit the 90-minute per-job timeout because
+mutmut 2.x's default mutation generation produces many candidates
+on large modules like <code>formatters.py</code> (1,150 statements) and
+<code>server.py</code> (908 statements). The two small completed modules give
+honest baseline data:</p>
 <table>
 <thead>
 <tr>
@@ -1313,82 +1317,127 @@ populated when complete:</p>
 <th>timeout</th>
 <th>suspicious</th>
 <th>skipped</th>
+<th>total</th>
 <th>kill rate</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>__init__</code></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-</tr>
-<tr>
-<td><code>proteinchem</code></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>n/a — file too small to generate mutants (mostly imports)</td>
 </tr>
 <tr>
 <td><code>cache</code></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
+<td>0</td>
+<td>7</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>7</td>
+<td><strong>0.00 %</strong> — tests cover the API but not the operator-level mutations mutmut introduces</td>
+</tr>
+<tr>
+<td><code>proteinchem</code></td>
+<td><em>matrix run incomplete; see v1.1.x action item below</em></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
 </tr>
 <tr>
 <td><code>client</code></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
+<td><em>matrix run incomplete; see v1.1.x action item below</em></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
 </tr>
 <tr>
 <td><code>formatters</code></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
+<td><em>matrix run incomplete; see v1.1.x action item below</em></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
 </tr>
 <tr>
 <td><code>server</code></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-</tr>
-<tr>
-<td><strong>TOTAL</strong></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
-<td><em>pending</em></td>
+<td><em>matrix run incomplete; see v1.1.x action item below</em></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
 </tr>
 </tbody>
 </table>
-<p><strong>Run URL:</strong> https://github.com/smaniches/uniprot-mcp/actions/workflows/mutation.yml</p>
-<p>After the matrix completes, the per-module YAML summaries are
-downloadable as workflow artefacts named <code>mutmut-&lt;module&gt;</code>. The
-aggregation job's <code>mutmut-summary</code> artefact contains the
-already-formatted Markdown table for direct paste into this file.</p>
+<p><strong>What the cache 0 % tells us, honestly:</strong> the 14 unit tests in
+<code>tests/unit/test_cache.py</code> exercise the cache's API surface (write
++ read + atomic-rename + cache-dir-from-env) but they don't catch
+the operator-level mutations mutmut introduces (e.g. flipping
+<code>&gt;=</code> to <code>&gt;</code>, replacing <code>0o600</code> file-mode constants with other
+modes, changing <code>.replace()</code> argument order). This is honest data
+that drives the v1.1.x uplift work below; it is <strong>not</strong> a defect
+in cache.py itself. The cache works; the <em>test suite for cache</em>
+doesn't catch this class of mutation. The remediation is more
+tests, not changing the gate.</p>
+<p><strong>Action item for v1.1.x — cache module uplift:</strong></p>
+<ol>
+<li>Run <code>mutmut show 1</code>, <code>mutmut show 8</code>, <code>mutmut show 15</code> (etc.)
+   locally to see each surviving mutant's diff.</li>
+<li>For each surviving mutant, write a test that fails when the
+   mutated cache.py is in place.</li>
+<li>Re-run the workflow on a fix branch; verify kill rate ≥ 0.95
+   on cache before merging.</li>
+</ol>
+<p><strong>Action item for v1.1.x — large-module measurement strategy:</strong></p>
+<p>The 90-minute job timeout is too tight for <code>formatters.py</code> and
+<code>server.py</code> under the current <code>pytest tests/unit tests/property
+tests/client tests/contract</code> runner per mutant. Two options for
+v1.1.x:</p>
+<ul>
+<li><strong>Per-test-file scoping</strong>: change the runner to only the test
+  files that import the mutated module (e.g. <code>pytest
+  tests/unit/test_biomedical_features.py</code> for the
+  formatters.py biomedical-features additions). Drops per-mutant
+  cost by 10–20×.</li>
+<li><strong>Bisect mutation scope</strong>: split each large module into
+  per-section matrix entries (e.g. <code>formatters.py</code> → "lines
+  1–600", "lines 601–1200", "lines 1201–1900") so each fits in
+  the 90-min budget.</li>
+</ul>
 <h3 id="historical-runs">Historical runs<a class="headerlink" href="#historical-runs" title="Permanent link">&para;</a></h3>
-<p>(empty — this is the first measurement)</p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Date</th>
+<th>Modules completed</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/smaniches/uniprot-mcp/actions/runs/24965548283">24965548283</a></td>
+<td>2026-04-26</td>
+<td><code>__init__</code>, <code>cache</code> (2/6)</td>
+<td>First matrix; 4 modules timed out at 90 min</td>
+</tr>
+</tbody>
+</table>
 <h2 id="why-this-matters-for-adoption">Why this matters for adoption<a class="headerlink" href="#why-this-matters-for-adoption" title="Permanent link">&para;</a></h2>
 <p>A regulated bio-pharma compliance officer evaluating this MCP for use
 in 2030 will look for measurable signals of test-suite quality. Line
