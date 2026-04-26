@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "generated_at_utc": "2026-04-26T21:40:42.637943Z",
+  "tool": {
+    "name": "uniprot-mcp/build_comprehensive_index.py",
+    "path": "examples/atlas/build_comprehensive_index.py",
+    "sha256": "dbd62896fca6cc842893763f16db1abb3d8d376ff0ede6a34f96c0a5da5f2429",
+    "git_commit_at_generation": "da33b1771299baafd35a4d77d360b665eed37e19",
+    "git_repo": "https://github.com/smaniches/uniprot-mcp"
+  },
+  "source": {
+    "name": "UniProt Knowledgebase REST API",
+    "url": "https://rest.uniprot.org",
+    "license": "CC BY 4.0",
+    "citation": "The UniProt Consortium. UniProt: the Universal Protein Knowledgebase in 2025. Nucleic Acids Research (2025). doi:10.1093/nar/gkae1010"
+  },
+  "files": [
+    {
+      "path": "examples/atlas/comprehensive_index.tsv",
+      "sha256": "078711347db7d5205219ceae325c92db357fc569365d9a9534851dda8a75ef75",
+      "rows_excl_header": 7250,
+      "bytes": 1215505
+    },
+    {
+      "path": "examples/atlas/comprehensive_index_pathogens.tsv",
+      "sha256": "b40b5c674d0091e8c011168ecc29c2da512897b2c1df617ba936634f7ff8e3e9",
+      "rows_excl_header": 4340,
+      "bytes": 542101
+    }
+  ]
+}
