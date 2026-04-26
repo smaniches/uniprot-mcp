@@ -79,7 +79,13 @@ async def test_get_sequence_happy_path() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.get("/uniprotkb/P04637").mock(return_value=httpx.Response(200, text=fasta))
         out = await uniprot_get_sequence("P04637")
-    assert out.startswith(">sp|P04637")
+    # The output carries a PIR-style `;`-prefix provenance header, then
+    # the FASTA record. Both must be present; the FASTA record line must
+    # be reachable after the header.
+    assert ";Source: UniProt" in out
+    assert ";Retrieved:" in out
+    assert ">sp|P04637|P53_HUMAN" in out
+    assert "MEEPQSD" in out
 
 
 async def test_get_features_with_filter() -> None:

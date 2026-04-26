@@ -79,3 +79,12 @@ _verify_fixed.py
 
 # Build artifacts from snapshots we don't want to commit half-baked
 tests/**/__snapshots__/.DS_Store
+
+# Benchmark expected answers — sealed via SHA-256 in `expected.hashes.jsonl`
+# on `main`. The plaintext is local-only until a benchmark run publishes it
+# alongside scoring output. See tests/benchmark/README.md for the protocol.
+tests/benchmark/expected.jsonl
+
+# mkdocs build output. Published via `.github/workflows/docs.yml` to
+# GitHub Pages; never tracked in source.
+site/

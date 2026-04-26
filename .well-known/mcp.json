@@ -1,8 +1,8 @@
 {
   "$schema": "https://modelcontextprotocol.io/schema/mcp.json",
   "name": "uniprot-mcp",
-  "version": "0.1.0",
-  "description": "Model Context Protocol server for the UniProt protein knowledgebase.",
+  "version": "1.1.0",
+  "description": "Reference-quality Model Context Protocol server for the UniProt protein knowledgebase. 41 tools across 8 families: search/lookup, structural (PDB cross-refs, AlphaFold pLDDT bands), variants & disease (ClinVar bridge, position-aware variant lookup, OMIM), biomedical features (position-aware feature intersection, active and binding sites, processing and maturation, post-translational modifications), composition dossier (sequence chemistry, drug-target context, disease associations), orthology, local provenance cache with replay, and per-query provenance verification (release-aware SHA-256 of canonical bytes). Every successful response carries a verifiable Provenance record (UniProt release number, release date, retrieval timestamp, resolved URL, SHA-256 digest) surfaced as a Markdown footer, JSON envelope, or PIR-style FASTA header. All tools are read-only and require no API key.",
   "homepage": "https://github.com/smaniches/uniprot-mcp",
   "license": "Apache-2.0",
   "author": {
@@ -11,7 +11,18 @@
     "orcid": "https://orcid.org/0009-0005-6480-1987",
     "organization": "TOPOLOGICA LLC"
   },
-  "keywords": ["uniprot", "bioinformatics", "proteins", "swiss-prot", "mcp"],
+  "keywords": [
+    "uniprot",
+    "bioinformatics",
+    "proteins",
+    "swiss-prot",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "llm-tools",
+    "provenance",
+    "reproducibility"
+  ],
   "transports": ["stdio"],
   "runtime": {
     "python": ">=3.11"
@@ -31,12 +42,53 @@
     "uniprot_get_cross_refs",
     "uniprot_id_mapping",
     "uniprot_batch_entries",
-    "uniprot_taxonomy_search"
+    "uniprot_taxonomy_search",
+    "uniprot_get_keyword",
+    "uniprot_search_keywords",
+    "uniprot_get_subcellular_location",
+    "uniprot_search_subcellular_locations",
+    "uniprot_get_uniref",
+    "uniprot_search_uniref",
+    "uniprot_get_uniparc",
+    "uniprot_search_uniparc",
+    "uniprot_get_proteome",
+    "uniprot_search_proteomes",
+    "uniprot_get_citation",
+    "uniprot_search_citations",
+    "uniprot_resolve_pdb",
+    "uniprot_resolve_alphafold",
+    "uniprot_resolve_interpro",
+    "uniprot_resolve_chembl",
+    "uniprot_get_evidence_summary",
+    "uniprot_compute_properties",
+    "uniprot_features_at_position",
+    "uniprot_lookup_variant",
+    "uniprot_get_disease_associations",
+    "uniprot_get_alphafold_confidence",
+    "uniprot_get_publications",
+    "uniprot_resolve_orthology",
+    "uniprot_resolve_clinvar",
+    "uniprot_target_dossier",
+    "uniprot_replay_from_cache",
+    "uniprot_provenance_verify",
+    "uniprot_get_active_sites",
+    "uniprot_get_processing_features",
+    "uniprot_get_ptms"
   ],
+  "toolDefaults": {
+    "readOnlyHint": true,
+    "openWorldHint": true,
+    "destructiveHint": false
+  },
   "dataSource": {
     "name": "UniProt Knowledgebase",
     "url": "https://www.uniprot.org",
     "license": "CC BY 4.0",
     "citation": "The UniProt Consortium. UniProt: the Universal Protein Knowledgebase in 2025. Nucleic Acids Research (2025). doi:10.1093/nar/gkae1010"
+  },
+  "support": {
+    "issues": "https://github.com/smaniches/uniprot-mcp/issues",
+    "documentation": "https://github.com/smaniches/uniprot-mcp/blob/main/README.md",
+    "security": "https://github.com/smaniches/uniprot-mcp/blob/main/SECURITY.md"
   }
 }
