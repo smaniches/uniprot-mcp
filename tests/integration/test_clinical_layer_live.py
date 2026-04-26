@@ -27,12 +27,15 @@ from uniprot_mcp.client import UniProtClient
 from uniprot_mcp.server import (
     uniprot_compute_properties,
     uniprot_features_at_position,
+    uniprot_get_active_sites,
     uniprot_get_alphafold_confidence,
     uniprot_get_citation,
     uniprot_get_disease_associations,
     uniprot_get_evidence_summary,
     uniprot_get_keyword,
+    uniprot_get_processing_features,
     uniprot_get_proteome,
+    uniprot_get_ptms,
     uniprot_get_publications,
     uniprot_get_subcellular_location,
     uniprot_get_uniparc,
@@ -399,3 +402,71 @@ async def test_user_agent_is_versioned(client: UniProtClient) -> None:
 
     assert UA.startswith("uniprot-mcp/1.")
     assert "github.com/smaniches/uniprot-mcp" in UA
+
+
+# ---------------------------------------------------------------------------
+# v1.1.0 biomedical-features family (live)
+#
+# Active sites, processing features, and PTMs are pure filters over the
+# entry's `features` array. The unit suite covers the filter and
+# rendering logic against synthetic fixtures; these tests confirm the
+# real UniProt JSON shape still drives the same buckets — guards
+# against an upstream feature-type rename ("Active site" -> "Catalytic
+# site", say) that would silently empty the tools.
+# ---------------------------------------------------------------------------
+
+
+async def test_active_sites_live_bovine_ribonuclease_a() -> None:
+    """Bovine ribonuclease A (P61823) is the textbook case: His-12 and
+    His-119 form the catalytic dyad; Lys-41 is a binding site. The
+    entry has been Swiss-Prot for decades, so these annotations are
+    among the most stable in the database."""
+    out = await uniprot_get_active_sites("P61823", "markdown")
+    assert "Active and binding sites: P61823" in out
+    # The catalytic histidines are the standard textbook claim
+    assert "Active site" in out
+    # Provenance footer must be present
+    assert "_Source: UniProt release" in out
+    assert "_SHA-256:" in out
+
+
+async def test_processing_features_live_human_insulin() -> None:
+    """Human insulin (P01308) is the canonical processing example:
+    24-aa signal peptide, B chain, C peptide (cleaved out), A chain.
+    A reproducibility miracle — these annotations are essentially
+    fossilised in UniProt."""
+    out = await uniprot_get_processing_features("P01308", "markdown")
+    assert "Processing and maturation: P01308" in out
+    # Insulin is the textbook example of signal+propeptide+chain
+    # processing; at least one of these must appear in the bucket
+    assert any(t in out for t in ("Signal peptide", "Chain", "Peptide"))
+
+
+async def test_ptms_live_human_insulin_disulfides() -> None:
+    """Human insulin (P01308) carries three annotated disulfide bonds
+    (A6-A11 intra-A, A7-B7 inter-AB, A20-B19 inter-AB). One of UniProt's
+    most heavily-validated PTM annotations."""
+    out = await uniprot_get_ptms("P01308", "markdown")
+    assert "Post-translational modifications: P01308" in out
+    assert "Disulfide bond" in out
+
+
+async def test_biomedical_buckets_disjoint_on_real_entry() -> None:
+    """End-to-end disjointness check on a real entry: the same accession
+    served through the three tools must produce three non-overlapping
+    feature lists."""
+    a_out = await uniprot_get_active_sites("P01308", "json")
+    p_out = await uniprot_get_processing_features("P01308", "json")
+    m_out = await uniprot_get_ptms("P01308", "json")
+
+    a_feats = json.loads(a_out)["data"]["features"]
+    p_feats = json.loads(p_out)["data"]["features"]
+    m_feats = json.loads(m_out)["data"]["features"]
+
+    a_types = {f["type"] for f in a_feats}
+    p_types = {f["type"] for f in p_feats}
+    m_types = {f["type"] for f in m_feats}
+
+    assert a_types.isdisjoint(p_types)
+    assert a_types.isdisjoint(m_types)
+    assert p_types.isdisjoint(m_types)
