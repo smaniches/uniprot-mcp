@@ -260,6 +260,17 @@ pip install uniprot-mcp-server   # PyPI distribution
 uvx --from uniprot-mcp-server uniprot-mcp
 ```
 
+> **Why three different names?** This is the standard Python packaging pattern, exactly because PyPI's namespace is global and collisions force disambiguation:
+>
+> | Concept | Value | What it is |
+> |---|---|---|
+> | GitHub repository | `smaniches/uniprot-mcp` | source code + issue tracker |
+> | PyPI distribution | `uniprot-mcp-server` | what you `pip install` (the bare `uniprot-mcp` name was already claimed on PyPI when this project published) |
+> | Python module | `uniprot_mcp` | what you `import` (PEP-8 underscore form) |
+> | Console script + MCP server identity | `uniprot-mcp` | what you run from the shell and what Claude Desktop sees |
+>
+> Cross-checks that prove the wheel you installed was built from this repo: each release ships a [Sigstore signature](https://www.sigstore.dev/), [SLSA build provenance](https://slsa.dev/), and a [CycloneDX SBOM](https://cyclonedx.org/), all attached to the [v1.1.0 GitHub Release](https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.0). Run `bash scripts/replicate.sh` (POSIX) or `pwsh scripts/replicate.ps1` (Windows) to verify the full chain end-to-end. Common precedents for the same one-thing-three-names pattern: `pillow`/`PIL`, `python-dateutil`/`dateutil`, `beautifulsoup4`/`bs4`, `python-Levenshtein`/`Levenshtein`.
+
 From source:
 
 ```bash
