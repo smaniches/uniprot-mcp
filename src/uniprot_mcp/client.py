@@ -40,6 +40,7 @@ BASE_URL = "https://rest.uniprot.org"
 # Each entry expands the threat surface (declared in docs/THREAT_MODEL.md
 # §T3) and is documented in PRIVACY.md as a third party.
 ALPHAFOLD_API_BASE = "https://alphafold.ebi.ac.uk"
+NCBI_EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 TIMEOUT = 30.0
 MAX_RETRIES = 3
 MAX_RETRY_AFTER_SECONDS = 120.0  # cap server-dictated waits
@@ -170,6 +171,7 @@ __all__ = [
     "KEYWORD_ID_RE",
     "MAX_RETRIES",
     "MAX_RETRY_AFTER_SECONDS",
+    "NCBI_EUTILS_BASE",
     "PIN_RELEASE_ENV",
     "PROTEOME_ID_RE",
     "SOURCE_NAME",
@@ -473,6 +475,69 @@ class UniProtClient:
     async def get_citation(self, citation_id: str) -> dict[str, Any]:
         data: dict[str, Any] = (await self._req("GET", f"/citations/{citation_id}")).json()
         return data
+
+    async def get_clinvar_records(
+        self, gene: str, change: str = "", retmax: int = 10
+    ) -> dict[str, Any]:
+        """Fetch ClinVar records via NCBI eutils.
+
+        Cross-origin call to ``eutils.ncbi.nlm.nih.gov``. Two-step:
+        ``esearch`` returns ClinVar IDs matching the gene (and optional
+        protein change); ``esummary`` returns the structured records.
+        Returns a dict with keys ``records`` (list) and ``total``
+        (the unfiltered esearch count, useful for "showing N of M").
+        """
+        term = f"{gene}[Gene]"
+        if change:
+            term += f' AND "{change}"[Variant Name]'
+        params_search: dict[str, Any] = {
+            "db": "clinvar",
+            "term": term,
+            "retmode": "json",
+            "retmax": min(retmax, 50),
+        }
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(TIMEOUT),
+            headers={"User-Agent": UA, "Accept": "application/json"},
+            follow_redirects=True,
+        ) as ext:
+            r_search = await ext.get(f"{NCBI_EUTILS_BASE}/esearch.fcgi", params=params_search)
+            r_search.raise_for_status()
+            search_payload = r_search.json()
+            esearch_result = search_payload.get("esearchresult", {})
+            ids: list[str] = list(esearch_result.get("idlist") or [])
+            total = int(esearch_result.get("count") or 0)
+            if not ids:
+                self._last_provenance = Provenance(
+                    source="NCBI ClinVar (eutils)",
+                    release=None,
+                    release_date=None,
+                    retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    url=str(r_search.url),
+                    response_sha256=canonical_response_hash(r_search),
+                )
+                return {"records": [], "total": total}
+            r_summary = await ext.get(
+                f"{NCBI_EUTILS_BASE}/esummary.fcgi",
+                params={"db": "clinvar", "id": ",".join(ids), "retmode": "json"},
+            )
+            r_summary.raise_for_status()
+            summary_payload: dict[str, Any] = r_summary.json()
+        result_block = summary_payload.get("result") or {}
+        records: list[dict[str, Any]] = []
+        for uid in result_block.get("uids") or []:
+            rec = result_block.get(uid)
+            if isinstance(rec, dict):
+                records.append(rec)
+        self._last_provenance = Provenance(
+            source="NCBI ClinVar (eutils)",
+            release=None,
+            release_date=None,
+            retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            url=str(r_summary.url),
+            response_sha256=canonical_response_hash(r_summary),
+        )
+        return {"records": records, "total": total}
 
     async def get_alphafold_summary(self, accession: str) -> dict[str, Any]:
         """Fetch AlphaFold-DB prediction metadata for a UniProt accession.

@@ -29,6 +29,7 @@ __all__ = [
     "fmt_chembl",
     "fmt_citation",
     "fmt_citation_search",
+    "fmt_clinvar",
     "fmt_crossrefs",
     "fmt_disease_associations",
     "fmt_entry",
@@ -1247,6 +1248,93 @@ def fmt_target_dossier(
             lines.append(f"- Top databases: {', '.join(xref['top_databases'][:8])}")
         lines.append("")
 
+    if provenance is not None:
+        lines.extend(_provenance_md_footer(provenance))
+    return "\n".join(lines)
+
+
+def fmt_clinvar(
+    payload: dict[str, Any],
+    accession: str,
+    gene: str,
+    change: str,
+    fmt: str = "markdown",
+    *,
+    provenance: Provenance | None = None,
+) -> str:
+    """Format the ClinVar resolver response.
+
+    ``payload`` is the dict returned by :meth:`UniProtClient.get_clinvar_records`,
+    with keys ``records`` (list of esummary dicts) and ``total`` (the
+    unfiltered esearch count).
+    """
+    if fmt == "json":
+        return _json_envelope(
+            {
+                "accession": accession,
+                "gene": gene,
+                "change": change or None,
+                "clinvar": payload,
+            },
+            provenance,
+        )
+    records = payload.get("records") or []
+    total = payload.get("total", 0)
+    head_extra = f" (gene {gene}"
+    if change:
+        head_extra += f", change `{change}`"
+    head_extra += ")"
+    lines: list[str] = [
+        f"## ClinVar records for {accession}{head_extra}",
+        "",
+        f"**Showing {len(records)} of {total} matching records**",
+        "",
+    ]
+    if not records:
+        lines.append(
+            "_No ClinVar records matched. Try without the ``change`` filter, "
+            "or check that the gene symbol resolves to the expected UniProt entry._"
+        )
+    else:
+        for r in records:
+            title = str(r.get("title", "?") or "?")
+            germline = r.get("germline_classification") or {}
+            classification = ""
+            review_status = ""
+            if isinstance(germline, dict):
+                classification = str(germline.get("description", "") or "")
+                review_status = str(germline.get("review_status", "") or "")
+            # Older eutils responses still use clinical_significance
+            cs = r.get("clinical_significance") or {}
+            if not classification and isinstance(cs, dict):
+                classification = str(cs.get("description", "") or "")
+                review_status = review_status or str(cs.get("review_status", "") or "")
+            traits = []
+            for t in r.get("trait_set") or []:
+                if isinstance(t, dict) and t.get("trait_name"):
+                    traits.append(str(t["trait_name"]))
+            consequences = r.get("molecular_consequence_list") or []
+            protein_change = str(r.get("protein_change", "") or "")
+            accession_str = str(r.get("accession", "") or "")
+            lines.append(f"### {title}")
+            if accession_str:
+                lines.append(f"**ClinVar accession:** {accession_str}")
+            if classification:
+                tail = f"  ({review_status})" if review_status else ""
+                lines.append(f"**Classification:** {classification}{tail}")
+            if traits:
+                shown = ", ".join(traits[:5])
+                more = f" (+{len(traits) - 5} more)" if len(traits) > 5 else ""
+                lines.append(f"**Conditions:** {shown}{more}")
+            if consequences:
+                lines.append(
+                    f"**Molecular consequence(s):** {', '.join(str(c) for c in consequences)}"
+                )
+            if protein_change:
+                shown = protein_change[:140]
+                ellipsis = "…" if len(protein_change) > 140 else ""
+                lines.append(f"**Protein change(s):** {shown}{ellipsis}")
+            lines.append("")
     if provenance is not None:
         lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)

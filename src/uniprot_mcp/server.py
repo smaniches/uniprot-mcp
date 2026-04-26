@@ -1,4 +1,4 @@
-"""TOPOLOGICA UniProt MCP Server. 36 tools. FastMCP. stdio transport.
+"""TOPOLOGICA UniProt MCP Server. 37 tools. FastMCP. stdio transport.
 
 Hardened against the common class of MCP-server defects:
 
@@ -61,6 +61,7 @@ from uniprot_mcp.formatters import (
     fmt_chembl,
     fmt_citation,
     fmt_citation_search,
+    fmt_clinvar,
     fmt_crossrefs,
     fmt_disease_associations,
     fmt_entry,
@@ -893,6 +894,66 @@ def _assemble_target_dossier(entry: dict[str, Any], chemistry: dict[str, Any]) -
 
 
 @mcp.tool(
+    name="uniprot_resolve_clinvar",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def uniprot_resolve_clinvar(
+    accession: str,
+    change: str = "",
+    size: int = 10,
+    response_format: str = "markdown",
+) -> str:
+    """Look up ClinVar records for the gene encoded by a UniProt entry.
+    First fetches the entry to extract the canonical gene symbol, then
+    queries NCBI eutils ClinVar by gene (and optional protein-change
+    filter, e.g. ``R175H``). Returns clinical-significance classification,
+    review status, condition list (trait_set), molecular consequence,
+    and the protein-change list per record.
+
+    Critical for clinical workflows — UniProt's natural-variant
+    annotations stop at literature-described variants. ClinVar carries
+    every variant submitted by clinical labs, with curated significance
+    classifications. Combine ``uniprot_lookup_variant`` (UniProt side)
+    with ``uniprot_resolve_clinvar`` (population side) for a full
+    variant-effect picture.
+
+    Calls https://eutils.ncbi.nlm.nih.gov — declared in PRIVACY.md."""
+    try:
+        _check_accession(accession)
+        if change:
+            _parse_variant_change(change)  # validate HGVS shape
+        _check_format(response_format)
+        size = max(1, min(size, 50))
+        client = _client()
+        # Phase 1: get gene name from the UniProt entry.
+        entry = await client.get_entry(accession)
+        genes = entry.get("genes") or []
+        gene = ""
+        if genes and isinstance(genes, list):
+            g_first = genes[0] if isinstance(genes[0], dict) else {}
+            gene_name_block = g_first.get("geneName") or {}
+            if isinstance(gene_name_block, dict):
+                gene = str(gene_name_block.get("value", "") or "")
+        if not gene:
+            raise _InputError(
+                f"UniProt entry {accession} has no canonical gene name; "
+                "ClinVar resolution requires a gene symbol."
+            )
+        # Phase 2: query ClinVar.
+        payload = await client.get_clinvar_records(gene, change=change, retmax=size)
+        return fmt_clinvar(
+            payload,
+            accession,
+            gene,
+            change,
+            response_format,
+            provenance=client.last_provenance,
+        )
+    except Exception as exc:
+        return _safe_error("uniprot_resolve_clinvar", exc)
+
+
+@mcp.tool(
     name="uniprot_get_alphafold_confidence",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
@@ -1634,6 +1695,7 @@ def _self_test() -> int:
         "uniprot_get_alphafold_confidence",
         "uniprot_get_publications",
         "uniprot_resolve_orthology",
+        "uniprot_resolve_clinvar",
         "uniprot_target_dossier",
         "uniprot_provenance_verify",
     }

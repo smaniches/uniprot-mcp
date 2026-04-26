@@ -74,11 +74,18 @@ We **do not** defend against full host compromise (root on the user's machine). 
 **Scenario.** `uniprot_get_alphafold_confidence` consults `https://alphafold.ebi.ac.uk` — the only origin outside `rest.uniprot.org` that uniprot-mcp calls. A future tool could be tempted to widen the allowlist further (NCBI eutils for ClinVar, PDB REST, etc.), and a careless addition would expand the SSRF surface beyond what the threat model accounts for.
 
 **Mitigations.**
-- The set of permissible cross-origin endpoints is enumerated in `src/uniprot_mcp/client.py` as named constants (`ALPHAFOLD_API_BASE`, …). Adding a new origin requires modifying that file *and* this threat-model entry *and* `PRIVACY.md` in the same commit; reviewers reject any cross-origin call that does not appear in all three.
+- The set of permissible cross-origin endpoints is enumerated in `src/uniprot_mcp/client.py` as named constants (`ALPHAFOLD_API_BASE`, `NCBI_EUTILS_BASE`, …). Adding a new origin requires modifying that file *and* this threat-model entry *and* `PRIVACY.md` in the same commit; reviewers reject any cross-origin call that does not appear in all three.
 - Each cross-origin call uses a fresh `httpx.AsyncClient` with `follow_redirects=True` and a hardcoded base URL — redirects to a different origin are accepted by httpx but mitigated by the fact that the URL we construct is built from a literal accession that has already passed `_check_accession`.
-- AlphaFold-DB does not require an API key; we are not at risk of credential exfiltration on this origin.
+- Neither AlphaFold-DB nor NCBI eutils require API keys for the volume of queries we make; we are not at risk of credential exfiltration on either origin.
 
-**Residual risk.** A compromise of `alphafold.ebi.ac.uk` itself (e.g. EBI infrastructure breach) would let an attacker return malicious metadata. The provenance subsystem records the source URL + canonical SHA-256 of the response, so a poisoned answer is *detectable* by `uniprot_provenance_verify`, but not *prevented*.
+**Residual risk.** A compromise of `alphafold.ebi.ac.uk` or `eutils.ncbi.nlm.nih.gov` itself (e.g. infrastructure breach) would let an attacker return malicious metadata. The provenance subsystem records the source URL + canonical SHA-256 of the response, so a poisoned answer is *detectable* by `uniprot_provenance_verify`, but not *prevented*.
+
+**Active cross-origin allowlist (ratchet by review):**
+
+| Origin | First used in | Tools |
+|---|---|---|
+| `alphafold.ebi.ac.uk` | `f6ab794` | `uniprot_get_alphafold_confidence` |
+| `eutils.ncbi.nlm.nih.gov` | (this commit) | `uniprot_resolve_clinvar` |
 
 ### T4 — Regex DoS via pathological input
 
