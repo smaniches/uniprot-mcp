@@ -57,27 +57,31 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install
-        # Pin to mutmut 2.x for stable --paths-to-mutate, --use-coverage,
-        # and predictable `mutmut results` output. mutmut 3.x reworked
-        # the CLI substantially.
+        # Editable install: mutmut needs the source paths in sys.path
+        # for coverage filtering (`--use-coverage`) to map mutated
+        # files back to recorded test executions.
         run: |
           python -m pip install --upgrade pip
-          pip install ".[test,dev]"
+          pip install -e ".[test,dev]"
           pip install "mutmut>=2.5,<3.0"
-      - name: Generate coverage data (so --use-coverage can scope tests)
+      - name: Generate coverage data
+        # mutmut --use-coverage reads .coverage to skip mutants in
+        # lines that no test executes. We use --cov=src/uniprot_mcp so
+        # the recorded paths match what mutmut sees in --paths-to-mutate.
         run: |
           pytest tests/unit tests/property tests/client tests/contract \
-            --cov=uniprot_mcp --cov-report= -q
+            --cov=src/uniprot_mcp --cov-report= -q
       - name: Run mutmut on ${{ matrix.module }}
-        # --use-coverage: skip mutants whose lines no test exercises;
-        # for the rest, run only the tests that actually touch the
-        # mutated line. Massively reduces wall time on large modules.
-        # `|| true` because mutmut exits non-zero on any survived mutant.
+        # Default runner: `python -m pytest -x` from the project's
+        # pyproject.toml addopts. We set the test scope via
+        # MUTMUT_TESTS_DIR rather than --runner so mutmut handles the
+        # quoting / argv wrapping correctly. `|| true` because mutmut
+        # exits non-zero on any survived mutant.
         run: |
           mutmut run \
-            --paths-to-mutate ${{ matrix.path }} \
-            --runner "python -m pytest -x -q tests/unit tests/property tests/client tests/contract" \
+            --paths-to-mutate=${{ matrix.path }} \
             --use-coverage \
+            --tests-dir=tests/unit \
             --simple-output \
             || true
       - name: Capture results
