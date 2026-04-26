@@ -50,7 +50,7 @@ property through a mechanical check and recording the receipts.
 | `https://alphafold.ebi.ac.uk` | `ALPHAFOLD_API_BASE` constant in `src/uniprot_mcp/client.py:42` | `uniprot_get_alphafold_confidence` |
 | `https://eutils.ncbi.nlm.nih.gov/entrez/eutils` | `NCBI_EUTILS_BASE` constant in `src/uniprot_mcp/client.py:43` | `uniprot_resolve_clinvar` |
 
-Every origin is HTTPS. Adding a new origin requires modifying `client.py` *and* `THREAT_MODEL.md` *and* `PRIVACY.md` in the same commit, per the policy in [`docs/THREAT_MODEL.md` §T3b](THREAT_MODEL.md#t3b--cross-origin-allowlist-for-non-uniprot-endpoints).
+Every origin is HTTPS. Adding a new origin requires modifying `client.py` *and* `THREAT_MODEL.md` *and* `PRIVACY.md` in the same commit, per the policy in [`docs/THREAT_MODEL.md` §T3b](THREAT_MODEL.md#t3b-cross-origin-allowlist-for-non-uniprot-endpoints).
 
 ### 2.3 Timeout coverage
 
@@ -194,7 +194,7 @@ Full privacy notice: [`PRIVACY.md`](https://github.com/smaniches/uniprot-mcp/blo
 |---|---|
 | [`docs/THREAT_MODEL.md`](THREAT_MODEL.md) | 12-threat STRIDE walk + cross-origin allowlist policy |
 | [`docs/INCIDENT_POLICY.md`](INCIDENT_POLICY.md) | What triggers a postmortem; blameless discipline; sunset rule |
-| [`docs/POSTMORTEM_TEMPLATE.md`](POSTMORTEM_TEMPLATE.md) | Header / timeline / root-cause / impact / detection / resolution / follow-up / lessons / 2030-compliance-officer view |
+| [`docs/POSTMORTEM_TEMPLATE.md`](https://github.com/smaniches/uniprot-mcp/blob/main/docs/POSTMORTEM_TEMPLATE.md) | Header / timeline / root-cause / impact / detection / resolution / follow-up / lessons / 2030-compliance-officer view |
 | [`docs/INCIDENT_LOG.md`](INCIDENT_LOG.md) | Append-only, currently empty (project pre-public) |
 | `tests/contract/test_incident_policy.py` (5 tests) | Drift prevention — every log entry must point at a real file; every postmortem file must be referenced from the log |
 

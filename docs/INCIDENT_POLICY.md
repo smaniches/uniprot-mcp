@@ -20,7 +20,7 @@ A postmortem is **not** required for:
 
 ## What the postmortem must contain
 
-Use [`POSTMORTEM_TEMPLATE.md`](POSTMORTEM_TEMPLATE.md). Every required section must be filled in before the fix PR is merged. Sections that read "n/a" must explain why.
+Use [`POSTMORTEM_TEMPLATE.md`](https://github.com/smaniches/uniprot-mcp/blob/main/docs/POSTMORTEM_TEMPLATE.md). Every required section must be filled in before the fix PR is merged. Sections that read "n/a" must explain why.
 
 The fix PR and the postmortem land **together**, in the same commit if practical:
 

@@ -129,7 +129,7 @@ and an honest empty-set advisory.
 
 ### Cross-origin enrichment (3)
 
-The only tools that consult origins outside `rest.uniprot.org`. Each is documented in [`PRIVACY.md`](PRIVACY.md) and in the [threat model](docs/THREAT_MODEL.md#t3b--cross-origin-allowlist-for-non-uniprot-endpoints).
+The only tools that consult origins outside `rest.uniprot.org`. Each is documented in [`PRIVACY.md`](PRIVACY.md) and in the [threat model](docs/THREAT_MODEL.md#t3b-cross-origin-allowlist-for-non-uniprot-endpoints).
 
 | Tool | Origin | Purpose |
 |---|---|---|

@@ -1,0 +1,87 @@
+name: Mutation testing
+
+# Mutmut runs the offline test suite against systematically-mutated
+# copies of the source. A "killed" mutant is one whose mutation breaks
+# the suite (i.e. the suite caught the bug); a "survived" mutant
+# slipped through, indicating an under-tested code path.
+#
+# Gate: kill rate must be >= 95% (declared in MUTATION_SCORES.md). The
+# 5% buffer absorbs equivalent-mutant noise (mutations that produce
+# semantically identical code, e.g. `x and y` -> `y and x` on
+# commutative operations).
+#
+# Schedule: weekly (Monday 06:00 UTC) and on-demand. Mutmut is too
+# expensive (~10x test-suite runtime) to run on every push; the
+# expectation is that the contract/unit/property tests stop most
+# regressions, and the weekly mutmut run catches the remainder.
+#
+# Linux-only: mutmut 3.x does not support Windows
+# (https://github.com/boxed/mutmut/issues/397). Local development on
+# Windows uses WSL or defers to this workflow.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mutmut:
+    name: mutmut (paths-to-mutate=src/uniprot_mcp)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test,dev]"
+          pip install mutmut
+      - name: Run mutmut
+        run: |
+          mutmut run --paths-to-mutate=src/uniprot_mcp --no-progress || true
+          # `|| true`: mutmut's exit code is non-zero whenever any
+          # mutant survives; we want the workflow to continue so the
+          # gate check below can produce a clean assertion failure.
+      - name: Show results
+        run: mutmut results
+      - name: Generate report
+        run: mutmut html
+      - name: Upload html report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: mutmut-html
+          path: html/
+          if-no-files-found: warn
+      - name: Enforce kill-rate gate (>= 95%)
+        run: |
+          python - <<'PY'
+          import subprocess
+          import sys
+          # Mutmut's stats output looks like:
+          #   17/123  killed
+          #   2/123   survived
+          # We parse the killed/total ratio from `mutmut results`.
+          out = subprocess.check_output(["mutmut", "results"], text=True)
+          # mutmut 3.x lists each mutant individually; the summary
+          # is in stderr or via `mutmut stats` depending on version.
+          # The portable way: count lines with a status keyword.
+          killed = sum(1 for ln in out.splitlines() if "killed" in ln.lower())
+          survived = sum(1 for ln in out.splitlines() if "survived" in ln.lower())
+          total = killed + survived
+          if total == 0:
+              print("WARNING: no mutants reported; mutmut may have failed silently.")
+              sys.exit(1)
+          kill_rate = killed / total
+          print(f"killed={killed}, survived={survived}, total={total}, kill_rate={kill_rate:.3f}")
+          if kill_rate < 0.95:
+              print(f"FAIL: kill rate {kill_rate:.3f} below gate 0.95")
+              sys.exit(1)
+          print("PASS: gate satisfied.")
+          PY
