@@ -4,13 +4,14 @@ title: "uniprot-mcp: A Model Context Protocol server for the UniProt protein kno
 abstract: >-
   uniprot-mcp is a Model Context Protocol (MCP) server that exposes the
   UniProt protein knowledgebase to LLM-driven agents such as Claude. It
-  ships 38 read-only tools across eight families: search and lookup;
+  ships 41 read-only tools across eight families: search and lookup;
   structural cross-references (PDB, AlphaFold per-residue pLDDT bands);
   variants and disease (ClinVar bridge, position-aware variant lookup,
-  OMIM); position-aware features (active sites, signal peptides, modified
-  residues, natural variants); composition dossier (sequence chemistry,
-  drug-target context, disease associations); orthology; a local
-  provenance cache with replay; and per-query provenance verification.
+  OMIM); biomedical features (position-aware feature intersection,
+  active and binding sites, processing and maturation, post-translational
+  modifications); composition dossier (sequence chemistry, drug-target
+  context, disease associations); orthology; a local provenance cache
+  with replay; and per-query provenance verification.
   Every response carries a verifiable provenance record - the UniProt
   release number, release date, retrieval timestamp, resolved URL, and
   a release-aware SHA-256 digest of the canonical response bytes. Strict
