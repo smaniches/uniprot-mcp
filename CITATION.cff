@@ -27,7 +27,7 @@ authors:
     email: "santiago.maniches@gmail.com"
     orcid: "https://orcid.org/0009-0005-6480-1987"
     affiliation: "TOPOLOGICA LLC"
-version: 1.1.1
+version: 1.1.2
 date-released: "2026-04-27"
 license: Apache-2.0
 identifiers:
@@ -37,6 +37,8 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.19817711
     description: "Version DOI for v1.1.1"
+  # v1.1.2 version DOI is appended in a follow-up commit after Zenodo mints it
+  # via the GitHub Release webhook.
 repository-code: "https://github.com/smaniches/uniprot-mcp"
 url: "https://github.com/smaniches/uniprot-mcp"
 keywords:

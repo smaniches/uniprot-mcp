@@ -5,6 +5,36 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-04-27
+
+Metadata-only follow-up to v1.1.1. The v1.1.1 release shipped with
+stale text in `.zenodo.json` and `CITATION.cff` that said
+"ships 38 read-only tools" and labelled the new family as
+"position-aware features (active sites, signal peptides, modified
+residues, natural variants)". The canonical surface is **41 tools**
+(per `server.json` and `.well-known/mcp.json`) and the family is
+**biomedical features** (with sub-categories: position-aware feature
+intersection, active and binding sites, processing and maturation,
+post-translational modifications). Cutting v1.1.2 lets the GitHub→
+Zenodo webhook mint a fresh version DOI whose record advertises an
+accurate count and family name; the concept DOI
+(`10.5281/zenodo.19817710`) automatically resolves to v1.1.2 going
+forward, so the README badge needs no edit.
+
+### Changed
+
+- `.zenodo.json` description and `CITATION.cff` abstract synced with
+  the canonical strings used in `server.json` /
+  `.well-known/mcp.json`: "41 read-only tools" + "biomedical features
+  (position-aware feature intersection, active and binding sites,
+  processing and maturation, post-translational modifications)".
+- Lock-step version bump 1.1.1 → 1.1.2 across `pyproject.toml`,
+  `.well-known/mcp.json`, `server.json`, `CITATION.cff`,
+  `examples/atlas/atlas.json`, `OVERVIEW.md`, `docs/SECURITY-AUDIT.md`,
+  and the User-Agent string in `src/uniprot_mcp/client.py`.
+
+No functional code changes; no behaviour change for clients.
+
 ## [1.1.1] - 2026-04-27
 
 Lock-step version bump to mint a Zenodo DOI. Zenodo's GitHub
