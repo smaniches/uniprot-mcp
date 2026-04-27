@@ -105,48 +105,72 @@ jobs:
         # import this module), per-mutant cost drops by ~10-20× vs
         # running the full tests/unit/. pytest still picks up the
         # `addopts` from pyproject.toml automatically (--strict-markers,
-        # --disable-socket, etc.). `|| true` because mutmut exits
-        # non-zero on any survived mutant.
+        # --disable-socket, etc.).
+        #
+        # We capture combined stdout+stderr to mutmut-run.log and
+        # parse it in the next step. mutmut 2.x's `mutmut results`
+        # command only emits a "Survived (N)" section (it omits the
+        # "Killed" count from its summary), so parsing `results`
+        # under-reports kill rate as 0. The progress log emitted
+        # during the run carries the full counts.
         run: |
+          set -o pipefail
           mutmut run \
             --paths-to-mutate=${{ matrix.path }} \
             --use-coverage \
             --tests-dir=tests/unit \
             --runner='python -m pytest -x --tb=no -q --no-header ${{ matrix.tests }}' \
             --simple-output \
-            || true
+            2>&1 | tee mutmut-run.log
+          true   # mutmut exits non-zero on any survivor; we want the parse step to run
       - name: Capture results
         run: |
-          mutmut results | tee mutmut-results.txt
+          mutmut results | tee mutmut-results.txt || true
       - name: Compute kill rate
+        # Parses the final progress line emitted by mutmut --simple-output:
+        #   "N/M  KILLED a  TIMEOUT b  SUSPICIOUS c  SURVIVED d  SKIPPED e"
+        # (the spinner glyph at the start is non-ASCII and is allowed by
+        # the leading `.*?` in the regex). The LAST such line is the
+        # final state. If no progress lines appear (e.g. __init__ has
+        # 0 mutants), all counts default to 0.
         id: score
         run: |
           python - <<'PY'
           import os
+          import pathlib
           import re
-          import subprocess
 
-          out = subprocess.check_output(["mutmut", "results"], text=True)
+          log = pathlib.Path("mutmut-run.log")
+          text = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
 
-          def count(label: str) -> int:
-              # mutmut 2.x: "Survived 🙁 (N)" or "Killed 🎉 (N)"
-              m = re.search(rf"{label}[^\(]*\((\d+)\)", out, flags=re.I)
-              return int(m.group(1)) if m else 0
+          pat = re.compile(
+              r"(\d+)/(\d+)\s+KILLED\s+(\d+)\s+TIMEOUT\s+(\d+)\s+"
+              r"SUSPICIOUS\s+(\d+)\s+SURVIVED\s+(\d+)\s+SKIPPED\s+(\d+)"
+          )
+          matches = pat.findall(text)
+          if matches:
+              done, total, killed, timeout, suspicious, survived, skipped = map(
+                  int, matches[-1]
+              )
+          else:
+              done = total = killed = timeout = suspicious = survived = skipped = 0
 
-          killed = count("Killed")
-          survived = count("Survived")
-          timeout = count("Timeout")
-          suspicious = count("Suspicious")
-          skipped = count("Skipped")
-          total = killed + survived + timeout + suspicious
+          # mutmut counts TIMEOUT and SUSPICIOUS as effectively-killed for
+          # rate purposes (they did break the test suite, just not via a
+          # clean fail signal). Survived is the only "the suite missed it"
+          # bucket. We report kill rate against KILLED+TIMEOUT+SUSPICIOUS
+          # over total mutants attempted (excluding SKIPPED, which were
+          # filtered out before running).
+          attempted = killed + timeout + suspicious + survived
+          effective_killed = killed + timeout + suspicious
+          rate = (effective_killed / attempted) if attempted else 0.0
 
-          rate = (killed / total) if total else 0.0
-          print(f"killed={killed} survived={survived} timeout={timeout} "
-                f"suspicious={suspicious} skipped={skipped} "
-                f"total={total} rate={rate:.4f}")
+          print(
+              f"killed={killed} survived={survived} timeout={timeout} "
+              f"suspicious={suspicious} skipped={skipped} "
+              f"attempted={attempted} rate={rate:.4f}"
+          )
 
-          # Surface counts to the workflow output for the aggregation
-          # job to consolidate.
           out_path = os.environ.get("GITHUB_OUTPUT", "")
           if out_path:
               with open(out_path, "a", encoding="utf-8") as fh:
@@ -155,7 +179,7 @@ jobs:
                   fh.write(f"timeout={timeout}\n")
                   fh.write(f"suspicious={suspicious}\n")
                   fh.write(f"skipped={skipped}\n")
-                  fh.write(f"total={total}\n")
+                  fh.write(f"total={attempted}\n")
                   fh.write(f"rate={rate:.4f}\n")
           PY
       - name: Save per-module summary
@@ -178,6 +202,7 @@ jobs:
           name: mutmut-${{ matrix.module }}
           path: |
             mutmut-results.txt
+            mutmut-run.log
             mutation-summary/${{ matrix.module }}.yaml
           if-no-files-found: warn
 
