@@ -50,7 +50,18 @@ jobs:
         # by `pip install uniprot-mcp-server`). When pip ships a
         # fixed version, remove this ignore. Tracked in CHANGELOG
         # under v1.1.0 known-issues.
-        run: pip-audit --strict --ignore-vuln CVE-2026-3219
+        #
+        # Exclude `uniprot-mcp-server` from the audit. On a release
+        # commit the bumped version doesn't exist on PyPI yet — the
+        # release.yml workflow uploads it shortly after the tag push,
+        # not on the branch push that triggers this CI run — and
+        # `pip-audit --strict` treats the PyPI lookup failure as an
+        # error. The project's own source is already covered by
+        # ruff / mypy / bandit above; pip-audit's role here is to
+        # flag CVEs in third-party dependencies.
+        run: |
+          pip freeze --exclude uniprot-mcp-server > /tmp/audit-deps.txt
+          pip-audit --strict --ignore-vuln CVE-2026-3219 -r /tmp/audit-deps.txt
 
   test:
     name: Tests (${{ matrix.os }} · Python ${{ matrix.python }})
