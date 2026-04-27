@@ -5,12 +5,20 @@ name: Mutation testing
 # the suite (i.e. the suite caught the bug); a "survived" mutant
 # slipped through, indicating an under-tested code path.
 #
-# Strategy: matrix per src/ file. Each job mutates exactly one module
-# and uses `--use-coverage` so each mutant only re-runs the tests that
-# exercise the mutated line. This keeps even the largest modules
-# (formatters.py, server.py) inside the 90-minute Actions window, and
-# gives us per-module kill rates that surface which areas need
-# uplift work.
+# Strategy: matrix per src/ file with **per-test-file scoping**.
+# Each job mutates exactly one module and runs only the test files
+# that import that module. Combined with `--use-coverage` (skip
+# mutants in lines no test exercises), this drops per-mutant cost
+# by ~10-20× vs running the full unit suite per mutant, and brings
+# even the largest modules (formatters.py, server.py) inside the
+# Actions wall-time budget.
+#
+# Coverage is generated once from the FULL offline suite so we
+# identify every covered mutant; the per-mutant runner is then
+# scoped per-module. This gives an accurate kill-rate measurement
+# (a mutant that no scoped test can kill is a real survivor that
+# motivates more targeted tests) without the 90-min timeout that
+# blocked the v1.1.0 baseline run on larger modules.
 #
 # Linux-only: mutmut 3.x does not support Windows; we pin to mutmut
 # 2.x which has a stable CLI but is also Linux-only in CI. Local
@@ -31,25 +39,44 @@ jobs:
   mutmut:
     name: mutmut · ${{ matrix.module }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
       matrix:
-        # One job per src/ file. The module name (column 2) is what
-        # appears in the per-module results table.
+        # One job per src/ file. The `tests` field lists the test
+        # files (or directories) that import this module — these are
+        # the files mutmut will run per mutant. Discovered by grepping
+        # `from uniprot_mcp.<module> import` across tests/unit/ and
+        # tests/property/.
+        #
+        # Timeout per matrix entry: small modules need ~10-15 min;
+        # the two large modules (formatters, server) get 180 min as
+        # cushion. GitHub-hosted runners on a public repo are free.
         include:
           - path: src/uniprot_mcp/__init__.py
             module: __init__
+            tests: tests/unit/test_self_test.py
+            timeout: 30
           - path: src/uniprot_mcp/proteinchem.py
             module: proteinchem
+            tests: tests/unit/test_round_one_clinical.py
+            timeout: 60
           - path: src/uniprot_mcp/cache.py
             module: cache
+            tests: tests/unit/test_cache.py tests/unit/test_cache_mutation_killers.py
+            timeout: 60
           - path: src/uniprot_mcp/client.py
             module: client
+            tests: tests/unit/test_accession_regex.py tests/unit/test_batch_filter.py tests/unit/test_keyword_subcellular.py tests/unit/test_pin_release.py tests/unit/test_provenance.py tests/unit/test_provenance_verify.py tests/unit/test_retry_after.py tests/unit/test_retry_after_delay.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_round_two_clinvar.py tests/unit/test_uniref.py tests/unit/test_wave_b_3_to_7.py tests/unit/test_coverage_gaps.py tests/property
+            timeout: 120
           - path: src/uniprot_mcp/formatters.py
             module: formatters
+            tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py
+            timeout: 180
           - path: src/uniprot_mcp/server.py
             module: server
+            tests: tests/unit
+            timeout: 180
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
@@ -72,16 +99,20 @@ jobs:
           pytest tests/unit tests/property tests/client tests/contract \
             --cov=src/uniprot_mcp --cov-report= -q
       - name: Run mutmut on ${{ matrix.module }}
-        # Default runner: `python -m pytest -x` from the project's
-        # pyproject.toml addopts. We set the test scope via
-        # MUTMUT_TESTS_DIR rather than --runner so mutmut handles the
-        # quoting / argv wrapping correctly. `|| true` because mutmut
-        # exits non-zero on any survived mutant.
+        # Per-test-file scoping: the `--runner` value is the exact
+        # pytest invocation mutmut runs per mutant. By limiting the
+        # test paths to ${{ matrix.tests }} (the test files that
+        # import this module), per-mutant cost drops by ~10-20× vs
+        # running the full tests/unit/. pytest still picks up the
+        # `addopts` from pyproject.toml automatically (--strict-markers,
+        # --disable-socket, etc.). `|| true` because mutmut exits
+        # non-zero on any survived mutant.
         run: |
           mutmut run \
             --paths-to-mutate=${{ matrix.path }} \
             --use-coverage \
             --tests-dir=tests/unit \
+            --runner='python -m pytest -x --tb=no -q --no-header ${{ matrix.tests }}' \
             --simple-output \
             || true
       - name: Capture results
