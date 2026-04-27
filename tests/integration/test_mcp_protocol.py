@@ -22,7 +22,12 @@ pytestmark = [pytest.mark.integration, pytest.mark.mcp_protocol]
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 SERVER_PATH = REPO_ROOT / "src" / "uniprot_mcp" / "server.py"
 
-EXPECTED_TOOLS = {
+# The historical v0.1.0 core tools — always present. We assert the live
+# server's tool inventory is a *superset* of these so the protocol-level
+# test does not break every time a new tool is added (the
+# `.well-known/mcp.json` consistency test in tests/contract/ is the
+# authoritative gate on the full registered set).
+EXPECTED_CORE_TOOLS = {
     "uniprot_get_entry",
     "uniprot_search",
     "uniprot_get_sequence",
@@ -78,7 +83,14 @@ async def test_mcp_handshake_and_tool_inventory() -> None:
 
         listed = await _rpc(proc, {"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
         names = {t["name"] for t in listed["result"]["tools"]}
-        assert names == EXPECTED_TOOLS, f"missing or extra tools: {names ^ EXPECTED_TOOLS}"
+        # Every historical core tool must still be present. New tools
+        # are welcome — the contract test in tests/contract/ pins the
+        # full set against `.well-known/mcp.json`.
+        missing_core = EXPECTED_CORE_TOOLS - names
+        assert not missing_core, f"missing core tools: {sorted(missing_core)}"
+        # Sanity: server registers the v1.1.0 surface (41 tools). If
+        # the count drops below the v1.0.1 baseline, that's a regression.
+        assert len(names) >= 38, f"only {len(names)} tools; expected at least 38"
 
         for t in listed["result"]["tools"]:
             ann = t.get("annotations", {})

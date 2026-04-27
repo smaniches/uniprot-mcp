@@ -27,9 +27,15 @@ async def test_get_entry_p53(client: UniProtClient) -> None:
 
 
 async def test_search_brca1(client: UniProtClient) -> None:
-    data = await client.search("(gene:BRCA1) AND (organism_id:9606)", size=1)
+    """The canonical reviewed BRCA1 accession (P38398) must appear in
+    the results. Set-inclusion semantics — UniProt's search-result
+    ordering is implementation-defined and can change between
+    releases; rigid position-0 assertions are too brittle. We widen
+    the page size and check membership."""
+    data = await client.search("(gene:BRCA1) AND (organism_id:9606)", size=10)
     assert data["results"]
-    assert data["results"][0]["primaryAccession"] == "P38398"
+    accessions = {r["primaryAccession"] for r in data["results"]}
+    assert "P38398" in accessions, f"P38398 not in BRCA1 search results; got {sorted(accessions)}"
 
 
 async def test_fasta_roundtrip(client: UniProtClient) -> None:
