@@ -19,7 +19,7 @@
   "schema:name": "uniprot-mcp disease & target atlas",
   "schema:description": "Curated worked examples spanning the major axes of biomedical research, each demonstrating the uniprot-mcp tool surface end-to-end on a real disease/protein pair. Each entry is one Markdown file plus a structured record in this manifest. The atlas pins the shape of the answer (which tools to call, what provenance fields to expect) rather than the content (which UniProt drifts between releases). Adopters can run the per-entry tool sequence against any UniProt release and verify drift via uniprot_provenance_verify.",
   "schema:license": "https://www.apache.org/licenses/LICENSE-2.0",
-  "schema:version": "1.1.0",
+  "schema:version": "1.1.1",
   "schema:dateCreated": "2026-04-26",
   "schema:dateModified": "2026-04-26",
   "schema:isAccessibleForFree": true,

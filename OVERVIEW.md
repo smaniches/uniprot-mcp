@@ -10,7 +10,7 @@ a script.
 A **Model Context Protocol** server that exposes the UniProt protein
 knowledgebase to LLM agents (Claude, and any other MCP client) with
 **per-query provenance verification**. Apache-2.0. Published on PyPI
-as [`uniprot-mcp-server` v1.1.0](https://pypi.org/project/uniprot-mcp-server/1.1.0/).
+as [`uniprot-mcp-server` v1.1.1](https://pypi.org/project/uniprot-mcp-server/1.1.1/).
 Source: [github.com/smaniches/uniprot-mcp](https://github.com/smaniches/uniprot-mcp).
 
 ## What is concrete and verifiable

@@ -180,7 +180,7 @@ python -m sigstore verify identity --cert-identity \
 
 | Third party | What it sees | Necessity |
 |---|---|---|
-| `rest.uniprot.org` | source IP, User-Agent (`uniprot-mcp/1.1.0`), request path/query | Required — this is what the server proxies |
+| `rest.uniprot.org` | source IP, User-Agent (`uniprot-mcp/1.1.1`), request path/query | Required — this is what the server proxies |
 | `alphafold.ebi.ac.uk` | source IP, User-Agent, the UniProt accession in the path | Optional — used only by `uniprot_get_alphafold_confidence` |
 | `eutils.ncbi.nlm.nih.gov` | source IP, User-Agent, the gene symbol (and optional HGVS shorthand) in query | Optional — used only by `uniprot_resolve_clinvar` |
 

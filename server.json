@@ -8,15 +8,15 @@
     "source": "github"
   },
   "version_detail": {
-    "version": "1.1.0",
-    "release_date": "2026-04-25T00:00:00Z",
+    "version": "1.1.1",
+    "release_date": "2026-04-27T00:00:00Z",
     "is_latest": true
   },
   "packages": [
     {
       "registry_name": "pypi",
       "name": "uniprot-mcp-server",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "package_arguments": [],
       "runtime_arguments": [],
       "environment_variables": []

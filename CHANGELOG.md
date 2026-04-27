@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-04-27
+
+Lock-step version bump to mint a Zenodo DOI. Zenodo's GitHub
+integration was switched on for `smaniches/uniprot-mcp` on
+2026-04-27 (~07:07 ET), after v1.1.0 had already shipped on
+2026-04-26. Zenodo only mints DOIs for releases created after the
+toggle, so v1.1.0 cannot be retroactively assigned a DOI. This patch
+is the smallest valid bump that fires the GitHub→Zenodo webhook on
+the `Release` workflow.
+
+### Changed
+
+- Version 1.1.0 → 1.1.1 across `pyproject.toml`,
+  `.well-known/mcp.json`, `server.json`, `CITATION.cff` (and
+  `date-released: 2026-04-27`), `examples/atlas/atlas.json`,
+  `OVERVIEW.md`, `docs/SECURITY-AUDIT.md`, and the User-Agent string
+  in `src/uniprot_mcp/client.py`.
+- `.zenodo.json` intentionally omits a `version` field — Zenodo
+  populates that from the GitHub release tag.
+
+No functional code changes; behaviour for clients is unchanged
+(8 files, 11 insertions, 11 deletions — all version-string updates).
+
 ## [1.1.0] - 2026-04-25
 
 Biomedical-features expansion. Three new filtered-feature tools target
