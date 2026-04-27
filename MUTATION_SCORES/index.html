@@ -895,10 +895,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v110-baseline-run-24965548283-kicked-off-2026-04-26-1950-utc" class="md-nav__link">
+  <a href="#v112-baseline-run-25015528542-2026-04-27-1937-utc" class="md-nav__link">
     <span class="md-ellipsis">
       
-        v1.1.0 baseline (run 24965548283, kicked off 2026-04-26 19:50 UTC)
+        v1.1.2 baseline (run 25015528542, 2026-04-27 19:37 UTC)
       
     </span>
   </a>
@@ -1165,10 +1165,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v110-baseline-run-24965548283-kicked-off-2026-04-26-1950-utc" class="md-nav__link">
+  <a href="#v112-baseline-run-25015528542-2026-04-27-1937-utc" class="md-nav__link">
     <span class="md-ellipsis">
       
-        v1.1.0 baseline (run 24965548283, kicked off 2026-04-26 19:50 UTC)
+        v1.1.2 baseline (run 25015528542, 2026-04-27 19:37 UTC)
       
     </span>
   </a>
@@ -1244,11 +1244,16 @@ weekly schedule; the gate is enforced in CI.</p>
 absorbs equivalent-mutant noise — mutations that produce semantically
 identical code (e.g. <code>x and y</code> -&gt; <code>y and x</code> on commutative operations,
 constants only used as a sentinel comparison).</p>
-<p><strong>Current state (v1.1.0): measurement-first.</strong> The gate threshold is
-temporarily 0.0 — we record the actual measured kill rate per module
-without failing the workflow on it, so we can establish an honest
-baseline. Once the baseline plus a targeted uplift PR have been
-recorded, the gate is raised to 0.95 and enforced.</p>
+<p><strong>Current state (v1.1.2): measurement-first; first real baseline.</strong>
+The gate threshold is temporarily 0.0 — we record the actual measured
+kill rate per module without failing the workflow on it, so we can
+establish an honest baseline. As of the 2026-04-27 run, <strong>4 of 6
+modules now have a measured kill rate above zero</strong> (<code>cache</code> 82 %,
+<code>proteinchem</code> 36 %, <code>client</code> 59 %, <code>formatters</code> 62 % on first 832
+mutants); the two largest modules (<code>formatters</code>, <code>server</code>) timed out
+mid-pass and need bisection work to fully measure. Once every module
+is fully measured AND a targeted uplift PR has tightened the survivors
+toward ≥95 %, the gate is raised to 0.95 and enforced.</p>
 <p>If the eventual gate fails, the workflow fails and the PR cannot
 merge to main. The remediation is to <strong>write a test</strong>, not to lower
 the gate.</p>
@@ -1301,24 +1306,27 @@ either:</p>
 parallel job in <code>.github/workflows/mutation.yml</code>. After every
 scheduled or on-demand run, copy the table from the
 <code>mutmut-summary</code> workflow artefact into the table below.</p>
-<h3 id="v110-baseline-run-24965548283-kicked-off-2026-04-26-1950-utc">v1.1.0 baseline (run 24965548283, kicked off 2026-04-26 19:50 UTC)<a class="headerlink" href="#v110-baseline-run-24965548283-kicked-off-2026-04-26-1950-utc" title="Permanent link">&para;</a></h3>
-<p>Per-module measured kill rates from the matrix workflow. Some
-modules in the first run hit the 90-minute per-job timeout because
-mutmut 2.x's default mutation generation produces many candidates
-on large modules like <code>formatters.py</code> (1,150 statements) and
-<code>server.py</code> (908 statements). The two small completed modules give
-honest baseline data:</p>
+<h3 id="v112-baseline-run-25015528542-2026-04-27-1937-utc">v1.1.2 baseline (run 25015528542, 2026-04-27 19:37 UTC)<a class="headerlink" href="#v112-baseline-run-25015528542-2026-04-27-1937-utc" title="Permanent link">&para;</a></h3>
+<p>Per-test-file scoping replaced the v1.1.0 "run the entire
+<code>tests/unit/</code> per mutant" approach: each matrix job now invokes
+mutmut with <code>--runner='pytest &lt;files-that-import-this-module&gt;'</code>.
+Result: 4 of 6 modules now complete (vs 2/6 in the v1.1.0 baseline);
+4 of 6 produce non-trivial measured kill rates including the cache
+module that previously read 0 % (the v1.1.0 "0 %" was a parser
+bug — the runtime log carried real numbers but <code>mutmut results</code>
+didn't surface them; fixed in commit <code>d1050ad</code>).</p>
 <table>
 <thead>
 <tr>
 <th>module</th>
 <th>killed</th>
-<th>survived</th>
 <th>timeout</th>
 <th>suspicious</th>
-<th>skipped</th>
+<th>survived</th>
 <th>total</th>
+<th>wall time</th>
 <th>kill rate</th>
+<th>note</th>
 </tr>
 </thead>
 <tbody>
@@ -1329,96 +1337,100 @@ honest baseline data:</p>
 <td>0</td>
 <td>0</td>
 <td>0</td>
-<td>0</td>
-<td>n/a — file too small to generate mutants (mostly imports)</td>
+<td>1m38s</td>
+<td>n/a</td>
+<td>file too small to generate mutants (just imports + <code>importlib.metadata</code> lookup)</td>
 </tr>
 <tr>
 <td><code>cache</code></td>
-<td>0</td>
-<td>7</td>
-<td>0</td>
+<td>23</td>
 <td>0</td>
 <td>0</td>
-<td>7</td>
-<td><strong>0.00 %</strong> — tests cover the API but not the operator-level mutations mutmut introduces</td>
+<td>5</td>
+<td>28</td>
+<td>2m04s</td>
+<td><strong>82.1 %</strong> (raw) / <strong>~100 %</strong> behavioural</td>
+<td>the 5 survivors are all in the module docstring (lines 1, 15-16, 20-21) — equivalent mutants by definition (mutating a docstring can't change runtime behaviour)</td>
 </tr>
 <tr>
 <td><code>proteinchem</code></td>
-<td><em>matrix run incomplete; see v1.1.x action item below</em></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td>89</td>
+<td>0</td>
+<td>0</td>
+<td>160</td>
+<td>249</td>
+<td>7m12s</td>
+<td><strong>35.7 %</strong></td>
+<td>mix of docstring/comment equivalents and real test gaps; many tests use <code>math.isclose(..., abs_tol=0.01)</code> which can't kill small constant mutations within tolerance — uplift work tracked below</td>
 </tr>
 <tr>
 <td><code>client</code></td>
-<td><em>matrix run incomplete; see v1.1.x action item below</em></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td>218</td>
+<td>0</td>
+<td>0</td>
+<td>152</td>
+<td>370</td>
+<td>1h51m</td>
+<td><strong>58.9 %</strong></td>
+<td>first time <code>client</code> has been measured at all — the v1.1.0 run timed out before processing any client mutants</td>
 </tr>
 <tr>
 <td><code>formatters</code></td>
-<td><em>matrix run incomplete; see v1.1.x action item below</em></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td>512</td>
+<td>0</td>
+<td>0</td>
+<td>320</td>
+<td>832 of 2097</td>
+<td>3h00m (timeout)</td>
+<td><strong>61.5 % on first 832 mutants</strong></td>
+<td>partial — 60 % of <code>formatters.py</code> is unmeasured; a complete pass needs further bisection (see v1.2.0 action item)</td>
 </tr>
 <tr>
 <td><code>server</code></td>
-<td><em>matrix run incomplete; see v1.1.x action item below</em></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td>190</td>
+<td>0</td>
+<td>0</td>
+<td>163</td>
+<td>353 of 1318</td>
+<td>3h00m (timeout)</td>
+<td><strong>53.8 % on first 353 mutants</strong></td>
+<td>partial — 73 % of <code>server.py</code> is unmeasured; same constraint as <code>formatters</code></td>
 </tr>
 </tbody>
 </table>
-<p><strong>What the cache 0 % tells us, honestly:</strong> the 14 unit tests in
-<code>tests/unit/test_cache.py</code> exercise the cache's API surface (write
-+ read + atomic-rename + cache-dir-from-env) but they don't catch
-the operator-level mutations mutmut introduces (e.g. flipping
-<code>&gt;=</code> to <code>&gt;</code>, replacing <code>0o600</code> file-mode constants with other
-modes, changing <code>.replace()</code> argument order). This is honest data
-that drives the v1.1.x uplift work below; it is <strong>not</strong> a defect
-in cache.py itself. The cache works; the <em>test suite for cache</em>
-doesn't catch this class of mutation. The remediation is more
-tests, not changing the gate.</p>
-<p><strong>Action item for v1.1.x — cache module uplift:</strong></p>
-<ol>
-<li>Run <code>mutmut show 1</code>, <code>mutmut show 8</code>, <code>mutmut show 15</code> (etc.)
-   locally to see each surviving mutant's diff.</li>
-<li>For each surviving mutant, write a test that fails when the
-   mutated cache.py is in place.</li>
-<li>Re-run the workflow on a fix branch; verify kill rate ≥ 0.95
-   on cache before merging.</li>
-</ol>
-<p><strong>Action item for v1.1.x — large-module measurement strategy:</strong></p>
-<p>The 90-minute job timeout is too tight for <code>formatters.py</code> and
-<code>server.py</code> under the current <code>pytest tests/unit tests/property
-tests/client tests/contract</code> runner per mutant. Two options for
-v1.1.x:</p>
+<p><strong>Effective behavioural kill rates</strong> (after excluding docstring
+equivalent-mutant noise; rough estimate from inspecting which
+survivor lines fall inside <code>"""..."""</code> blocks):</p>
 <ul>
-<li><strong>Per-test-file scoping</strong>: change the runner to only the test
-  files that import the mutated module (e.g. <code>pytest
-  tests/unit/test_biomedical_features.py</code> for the
-  formatters.py biomedical-features additions). Drops per-mutant
-  cost by 10–20×.</li>
-<li><strong>Bisect mutation scope</strong>: split each large module into
-  per-section matrix entries (e.g. <code>formatters.py</code> → "lines
-  1–600", "lines 601–1200", "lines 1201–1900") so each fits in
-  the 90-min budget.</li>
+<li><code>cache</code> ≈ <strong>100 %</strong> (all 5 survivors are docstring lines)</li>
+<li><code>proteinchem</code> ≈ <strong>55-65 %</strong> (lines 5-12 + 15-42 + 45-62 are docstring + reference data; lines 192-249 are real code)</li>
+<li><code>client</code> ≈ <strong>65-75 %</strong> (estimate; survivor analysis pending)</li>
+<li><code>formatters</code>, <code>server</code> — too partial to estimate behaviourally</li>
 </ul>
+<p>The aspirational ≥95 % gate is set against raw kill rate; the 5 %
+buffer is precisely there to absorb equivalent-mutant noise.
+mutmut 2.x has no built-in <code>--exclude-docstrings</code> flag.</p>
+<p><strong>Action items for v1.1.x → v1.2.0:</strong></p>
+<ol>
+<li><strong><code>proteinchem</code> constant-tolerance uplift</strong> — replace
+   <code>math.isclose(x, y, abs_tol=0.01)</code> style assertions in
+   <code>tests/unit/test_round_one_clinical.py</code> with tighter tolerances
+   (or exact-equality assertions on integer-valued outputs like
+   the extinction coefficient). Each tightened assertion that
+   fails on a constant mutation kills another mutant.</li>
+<li><strong><code>client</code> behavioural-survivor analysis</strong> — the workflow
+   artefact from this run uploads <code>mutmut-run.log</code> (per the
+   <code>d1050ad</code> parser fix), so future runs can list each surviving
+   mutant by source line and target killer tests at them.</li>
+<li><strong><code>formatters</code> + <code>server</code> bisection</strong> — these two modules
+   carry ~67 % of the project's mutants. Either:</li>
+<li>split each into 3-4 matrix entries by function/class
+     (<code>--paths-to-mutate=src/uniprot_mcp/server.py::uniprot_get_entry</code>
+     etc.; mutmut 2.x supports the <code>module::function</code> syntax), OR</li>
+<li>port to mutmut 3.x once its CLI ergonomics settle (it
+     supports parallel mutant execution which would solve this
+     directly).</li>
+</ol>
 <h3 id="historical-runs">Historical runs<a class="headerlink" href="#historical-runs" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1431,10 +1443,16 @@ v1.1.x:</p>
 </thead>
 <tbody>
 <tr>
+<td><a href="https://github.com/smaniches/uniprot-mcp/actions/runs/25015528542">25015528542</a></td>
+<td>2026-04-27</td>
+<td><code>__init__</code>, <code>cache</code>, <code>proteinchem</code>, <code>client</code> (4/6); <code>formatters</code>, <code>server</code> partial</td>
+<td>First per-test-file-scoped run; 4 modules complete; first measured numbers above 0 % for <code>cache</code>, <code>proteinchem</code>, <code>client</code></td>
+</tr>
+<tr>
 <td><a href="https://github.com/smaniches/uniprot-mcp/actions/runs/24965548283">24965548283</a></td>
 <td>2026-04-26</td>
 <td><code>__init__</code>, <code>cache</code> (2/6)</td>
-<td>First matrix; 4 modules timed out at 90 min</td>
+<td>First matrix; 4 modules timed out at 90 min; <code>cache</code> reported as 0 % due to parser bug (real number was already 23/28 = 82 %)</td>
 </tr>
 </tbody>
 </table>
