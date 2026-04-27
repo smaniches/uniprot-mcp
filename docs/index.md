@@ -81,7 +81,7 @@ uniprot-mcp --self-test
 | Layer | State |
 |---|---|
 | Tool surface | **41 tools** across 8 families |
-| Tests | **402 offline + 31 live integration** |
+| Tests | **446 offline + 42 live integration** |
 | Static analysis | **mypy strict** + **ruff** + **bandit** + **pip-audit** clean |
 | Provenance verification | **Live round-trip-tested against real UniProt** |
 | Pre-registered benchmark | **30 SHA-256 commitments on `main`** |

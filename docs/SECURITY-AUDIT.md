@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-04-25
 **Auditor:** Santiago Maniches (with mechanical assistance from Claude Opus 4.7)
-**Target:** branch `hardening-v2` head `46cf081`, 38 tools, 357 offline + 4 live integration tests (audit anchored at this commit; subsequent commits expand to 41 tools and 402 offline + 31 live tests — see CHANGELOG)
+**Target:** branch `hardening-v2` head `46cf081`, 38 tools, 357 offline + 4 live integration tests (audit anchored at this commit; subsequent commits expand to 41 tools and 446 offline + 42 live tests as of commit `01ab7a8` — see CHANGELOG)
 **License:** Apache-2.0
 
 This is the formal security audit performed in the run-up to the

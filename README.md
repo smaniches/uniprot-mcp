@@ -4,7 +4,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![MCP compatible](https://img.shields.io/badge/MCP-compatible-6e56cf.svg)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-411_offline_%2B_35_live-success)](#testing)
+[![Tests](https://img.shields.io/badge/tests-446_offline_%2B_42_live-success)](#testing)
 [![Provenance: SHA-256 + verify](https://img.shields.io/badge/provenance-SHA--256_+_verify-blue)](#provenance--verification)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
 
@@ -419,7 +419,7 @@ export UNIPROT_MCP_CACHE_DIR=~/sealed-cache
 | Integration | `tests/integration/` | Live UniProt + AlphaFold; opt-in via `--integration`. |
 | Benchmark | `tests/benchmark/` | 30 SHA-256-committed prompts + reproducible verifier. |
 
-**402 offline + 31 live integration tests, all green.** Mypy (strict),
+**446 offline + 42 live integration tests, all green** (real counts via `pytest --collect-only` on commit `01ab7a8`). Mypy (strict),
 ruff (check + format), bandit (0 issues at any severity), pip-audit
 (`--strict`, no known vulnerabilities) all clean. Mutation testing
 (`mutmut`) gate ≥ 95 % kill, populated post-billing-reset.
