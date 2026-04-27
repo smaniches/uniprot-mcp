@@ -22,7 +22,7 @@ Source: [github.com/smaniches/uniprot-mcp](https://github.com/smaniches/uniprot-
 | A `uniprot_provenance_verify` tool with five enumerated verdicts. | `src/uniprot_mcp/server.py` (the tool registration); unit tests in `tests/unit/test_provenance_verify.py`. |
 | 446 offline + 42 live integration tests (real counts via `pytest --collect-only`). | `pytest tests/unit tests/property tests/client tests/contract -q` — verifiable on any machine. |
 | 30/30 sealed-prompt benchmark verified against live UniProt 2026-04-26. | `tests/benchmark/run-2026-04-26-v1.1.0/` (transcript) + the cryptographic seals at `tests/benchmark/expected.hashes.jsonl`. |
-| The PyPI wheel was built from this exact repo. | SLSA build provenance attestation on the [v1.1.0 GitHub Release](https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.0); `gh attestation verify` confirms. End-to-end script: `scripts/replicate.sh`. |
+| The PyPI wheel was built from this exact repo. | SLSA build provenance attestation on every [GitHub Release](https://github.com/smaniches/uniprot-mcp/releases) (v1.1.2 = latest); `gh attestation verify` confirms. End-to-end script: `scripts/replicate.sh`. |
 | **11,590 disease/pathogen rows** in the comprehensive atlas, all sourced verbatim from UniProt. | `examples/atlas/comprehensive_index.tsv` (7,250 human disease rows from 5,296 entries) + `examples/atlas/comprehensive_index_pathogens.tsv` (4,340 entries across 16 pathogens). Reproducibility manifest at `examples/atlas/manifest.json` with SHA-256 of every file + the script's git commit. |
 | Coverage gate currently 91, measured 91.85%. Aspirational 99. | `pyproject.toml` `[tool.coverage.report]` block documents both the regression and the uplift commitment; CI enforces 91 today. |
 | Mutation testing infrastructure ships; the v1.1.0 baseline is partially measured. | `.github/workflows/mutation.yml` (matrix per src/ file); `docs/MUTATION_SCORES.md` records what is measured (cache module: 7 mutants, 0 killed) and what is pending (large modules timed out at 90 min on first matrix; v1.1.x switches to per-test-file scoping). |
@@ -66,7 +66,7 @@ pwsh scripts/replicate.ps1  # Windows
 
 The script:
 
-1. Downloads `uniprot-mcp-server==1.1.0` from PyPI; SHA-256s it.
+1. Downloads `uniprot-mcp-server==1.1.2` from PyPI (override with the `VERSION` env var to pin any released version); SHA-256s it.
 2. Cross-checks that hash against PyPI's API + the GitHub Release
    asset + the SLSA build-provenance subject digest. **All four must
    match.**

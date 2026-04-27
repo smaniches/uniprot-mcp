@@ -119,10 +119,13 @@ To be explicit about scope:
 
 ## Versioning and reproducibility
 
-- The atlas is versioned with the release line: v1.1.0 atlas ships
-  with v1.1.0 of `uniprot-mcp-server`.
+- The atlas is versioned with the release line: each `uniprot-mcp-server`
+  release ships an atlas pinned to the same version (e.g. atlas v1.1.2
+  ships with `uniprot-mcp-server` v1.1.2). The atlas was authored at
+  v1.1.0 (2026-04-26); v1.1.1 and v1.1.2 were metadata-only patches that
+  did not modify atlas content.
 - Every push to `main` runs the structural gates above.
-- Every release-tag push (e.g., `v1.1.0`) must pass the live-UniProt
+- Every release-tag push (e.g., `v1.1.2`) must pass the live-UniProt
   gate before merge to main of the release-prep branch.
 - Atlas changes between releases are recorded in `CHANGELOG.md`
   under the version's `### Atlas` section (introduced in v1.2.0).
@@ -138,11 +141,14 @@ commit.
 
 ## Citing the atlas
 
-If the atlas informs published work, cite the underlying release:
+If the atlas informs published work, cite via the Zenodo DOI (the
+concept DOI auto-resolves to the latest version):
 
-> Maniches S. (2026). *uniprot-mcp v1.1.0 — disease & target atlas*. https://github.com/smaniches/uniprot-mcp/tree/main/examples/atlas
+> Maniches S. (2026). *uniprot-mcp — disease & target atlas*. Zenodo. https://doi.org/10.5281/zenodo.19817710
 
-or, post-Zenodo registration, the assigned DOI.
+For a specific pinned version (e.g. v1.1.2) use the corresponding
+version DOI: https://doi.org/10.5281/zenodo.19826135. The full
+identifier registry lives in `CITATION.cff`.
 
 ## Epistemic stance
 

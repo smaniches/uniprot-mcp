@@ -276,7 +276,9 @@ wheel's metadata via `importlib.metadata`, so it cannot drift from
 - `batch_entries` no longer returns HTTP 400 when one malformed accession
   is mixed into an otherwise valid batch.
 
-[Unreleased]: https://github.com/smaniches/uniprot-mcp/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/smaniches/uniprot-mcp/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.2
+[1.1.1]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.1
 [1.1.0]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.0
 [1.0.1]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.0.1
 [0.1.0]: https://github.com/smaniches/uniprot-mcp/releases/tag/v0.1.0

@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# One-command beta-lab replication of the v1.1.0 sealed benchmark.
+# One-command beta-lab replication of the sealed benchmark for the
+# latest published release. Override the version with the `VERSION`
+# env var to verify any specific release (e.g. `VERSION=1.1.0`).
 #
 # What this script does (in order):
 #
-#   1. Downloads the published `uniprot-mcp-server==1.1.0` wheel from PyPI
-#      into a temp dir and computes its SHA-256.
+#   1. Downloads the published `uniprot-mcp-server` wheel for the
+#      configured VERSION from PyPI into a temp dir and computes its
+#      SHA-256.
 #   2. Compares the wheel's SHA-256 to the value recorded in PyPI's API
 #      (and prints the GitHub Release SHA-256 + the SLSA-attested subject
 #      digest for cross-check).
@@ -30,7 +33,7 @@
 
 set -euo pipefail
 
-VERSION="${VERSION:-1.1.0}"
+VERSION="${VERSION:-1.1.2}"
 PKG="uniprot-mcp-server"
 REPO="smaniches/uniprot-mcp"
 

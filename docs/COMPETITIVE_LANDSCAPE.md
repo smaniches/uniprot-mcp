@@ -35,7 +35,7 @@ about, so an adopter can pick the right tool for their workflow.
 
 ClinVar-specific MCP and a ChEMBL-only MCP were not found as standalone servers — only as facets of meta-routers.
 
-## What `uniprot-mcp` v1.1.0 does that no surveyed bio-MCP does
+## What `uniprot-mcp` does that no surveyed bio-MCP does
 
 1. **Per-response SHA-256 + canonicalised `Provenance` footer** on every tool result (release tag, retrieval timestamp, resolved URL, body digest). No other bio-MCP scanned attaches a body digest. BioMCP attaches an installer SHA-256 only.
 2. **`uniprot_provenance_verify` re-fetch primitive** with five enumerated verdicts (`verified`, `release_drift`, `hash_drift`, `release_and_hash_drift`, `url_unreachable`) and per-verdict advice. GitHub code search across repos finds zero other implementations of `provenance_verify` / `hash_drift` / `release_drift` semantics.
