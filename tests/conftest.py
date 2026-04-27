@@ -37,6 +37,26 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             item.add_marker(skip_live)
 
 
+def pytest_configure(config: pytest.Config) -> None:
+    """When ``--integration`` is in effect the live tests must be allowed
+    to actually open sockets.
+
+    The project's offline default in ``pyproject.toml`` is a strict
+    ``--disable-socket --allow-hosts=127.0.0.1,::1`` (so unit / property
+    / client / contract tests cannot accidentally hit the network).
+    The integration tests *must* hit the network — that is the entire
+    point of running them. This hook lifts the ``pytest-socket``
+    block when, and only when, ``--integration`` is passed.
+    """
+    if not config.getoption("--integration"):
+        return
+    try:
+        from pytest_socket import enable_socket  # type: ignore[import-untyped]
+    except ImportError:  # pragma: no cover - pytest-socket always installed in test extras
+        return
+    enable_socket()
+
+
 @pytest.fixture(autouse=True)
 async def _reset_server_client_singleton():
     """Ensure the module-level UniProtClient singleton doesn't leak
