@@ -37,18 +37,24 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             item.add_marker(skip_live)
 
 
-def pytest_configure(config: pytest.Config) -> None:
-    """When ``--integration`` is in effect the live tests must be allowed
-    to actually open sockets.
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    """Lift ``pytest-socket``'s block per-test for integration tests.
 
     The project's offline default in ``pyproject.toml`` is a strict
-    ``--disable-socket --allow-hosts=127.0.0.1,::1`` (so unit / property
-    / client / contract tests cannot accidentally hit the network).
-    The integration tests *must* hit the network — that is the entire
-    point of running them. This hook lifts the ``pytest-socket``
-    block when, and only when, ``--integration`` is passed.
+    ``--disable-socket --allow-hosts=127.0.0.1,::1`` (so unit /
+    property / client / contract tests cannot accidentally hit the
+    network). Integration tests *must* hit the network — that is the
+    entire point of running them.
+
+    pytest-socket's own ``pytest_runtest_setup`` reapplies the block
+    on every test, so a single ``enable_socket()`` call in
+    ``pytest_configure`` is not enough — it gets overridden before
+    each test runs. Calling ``enable_socket()`` here, *after*
+    pytest-socket's hook has run for this specific item, is the
+    reliable per-test override. We restrict it to items marked
+    ``integration`` so the offline tests still respect the block.
     """
-    if not config.getoption("--integration"):
+    if "integration" not in item.keywords:
         return
     try:
         from pytest_socket import enable_socket  # type: ignore[import-untyped]

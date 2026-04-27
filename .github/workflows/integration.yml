@@ -25,7 +25,17 @@ jobs:
           pip install -e ".[test]"
       - name: Run live integration tests
         id: live
-        run: pytest --integration tests/integration -v
+        # ``--override-ini`` strips the offline pytest addopts block
+        # (``--disable-socket --allow-hosts=127.0.0.1,::1``) that
+        # pyproject.toml pins for the unit/property/client/contract
+        # suites. Integration tests must hit the live UniProt /
+        # AlphaFold / NCBI eutils endpoints — that is the workflow's
+        # entire purpose. Belt-and-braces with the conftest hook that
+        # also calls pytest_socket.enable_socket() per integration
+        # item.
+        run: |
+          pytest --integration tests/integration -v \
+            --override-ini="addopts=--strict-markers --strict-config -ra"
       - name: Open an issue on failure
         if: failure()
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
