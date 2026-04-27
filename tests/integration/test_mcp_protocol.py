@@ -92,10 +92,19 @@ async def test_mcp_handshake_and_tool_inventory() -> None:
         # the count drops below the v1.0.1 baseline, that's a regression.
         assert len(names) >= 38, f"only {len(names)} tools; expected at least 38"
 
+        # ``uniprot_replay_from_cache`` is the one tool that intentionally
+        # does NOT carry ``openWorldHint`` — it reads only the local cache
+        # and never touches the network. README documents this explicitly:
+        # "All but uniprot_replay_from_cache interact with at least one
+        # upstream service (openWorldHint: true)".
+        no_openworld = {"uniprot_replay_from_cache"}
         for t in listed["result"]["tools"]:
             ann = t.get("annotations", {})
             assert ann.get("readOnlyHint") is True, f"{t['name']} missing readOnlyHint"
-            assert ann.get("openWorldHint") is True, f"{t['name']} missing openWorldHint"
+            if t["name"] not in no_openworld:
+                assert ann.get("openWorldHint") is True, (
+                    f"{t['name']} missing openWorldHint (only {sorted(no_openworld)} are exempt)"
+                )
             assert len(t.get("description", "")) >= 30, f"{t['name']} description too short"
     finally:
         proc.terminate()
