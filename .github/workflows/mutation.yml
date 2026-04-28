@@ -59,7 +59,7 @@ jobs:
             timeout: 30
           - path: src/uniprot_mcp/proteinchem.py
             module: proteinchem
-            tests: tests/unit/test_round_one_clinical.py
+            tests: tests/unit/test_round_one_clinical.py tests/unit/test_proteinchem_mutation_killers.py
             timeout: 60
           - path: src/uniprot_mcp/cache.py
             module: cache
