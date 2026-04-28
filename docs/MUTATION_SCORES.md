@@ -93,6 +93,41 @@ parallel job in `.github/workflows/mutation.yml`. After every
 scheduled or on-demand run, copy the table from the
 `mutmut-summary` workflow artefact into the table below.
 
+### v1.1.2 + proteinchem uplift (run 25032660208, 2026-04-28 03:42 UTC)
+
+After the v1.1.2 baseline below, a targeted uplift PR
+(branch `fix/proteinchem-mutation-uplift`) added
+`tests/unit/test_proteinchem_mutation_killers.py` (~100 parametrised
+single-residue assertions pinning every entry of `_RESIDUE_MASS`,
+`_KYTE_DOOLITTLE`, the side-chain pK dicts, the extinction-coefficient
+magic numbers `1490` / `5500` / `125`, the N/C-terminus pKs, and
+`STANDARD_AA`) and tightened the four loose-tolerance assertions in
+`tests/unit/test_round_one_clinical.py` (`abs_tol` 0.01 / 1e-3 →
+1e-6). Re-run on the same per-test-file-scoped matrix:
+
+| module | killed | survived | total | wall time | raw kill rate | Δ vs baseline |
+|---|---|---|---|---|---|---|
+| `cache` | 23 | 5 | 28 | 1m59s | 82.1 % (≈100 % behavioural) | unchanged (no new cache tests) |
+| `proteinchem` | **228** | **21** | 249 | 7m21s | **91.6 %** | **+55.9 pp** (was 35.7 %) |
+
+The 21 surviving proteinchem mutants are concentrated in the module
+docstring (lines 1-20) and the reference-data block (lines 26-32 / 56-57 /
+80-94, which are the inline comments above the `_RESIDUE_MASS`,
+`_KYTE_DOOLITTLE`, and `_PK_*` dicts). All are equivalent mutants —
+mutmut 2.x mutating string literals in `"""…"""` blocks or `# …`
+comments cannot change runtime behaviour. Behavioural kill rate is
+therefore effectively **100 %** on `proteinchem.py`.
+
+**Workflow note:** prior to this run, `mutmut`'s exit-code-2-on-survivors
+behaviour combined with the GitHub Actions default `bash -e`
+short-circuited the per-job step before the post-run capture/upload
+steps ran, so each module's job reported `failure` even though mutmut
+completed cleanly. Fixed in the same uplift commit:
+
+- `|| true` masks `mutmut`'s non-zero exit on the pipeline
+- `if: always()` on the Capture / Compute / Save / Upload steps so
+  the artefact lands regardless of mutmut's exit code
+
 ### v1.1.2 baseline (run 25015528542, 2026-04-27 19:37 UTC)
 
 Per-test-file scoping replaced the v1.1.0 "run the entire
@@ -128,12 +163,10 @@ mutmut 2.x has no built-in `--exclude-docstrings` flag.
 
 **Action items for v1.1.x → v1.2.0:**
 
-1. **`proteinchem` constant-tolerance uplift** — replace
-   `math.isclose(x, y, abs_tol=0.01)` style assertions in
-   `tests/unit/test_round_one_clinical.py` with tighter tolerances
-   (or exact-equality assertions on integer-valued outputs like
-   the extinction coefficient). Each tightened assertion that
-   fails on a constant mutation kills another mutant.
+1. ~~**`proteinchem` constant-tolerance uplift**~~ — **DONE**
+   (run 25032660208, 2026-04-28). Raw kill rate 35.7 % → 91.6 %;
+   behavioural ≈ 100 % (remaining 21 survivors are docstring +
+   inline-comment equivalent mutants).
 2. **`client` behavioural-survivor analysis** — the workflow
    artefact from this run uploads `mutmut-run.log` (per the
    `d1050ad` parser fix), so future runs can list each surviving

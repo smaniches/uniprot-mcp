@@ -113,6 +113,11 @@ jobs:
         # "Killed" count from its summary), so parsing `results`
         # under-reports kill rate as 0. The progress log emitted
         # during the run carries the full counts.
+        # mutmut exits non-zero on any survivor; the GitHub Actions bash
+        # invocation runs with `bash -e` so we explicitly mask that with
+        # `|| true` on the pipeline (set -o pipefail propagates mutmut's
+        # exit through tee). All subsequent steps use `if: always()` so
+        # they harvest the run log even when mutmut's exit code is non-zero.
         run: |
           set -o pipefail
           mutmut run \
@@ -121,12 +126,13 @@ jobs:
             --tests-dir=tests/unit \
             --runner='python -m pytest -x --tb=no -q --no-header ${{ matrix.tests }}' \
             --simple-output \
-            2>&1 | tee mutmut-run.log
-          true   # mutmut exits non-zero on any survivor; we want the parse step to run
+            2>&1 | tee mutmut-run.log || true
       - name: Capture results
+        if: always()
         run: |
           mutmut results | tee mutmut-results.txt || true
       - name: Compute kill rate
+        if: always()
         # Parses the final progress line emitted by mutmut --simple-output:
         #   "N/M  KILLED a  TIMEOUT b  SUSPICIOUS c  SURVIVED d  SKIPPED e"
         # (the spinner glyph at the start is non-ASCII and is allowed by
@@ -183,6 +189,7 @@ jobs:
                   fh.write(f"rate={rate:.4f}\n")
           PY
       - name: Save per-module summary
+        if: always()
         run: |
           mkdir -p mutation-summary
           {
@@ -197,6 +204,7 @@ jobs:
             echo "rate: ${{ steps.score.outputs.rate }}"
           } > "mutation-summary/${{ matrix.module }}.yaml"
       - name: Upload module results
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: mutmut-${{ matrix.module }}
