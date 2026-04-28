@@ -895,6 +895,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#v112-client-uplift-run-25072369933-2026-04-28-1908-utc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.1.2 + client uplift (run 25072369933, 2026-04-28 19:08 UTC)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#v112-proteinchem-uplift-run-25032660208-2026-04-28-0342-utc" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1176,6 +1187,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#v112-client-uplift-run-25072369933-2026-04-28-1908-utc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.1.2 + client uplift (run 25072369933, 2026-04-28 19:08 UTC)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#v112-proteinchem-uplift-run-25032660208-2026-04-28-0342-utc" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1328,16 +1350,119 @@ either:</p>
 parallel job in <code>.github/workflows/mutation.yml</code>. After every
 scheduled or on-demand run, copy the table from the
 <code>mutmut-summary</code> workflow artefact into the table below.</p>
+<h3 id="v112-client-uplift-run-25072369933-2026-04-28-1908-utc">v1.1.2 + client uplift (run 25072369933, 2026-04-28 19:08 UTC)<a class="headerlink" href="#v112-client-uplift-run-25072369933-2026-04-28-1908-utc" title="Permanent link">&para;</a></h3>
+<p>After the proteinchem uplift below, a second targeted uplift PR
+(branch <code>fix/client-mutation-uplift</code>) was applied to <code>client.py</code> in
+two phases. The trajectory is recorded honestly because each phase
+revealed a different gap in the test surface:</p>
+<p><strong>Phase 1 — sync killers</strong> (commit <code>b5ab1a8</code>):
+<code>tests/unit/test_client_mutation_killers.py</code> — 142 parametrised +
+standalone tests pinning every module constant via direct equality,
+every regex via valid/invalid examples (5–13 each), <code>parse_retry_after</code>
+via 16 hardcoded <code>(input, expected)</code> cases, <code>canonical_response_hash</code>
+via 11 snapshot hashes, <code>_extract_provenance</code> via four synthetic
+<code>httpx.Response</code> objects, <code>ReleaseMismatchError</code> message format, and
+<code>UniProtClient</code> construction. Result on the narrow scope: <strong>62.7 %</strong>
+raw (232/370). Then expanding the matrix <code>tests:</code> field from 14
+listed files to the full <code>tests/unit + tests/property</code> (commit
+<code>1f9824f</code>) lifted it slightly to <strong>63.24 %</strong> (234/370, +4.3 pp).</p>
+<p>The reason the lift was small: decoding the 136 surviving mutmut
+IDs against the local <code>.mutmut-cache</code> showed <strong>every survivor was
+inside an async method body</strong> that no test in the suite actually
+invokes — the sync killer file pinned constants and pure helpers
+correctly, but the bulk of <code>client.py</code>'s mutation surface lives in
+the <code>_req</code> retry loop, the pin-release branch, the thin
+<code>get_*</code> / <code>search_*</code> async wrappers, <code>id_mapping_submit</code> /
+<code>id_mapping_results</code>, <code>batch_entries</code> filtering, and the
+cross-origin <code>get_clinvar_records</code> / <code>get_alphafold_summary</code>
+flows. The methodology fingerprinted its own gap.</p>
+<p><strong>Phase 2 — async killers</strong> (commit <code>390a54d</code>):
+<code>tests/unit/test_client_async_killers.py</code> — 49 <code>respx</code>-mocked async
+tests pinning each surviving location: per-wrapper URL/method/path
+assertions, retry-loop behaviour (429 → retry; 5xx → retry; all 5xx
+→ <code>RuntimeError</code> after <code>MAX_RETRIES + 1</code> attempts; matched-pin →
+success; mismatched-pin → <code>ReleaseMismatchError</code>), <code>id_mapping</code>
+flow (POST + polling + <code>redirectURL</code> follow), <code>batch_entries</code>
+client-side filter / 100-cap / <code>OR</code>-join, <code>get_clinvar_records</code>
+two-step + idlist-empty short-circuit, <code>get_alphafold_summary</code>
+version-rendering. Result: <strong>70.00 %</strong> raw (259/370, +6.76 pp on
+phase 1, +11.08 pp on baseline).</p>
+<p>Final v1.1.2-uplift table:</p>
+<table>
+<thead>
+<tr>
+<th>module</th>
+<th>killed</th>
+<th>survived</th>
+<th>total</th>
+<th>wall time</th>
+<th>raw kill rate</th>
+<th>Δ vs baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cache</code></td>
+<td>23</td>
+<td>5</td>
+<td>28</td>
+<td>1m59s</td>
+<td>82.1 % (≈100 % behavioural)</td>
+<td>unchanged (no new cache tests)</td>
+</tr>
+<tr>
+<td><code>proteinchem</code></td>
+<td><strong>228</strong></td>
+<td><strong>21</strong></td>
+<td>249</td>
+<td>7m21s</td>
+<td><strong>91.6 %</strong></td>
+<td><strong>+55.9 pp</strong> (was 35.7 %)</td>
+</tr>
+<tr>
+<td><code>client</code></td>
+<td><strong>259</strong></td>
+<td><strong>111</strong></td>
+<td>370</td>
+<td>2h31m</td>
+<td><strong>70.00 %</strong></td>
+<td><strong>+11.08 pp</strong> (was 58.92 %)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why client landed at 70 % rather than ≥85 %:</strong> the remaining 111
+mutants split into three categories (decoded via the local
+<code>.mutmut-cache</code> against the v4 survivor list):</p>
+<ul>
+<li><strong>Equivalent / hard-to-kill mutants (~15–20):</strong> <code>@property</code>
+  decorator mutations on lines 277, 282; ternary-branch variants
+  on <code>observed_disp = observed if observed is not None else
+  "(absent)"</code>; generator-expression equivalents in
+  <code>" OR ".join(f"accession:{a}" for a in valid)</code>.</li>
+<li><strong>Loose-assertion gaps (~40–50):</strong> existing tests assert the
+  right <em>behaviour</em> but with substring rather than exact-equality
+  checks — e.g., <code>"fasta" in accept.lower()</code> survives a
+  <code>"XXfasta...XX"</code> wrap. Tightening these assertions is the highest-
+  ROI follow-up.</li>
+<li><strong>Untested code paths (~40):</strong> the <code>id_mapping_submit</code> retry
+  loop's 429/5xx branches; <code>get_alphafold_summary</code>'s
+  <code>latestVersion</code>-absent fallback; <code>get_clinvar_records</code>'s
+  provenance-block construction. Phase 2 covers the success paths
+  but not all the retry / fallback branches.</li>
+</ul>
+<p>Hitting ≥85 % on <code>client</code> requires another iteration that tightens
+the loose assertions and adds tests for the untested branches.
+Estimated cost: ~1.5–2 h of test writing + ~3-h CI cycle.</p>
 <h3 id="v112-proteinchem-uplift-run-25032660208-2026-04-28-0342-utc">v1.1.2 + proteinchem uplift (run 25032660208, 2026-04-28 03:42 UTC)<a class="headerlink" href="#v112-proteinchem-uplift-run-25032660208-2026-04-28-0342-utc" title="Permanent link">&para;</a></h3>
-<p>After the v1.1.2 baseline below, a targeted uplift PR
-(branch <code>fix/proteinchem-mutation-uplift</code>) added
-<code>tests/unit/test_proteinchem_mutation_killers.py</code> (~100 parametrised
-single-residue assertions pinning every entry of <code>_RESIDUE_MASS</code>,
-<code>_KYTE_DOOLITTLE</code>, the side-chain pK dicts, the extinction-coefficient
-magic numbers <code>1490</code> / <code>5500</code> / <code>125</code>, the N/C-terminus pKs, and
-<code>STANDARD_AA</code>) and tightened the four loose-tolerance assertions in
-<code>tests/unit/test_round_one_clinical.py</code> (<code>abs_tol</code> 0.01 / 1e-3 →
-1e-6). Re-run on the same per-test-file-scoped matrix:</p>
+<p>A targeted uplift PR (branch <code>fix/proteinchem-mutation-uplift</code>)
+added <code>tests/unit/test_proteinchem_mutation_killers.py</code> (~100
+parametrised single-residue assertions pinning every entry of
+<code>_RESIDUE_MASS</code>, <code>_KYTE_DOOLITTLE</code>, the side-chain pK dicts, the
+extinction-coefficient magic numbers <code>1490</code> / <code>5500</code> / <code>125</code>, the
+N/C-terminus pKs, and <code>STANDARD_AA</code>) and tightened the four
+loose-tolerance assertions in <code>tests/unit/test_round_one_clinical.py</code>
+(<code>abs_tol</code> 0.01 / 1e-3 → 1e-6). Re-run on the same per-test-file-
+scoped matrix:</p>
 <table>
 <thead>
 <tr>
@@ -1498,10 +1623,15 @@ mutmut 2.x has no built-in <code>--exclude-docstrings</code> flag.</p>
    (run 25032660208, 2026-04-28). Raw kill rate 35.7 % → 91.6 %;
    behavioural ≈ 100 % (remaining 21 survivors are docstring +
    inline-comment equivalent mutants).</li>
-<li><strong><code>client</code> behavioural-survivor analysis</strong> — the workflow
-   artefact from this run uploads <code>mutmut-run.log</code> (per the
-   <code>d1050ad</code> parser fix), so future runs can list each surviving
-   mutant by source line and target killer tests at them.</li>
+<li>~~<strong><code>client</code> behavioural-survivor analysis</strong>~~ — <strong>PARTIALLY DONE</strong>
+   (runs 25049571013 + 25072369933, 2026-04-28). Phase 1 (sync
+   killers) + phase 2 (async killers) raised client raw kill rate
+   from 58.92 % → 70.00 % (+11.08 pp). Still short of the ≥85 %
+   target. v1.2.0 follow-up: tighten the loose-assertion gaps in
+   <code>test_client_async_killers.py</code> (substring → exact-equality on
+   Accept headers, key-name pinning on <code>resp.json()["jobId"]</code>,
+   retry-branch coverage in <code>id_mapping_submit</code>, fallback branch
+   coverage in <code>get_alphafold_summary</code>).</li>
 <li><strong><code>formatters</code> + <code>server</code> bisection</strong> — these two modules
    carry ~67 % of the project's mutants. Either:</li>
 <li>split each into 3-4 matrix entries by function/class
@@ -1522,6 +1652,30 @@ mutmut 2.x has no built-in <code>--exclude-docstrings</code> flag.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><a href="https://github.com/smaniches/uniprot-mcp/actions/runs/25072369933">25072369933</a></td>
+<td>2026-04-28</td>
+<td>client (sync + async killers, 70.00 %); cache, proteinchem unchanged</td>
+<td>Phase 2 of client uplift (async killers + full <code>tests/unit</code> scope); 2h31m wall time</td>
+</tr>
+<tr>
+<td><a href="https://github.com/smaniches/uniprot-mcp/actions/runs/25049571013">25049571013</a></td>
+<td>2026-04-28</td>
+<td>client (sync killers + full scope, 63.24 %)</td>
+<td>Phase 1 of client uplift; +0.5 pp over narrow-scope showed survivors are async-only</td>
+</tr>
+<tr>
+<td><a href="https://github.com/smaniches/uniprot-mcp/actions/runs/25034689002">25034689002</a></td>
+<td>2026-04-28</td>
+<td>client (sync killers + narrow scope, 62.70 %)</td>
+<td>First client uplift attempt; misconfigured runner scope</td>
+</tr>
+<tr>
+<td><a href="https://github.com/smaniches/uniprot-mcp/actions/runs/25032660208">25032660208</a></td>
+<td>2026-04-28</td>
+<td>proteinchem 91.6 %, cache 82.1 %</td>
+<td>proteinchem uplift; +55.9 pp</td>
+</tr>
 <tr>
 <td><a href="https://github.com/smaniches/uniprot-mcp/actions/runs/25015528542">25015528542</a></td>
 <td>2026-04-27</td>
