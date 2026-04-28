@@ -895,6 +895,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#v112-proteinchem-uplift-run-25032660208-2026-04-28-0342-utc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.1.2 + proteinchem uplift (run 25032660208, 2026-04-28 03:42 UTC)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#v112-baseline-run-25015528542-2026-04-27-1937-utc" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1165,6 +1176,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#v112-proteinchem-uplift-run-25032660208-2026-04-28-0342-utc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.1.2 + proteinchem uplift (run 25032660208, 2026-04-28 03:42 UTC)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#v112-baseline-run-25015528542-2026-04-27-1937-utc" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1306,6 +1328,66 @@ either:</p>
 parallel job in <code>.github/workflows/mutation.yml</code>. After every
 scheduled or on-demand run, copy the table from the
 <code>mutmut-summary</code> workflow artefact into the table below.</p>
+<h3 id="v112-proteinchem-uplift-run-25032660208-2026-04-28-0342-utc">v1.1.2 + proteinchem uplift (run 25032660208, 2026-04-28 03:42 UTC)<a class="headerlink" href="#v112-proteinchem-uplift-run-25032660208-2026-04-28-0342-utc" title="Permanent link">&para;</a></h3>
+<p>After the v1.1.2 baseline below, a targeted uplift PR
+(branch <code>fix/proteinchem-mutation-uplift</code>) added
+<code>tests/unit/test_proteinchem_mutation_killers.py</code> (~100 parametrised
+single-residue assertions pinning every entry of <code>_RESIDUE_MASS</code>,
+<code>_KYTE_DOOLITTLE</code>, the side-chain pK dicts, the extinction-coefficient
+magic numbers <code>1490</code> / <code>5500</code> / <code>125</code>, the N/C-terminus pKs, and
+<code>STANDARD_AA</code>) and tightened the four loose-tolerance assertions in
+<code>tests/unit/test_round_one_clinical.py</code> (<code>abs_tol</code> 0.01 / 1e-3 →
+1e-6). Re-run on the same per-test-file-scoped matrix:</p>
+<table>
+<thead>
+<tr>
+<th>module</th>
+<th>killed</th>
+<th>survived</th>
+<th>total</th>
+<th>wall time</th>
+<th>raw kill rate</th>
+<th>Δ vs baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cache</code></td>
+<td>23</td>
+<td>5</td>
+<td>28</td>
+<td>1m59s</td>
+<td>82.1 % (≈100 % behavioural)</td>
+<td>unchanged (no new cache tests)</td>
+</tr>
+<tr>
+<td><code>proteinchem</code></td>
+<td><strong>228</strong></td>
+<td><strong>21</strong></td>
+<td>249</td>
+<td>7m21s</td>
+<td><strong>91.6 %</strong></td>
+<td><strong>+55.9 pp</strong> (was 35.7 %)</td>
+</tr>
+</tbody>
+</table>
+<p>The 21 surviving proteinchem mutants are concentrated in the module
+docstring (lines 1-20) and the reference-data block (lines 26-32 / 56-57 /
+80-94, which are the inline comments above the <code>_RESIDUE_MASS</code>,
+<code>_KYTE_DOOLITTLE</code>, and <code>_PK_*</code> dicts). All are equivalent mutants —
+mutmut 2.x mutating string literals in <code>"""…"""</code> blocks or <code># …</code>
+comments cannot change runtime behaviour. Behavioural kill rate is
+therefore effectively <strong>100 %</strong> on <code>proteinchem.py</code>.</p>
+<p><strong>Workflow note:</strong> prior to this run, <code>mutmut</code>'s exit-code-2-on-survivors
+behaviour combined with the GitHub Actions default <code>bash -e</code>
+short-circuited the per-job step before the post-run capture/upload
+steps ran, so each module's job reported <code>failure</code> even though mutmut
+completed cleanly. Fixed in the same uplift commit:</p>
+<ul>
+<li><code>|| true</code> masks <code>mutmut</code>'s non-zero exit on the pipeline</li>
+<li><code>if: always()</code> on the Capture / Compute / Save / Upload steps so
+  the artefact lands regardless of mutmut's exit code</li>
+</ul>
 <h3 id="v112-baseline-run-25015528542-2026-04-27-1937-utc">v1.1.2 baseline (run 25015528542, 2026-04-27 19:37 UTC)<a class="headerlink" href="#v112-baseline-run-25015528542-2026-04-27-1937-utc" title="Permanent link">&para;</a></h3>
 <p>Per-test-file scoping replaced the v1.1.0 "run the entire
 <code>tests/unit/</code> per mutant" approach: each matrix job now invokes
@@ -1412,12 +1494,10 @@ buffer is precisely there to absorb equivalent-mutant noise.
 mutmut 2.x has no built-in <code>--exclude-docstrings</code> flag.</p>
 <p><strong>Action items for v1.1.x → v1.2.0:</strong></p>
 <ol>
-<li><strong><code>proteinchem</code> constant-tolerance uplift</strong> — replace
-   <code>math.isclose(x, y, abs_tol=0.01)</code> style assertions in
-   <code>tests/unit/test_round_one_clinical.py</code> with tighter tolerances
-   (or exact-equality assertions on integer-valued outputs like
-   the extinction coefficient). Each tightened assertion that
-   fails on a constant mutation kills another mutant.</li>
+<li>~~<strong><code>proteinchem</code> constant-tolerance uplift</strong>~~ — <strong>DONE</strong>
+   (run 25032660208, 2026-04-28). Raw kill rate 35.7 % → 91.6 %;
+   behavioural ≈ 100 % (remaining 21 survivors are docstring +
+   inline-comment equivalent mutants).</li>
 <li><strong><code>client</code> behavioural-survivor analysis</strong> — the workflow
    artefact from this run uploads <code>mutmut-run.log</code> (per the
    <code>d1050ad</code> parser fix), so future runs can list each surviving
