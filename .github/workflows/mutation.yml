@@ -67,8 +67,14 @@ jobs:
             timeout: 60
           - path: src/uniprot_mcp/client.py
             module: client
-            tests: tests/unit/test_accession_regex.py tests/unit/test_batch_filter.py tests/unit/test_keyword_subcellular.py tests/unit/test_pin_release.py tests/unit/test_provenance.py tests/unit/test_provenance_verify.py tests/unit/test_retry_after.py tests/unit/test_retry_after_delay.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_round_two_clinvar.py tests/unit/test_uniref.py tests/unit/test_wave_b_3_to_7.py tests/unit/test_coverage_gaps.py tests/unit/test_client_mutation_killers.py tests/property
-            timeout: 120
+            # Full tests/unit scope (not the narrow 14-file list): client.py
+            # is reached indirectly by server.py + many tool tests, so
+            # restricting to "files that import client directly" loses real
+            # kill signal that v1.1.0's full-suite-per-mutant baseline
+            # captured. The killer file (test_client_mutation_killers.py)
+            # lives inside tests/unit so the directory pickup includes it.
+            tests: tests/unit tests/property
+            timeout: 240
           - path: src/uniprot_mcp/formatters.py
             module: formatters
             tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py
