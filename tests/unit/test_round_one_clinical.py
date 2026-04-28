@@ -45,22 +45,25 @@ from uniprot_mcp.server import (
 
 
 def test_glycine_monomer_has_known_residue_mass() -> None:
-    """Single glycine: residue (57.0519) + water (18.01528) ≈ 75.067 Da.
-    Independently checkable on any pK reference."""
+    """Single glycine: residue (57.0519) + water (18.01528) = 75.06718 Da
+    rounded to 4 dp = 75.0672. Tight tolerance kills _RESIDUE_MASS["G"]
+    or _WATER constant mutations (any single-digit flip shifts MW by
+    >= 1e-4)."""
     p = compute_protein_properties("G")
-    assert math.isclose(p["molecular_weight"], 75.067, abs_tol=0.01)
+    assert math.isclose(p["molecular_weight"], 75.0672, abs_tol=1e-6)
     assert p["length"] == 1
 
 
 def test_di_alanine_has_known_mass() -> None:
+    """2 * 71.0788 + 18.01528 = 160.17288 → 160.1729 (4 dp).
+    Tight tolerance kills _RESIDUE_MASS["A"] mutations."""
     p = compute_protein_properties("AA")
-    # 2 * 71.0788 + 18.01528 = 160.1729
-    assert math.isclose(p["molecular_weight"], 160.17, abs_tol=0.01)
+    assert math.isclose(p["molecular_weight"], 160.1729, abs_tol=1e-6)
 
 
 def test_aromaticity_is_fyw_fraction() -> None:
     p = compute_protein_properties("AAFFFAAA")  # 3 F in 8 residues
-    assert math.isclose(p["aromaticity"], 3 / 8, abs_tol=1e-6)
+    assert math.isclose(p["aromaticity"], 3 / 8, abs_tol=1e-9)
 
 
 def test_extinction_coefficient_pace_formula() -> None:
@@ -71,16 +74,17 @@ def test_extinction_coefficient_pace_formula() -> None:
 
 
 def test_gravy_for_pure_isoleucine() -> None:
-    """KD value for I is +4.5; pure-I sequence GRAVY = +4.5."""
+    """KD value for I is +4.5; pure-I sequence GRAVY = +4.5.
+    Tight tolerance kills _KYTE_DOOLITTLE["I"] mutations."""
     p = compute_protein_properties("IIIII")
-    assert math.isclose(p["gravy"], 4.5, abs_tol=1e-3)
+    assert math.isclose(p["gravy"], 4.5, abs_tol=1e-6)
 
 
 def test_gravy_for_pure_arginine_is_most_hydrophilic() -> None:
     """KD value for R is -4.5; the lowest possible GRAVY for any
-    homopolymer."""
+    homopolymer. Tight tolerance kills _KYTE_DOOLITTLE["R"] mutations."""
     p = compute_protein_properties("RRRRR")
-    assert math.isclose(p["gravy"], -4.5, abs_tol=1e-3)
+    assert math.isclose(p["gravy"], -4.5, abs_tol=1e-6)
 
 
 def test_pi_is_basic_for_arginine_rich_protein() -> None:
