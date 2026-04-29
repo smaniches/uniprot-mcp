@@ -4,7 +4,8 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![MCP compatible](https://img.shields.io/badge/MCP-compatible-6e56cf.svg)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-446_offline_%2B_42_live-success)](#testing)
+[![Tests](https://img.shields.io/badge/tests-735_offline_%2B_42_live-success)](#testing)
+[![Coverage](https://img.shields.io/badge/coverage-91.85%25-yellow)](pyproject.toml)
 [![Provenance: SHA-256 + verify](https://img.shields.io/badge/provenance-SHA--256_+_verify-blue)](#provenance--verification)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19817710.svg)](https://doi.org/10.5281/zenodo.19817710)
@@ -18,9 +19,10 @@ URL, and a SHA-256 of the canonical response body — that the agent
 (or a third party, a year later) can re-check with a single tool
 call: `uniprot_provenance_verify`.
 
-The wedge: **per-response SHA-256 + verify primitive + release pinning
-+ offline replay** is, to the best of my survey of public MCPs as of
-2026-04-26, absent from every other bio-MCP server I could find
+The distinguishing capability: **per-response SHA-256 + verify primitive
++ release pinning + offline replay** is, to the best of my survey of
+public MCPs as of 2026-04-26, absent from every other bio-MCP server I
+could find
 (BioMCP, Augmented-Nature/UniProt-MCP, biothings-mcp, gget-mcp, and
 others). If you are a regulated-bio-pharma user who needs to prove,
 years later, that a UniProt-derived claim still holds, this is the
@@ -63,7 +65,7 @@ Issues / corrections welcome at https://github.com/smaniches/uniprot-mcp/issues.
 | Cross-origin allowlist | enumerated, threat-modelled, privacy-listed | n/a | usually unaudited |
 | Supply chain | SLSA build provenance + Sigstore + CycloneDX SBOM (post-flip) | n/a | rare |
 | Test layers | unit + property + contract + client + integration + benchmark | n/a | usually unit only |
-| Mutation testing | weekly + on-demand workflow; baseline measurement on v1.1.0; ≥ 95 % gate planned post-baseline | n/a | rare |
+| Mutation testing | weekly + on-demand workflow; per-module measurement complete for `cache` 82 %, `proteinchem` 92 %, `client` 70 %; gate currently 0 % (measurement-first), ≥ 95 % is the v1.2.0 target — see `docs/MUTATION_SCORES.md` | n/a | rare |
 
 The **provenance + verify** chain is, in my 2026-04-26 survey, absent
 from every other bio-MCP I could find. A regulated user can take any
@@ -420,10 +422,7 @@ export UNIPROT_MCP_CACHE_DIR=~/sealed-cache
 | Integration | `tests/integration/` | Live UniProt + AlphaFold; opt-in via `--integration`. |
 | Benchmark | `tests/benchmark/` | 30 SHA-256-committed prompts + reproducible verifier. |
 
-**446 offline + 42 live integration tests, all green** (real counts via `pytest --collect-only` on commit `01ab7a8`). Mypy (strict),
-ruff (check + format), bandit (0 issues at any severity), pip-audit
-(`--strict`, no known vulnerabilities) all clean. Mutation testing
-(`mutmut`) gate ≥ 95 % kill, populated post-billing-reset.
+**735 offline + 42 live integration tests, all green** (real counts via `pytest --collect-only` on commit `ed0c76e`; the offline jump from the prior 446 is the v1.1.x mutation-killer files for `cache`, `proteinchem`, `client`). Line + branch coverage measured at **91.85 %** at v1.1.0; the `[tool.coverage.report]` block in `pyproject.toml` documents the regression and the v1.2.0 uplift commitment back to 99 %. Mypy (strict), ruff (check + format), bandit (0 issues at any severity), pip-audit (`--strict`, no known vulnerabilities) all clean. **Mutation testing infrastructure ships and is measurement-first:** per-module raw kill rates as of `0403c0e` are `cache` 82 %, `proteinchem` 92 %, `client` 70 %; the ≥ 95 % gate is the v1.2.0 target, not the current state. Full per-module table at [`docs/MUTATION_SCORES.md`](docs/MUTATION_SCORES.md).
 
 ```bash
 # Fast, offline (CI on every push):
@@ -475,11 +474,13 @@ repository" button). Always also cite the UniProt Consortium:
 
 Apache-2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
-This project is the **gateway** layer of the [Topologica
-Bio](https://github.com/smaniches) MCP suite. Multi-source
-orchestration and tamper-evident provenance ledgers live in the
-companion `topologica-bio` repository under BUSL-1.1 (Change Date
-2030-04-19, auto-reverts to Apache-2.0). `uniprot-mcp` itself is and
-will remain permissively Apache-2.0.
+This project is the **gateway** layer of the planned [Topologica
+Bio](https://github.com/smaniches) MCP suite. Multi-source orchestration
+and tamper-evident provenance ledgers will live in a companion
+`topologica-bio` repository under BUSL-1.1 (Change Date 2030-04-19,
+auto-reverts to Apache-2.0). That companion repository is currently
+private; this README will be updated with a public link when it ships.
+`uniprot-mcp` itself is and will remain permissively Apache-2.0
+regardless of the Topologica Bio side.
 
 Copyright © 2026 Santiago Maniches. TOPOLOGICA LLC.

@@ -1,4 +1,13 @@
-# Professional Repository Audit — uniprot-mcp 0.1.0
+# Professional Repository Audit — uniprot-mcp
+
+> **This document is a rolling audit log.** The original v0.1.0 audit
+> sits in §Findings below; subsequent post-incident notes are appended
+> in chronological sections at the end. Latest entry:
+> `Post-incident note — 2026-04-29 dependency-bump cycle`. Always
+> scroll to the end first to see what's been added since the original
+> audit.
+
+## Original v0.1.0 audit
 
 **Audit date:** 2026-04-19
 **Author:** Santiago Maniches (with independent audit pass from a separate Claude agent on branch `claude/repository-audit-E9k3N`, which timed out before committing — findings consolidated below)

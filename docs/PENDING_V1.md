@@ -1,7 +1,24 @@
 # Pending work — path to `uniprot-mcp` v1.0.1 public release
 
-**Status date:** 2026-04-22
-**Target flip window:** 2026-06-01 → 2026-06-07 (`topologica-bio/docs/LAUNCH_PLAN.md` Phase 4)
+> **HISTORICAL — pre-flip planning, retained for audit trail.**
+> This document was the punch list between the audit-remediated
+> private-repo state (`hardening-v2` @ `020c2a8`) and the v1.0.1
+> public-flip gate. The flip happened **2026-04-26** (well ahead of
+> the original 2026-06-01 → 2026-06-07 window — Phase 4 collapsed once
+> the tool surface, benchmark, provenance, and supply-chain artefacts
+> were all green). v1.0.1 shipped 2026-04-25; v1.1.0 followed on
+> 2026-04-26; v1.1.1 + v1.1.2 (Zenodo DOI mint) on 2026-04-27. Items
+> marked `⏳ flip day` are now done; items marked `⏳ May 1+` either
+> shipped on or before that date, or are tracked under `v1.2.0` in
+> `docs/MUTATION_SCORES.md`. The `§6 Completed log` at the end is
+> the canonical historical timeline.
+>
+> Current authoritative status lives in `README.md`, `CHANGELOG.md`,
+> and `docs/MUTATION_SCORES.md`. Do not treat this file as a
+> live punch list.
+
+**Status date:** 2026-04-22 (frozen)
+**Target flip window:** 2026-06-01 → 2026-06-07 (`topologica-bio/docs/LAUNCH_PLAN.md` Phase 4) — **superseded by actual flip on 2026-04-26**
 **GitHub Actions billing reset:** ~2026-05-01 (Phase 1 measurement cannot run before this)
 **Release tag target:** `v1.0.1` (first public tag; `v0.1.0` stays the pre-flip private baseline)
 
