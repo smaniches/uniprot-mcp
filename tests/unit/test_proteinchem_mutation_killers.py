@@ -167,9 +167,7 @@ _NET_CHARGE_PH7_SINGLE_RESIDUE = [
 
 
 @pytest.mark.parametrize("aa,expected_charge", _NET_CHARGE_PH7_SINGLE_RESIDUE)
-def test_single_residue_net_charge_pH7_pins_pk_constants(  # noqa: N802
-    aa: str, expected_charge: float
-) -> None:
+def test_single_residue_net_charge_pH7_pins_pk_constants(aa: str, expected_charge: float) -> None:
     """Each single-residue net charge at pH 7 pins the relevant pK
     constants (N-term, C-term, and side-chain if applicable)."""
     p = compute_protein_properties(aa)
@@ -183,19 +181,19 @@ def test_single_residue_net_charge_pH7_pins_pk_constants(  # noqa: N802
 # ---------------------------------------------------------------------------
 
 
-def test_extinction_one_W_zero_Y_pins_1490() -> None:  # noqa: N802
+def test_extinction_one_W_zero_Y_pins_1490() -> None:
     """Pace 1995: epsilon_W = 1490. With 1 Trp, 0 Tyr, 0 cystines,
     epsilon must equal exactly 1490 (any mutation of the magic number
     fails)."""
     assert extinction_coefficient_280nm({"W": 1, "Y": 0}) == 1490
 
 
-def test_extinction_zero_W_one_Y_pins_5500() -> None:  # noqa: N802
+def test_extinction_zero_W_one_Y_pins_5500() -> None:
     """Pace 1995: epsilon_Y = 5500."""
     assert extinction_coefficient_280nm({"W": 0, "Y": 1}) == 5500
 
 
-def test_extinction_zero_W_zero_Y_one_cystine_pins_125() -> None:  # noqa: N802
+def test_extinction_zero_W_zero_Y_one_cystine_pins_125() -> None:
     """1 cystine bond contributes 125 even with no W or Y."""
     assert extinction_coefficient_280nm({"W": 0, "Y": 0}, cystines=1) == 125
 
@@ -405,7 +403,7 @@ def test_isoelectric_point_for_neutral_alanine_is_about_six() -> None:
     assert math.isclose(isoelectric_point(counts), 6.01, abs_tol=1e-2)
 
 
-def test_net_charge_pH7_for_neutral_alanine() -> None:  # noqa: N802
+def test_net_charge_pH7_for_neutral_alanine() -> None:
     """Single A at pH 7: charge = 1/(1 + 10**(7-9.69)) - 1/(1 + 10**(2.34-7))
     = 0.998 - 1.000 = -0.002. Pins both terminus pKs jointly."""
     counts = {aa: 0 for aa in "ACDEFGHIKLMNPQRSTVWY"}

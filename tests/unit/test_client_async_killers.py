@@ -38,8 +38,6 @@ would defeat the kill.
 
 from __future__ import annotations
 
-from typing import Any
-
 import httpx
 import pytest
 import respx
@@ -48,7 +46,6 @@ from uniprot_mcp.client import (
     ALPHAFOLD_API_BASE,
     BASE_URL,
     NCBI_EUTILS_BASE,
-    PIN_RELEASE_ENV,
     ReleaseMismatchError,
     UniProtClient,
 )
@@ -444,9 +441,7 @@ async def test_req_raises_runtime_error_after_max_retries_exhausted() -> None:
     Mutating the loop bound, the 'await self._req' arg list, or the
     final 'raise RuntimeError' breaks one of the assertions below."""
     # 4 = MAX_RETRIES (3) + 1 = 4 attempts total.
-    route = respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
-        return_value=httpx.Response(500)
-    )
+    route = respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(500))
     c = UniProtClient()
     try:
         with pytest.raises(RuntimeError, match="failed after 4 attempts"):
@@ -589,9 +584,9 @@ async def test_id_mapping_results_follows_redirect_url() -> None:
             200, json={"redirectURL": "https://rest.uniprot.org/idmapping/results/job1"}
         )
     )
-    redirect_route = respx.get(
-        "https://rest.uniprot.org/idmapping/results/job1"
-    ).mock(return_value=httpx.Response(200, json={"results": [{"from": "X", "to": "Y"}]}))
+    redirect_route = respx.get("https://rest.uniprot.org/idmapping/results/job1").mock(
+        return_value=httpx.Response(200, json={"results": [{"from": "X", "to": "Y"}]})
+    )
     c = UniProtClient()
     try:
         out = await c.id_mapping_results("job1", size=200)
@@ -640,9 +635,9 @@ async def test_batch_entries_caps_at_100_accessions() -> None:
         return_value=httpx.Response(200, json={"results": []})
     )
     c = UniProtClient()
-    accessions = [f"P{i:05d}" for i in range(150)]  # 150 fake-but-valid-shape; ACCESSION_RE filters
-    # Real-shape valid accessions
-    real = ["P04637", "Q9Y6K9", "O00187", "P12345"] * 30  # 120 dupes
+    # 120 valid-shape accessions (4 distinct x 30 dupes); ACCESSION_RE accepts
+    # all four, so all 120 are valid -> the 100-cap path is exercised.
+    real = ["P04637", "Q9Y6K9", "O00187", "P12345"] * 30
     try:
         await c.batch_entries(real)
     finally:
@@ -760,9 +755,7 @@ async def test_get_clinvar_records_term_includes_gene_qualifier() -> None:
     """The esearch term must include '{gene}[Gene]' — pins the term
     construction string."""
     route = respx.get(f"{NCBI_EUTILS_BASE}/esearch.fcgi").mock(
-        return_value=httpx.Response(
-            200, json={"esearchresult": {"idlist": [], "count": "0"}}
-        )
+        return_value=httpx.Response(200, json={"esearchresult": {"idlist": [], "count": "0"}})
     )
     c = UniProtClient()
     try:
@@ -778,9 +771,7 @@ async def test_get_clinvar_records_term_includes_gene_qualifier() -> None:
 async def test_get_clinvar_records_term_includes_variant_when_change_given() -> None:
     """When change is non-empty, term has ' AND "<change>"[Variant Name]'."""
     route = respx.get(f"{NCBI_EUTILS_BASE}/esearch.fcgi").mock(
-        return_value=httpx.Response(
-            200, json={"esearchresult": {"idlist": [], "count": "0"}}
-        )
+        return_value=httpx.Response(200, json={"esearchresult": {"idlist": [], "count": "0"}})
     )
     c = UniProtClient()
     try:
@@ -798,9 +789,7 @@ async def test_get_clinvar_records_term_includes_variant_when_change_given() -> 
 async def test_get_clinvar_records_db_param_is_clinvar() -> None:
     """db=clinvar must be in both calls' query strings."""
     es = respx.get(f"{NCBI_EUTILS_BASE}/esearch.fcgi").mock(
-        return_value=httpx.Response(
-            200, json={"esearchresult": {"idlist": [], "count": "0"}}
-        )
+        return_value=httpx.Response(200, json={"esearchresult": {"idlist": [], "count": "0"}})
     )
     c = UniProtClient()
     try:
@@ -862,9 +851,7 @@ async def test_get_alphafold_summary_returns_empty_when_no_payload() -> None:
 async def test_get_alphafold_summary_handles_missing_latest_version() -> None:
     """If latestVersion is absent, release falls through to None."""
     respx.get(f"{ALPHAFOLD_API_BASE}/api/prediction/X").mock(
-        return_value=httpx.Response(
-            200, json=[{"modelCreatedDate": "2024-09-15"}]
-        )
+        return_value=httpx.Response(200, json=[{"modelCreatedDate": "2024-09-15"}])
     )
     c = UniProtClient()
     try:
@@ -896,9 +883,7 @@ async def test_close_is_idempotent_when_no_client_yet() -> None:
 async def test_close_is_idempotent_after_a_request() -> None:
     """After one request, close() works once and subsequent close()
     calls also work (the is_closed branch)."""
-    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
-        return_value=httpx.Response(200, json={})
-    )
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(200, json={}))
     c = UniProtClient()
     await c.get_entry("P04637")
     await c.close()
@@ -917,9 +902,7 @@ async def test_provenance_records_canonical_hash_for_json_body() -> None:
     """A successful JSON request populates last_provenance with a
     SHA-256 hex digest of length 64 — exercises canonical_response_hash
     path (line 236) inside _req's success path."""
-    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
-        return_value=httpx.Response(200, json={"a": 1})
-    )
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(200, json={"a": 1}))
     c = UniProtClient()
     try:
         await c.get_entry("P04637")
@@ -937,11 +920,10 @@ async def test_provenance_retrieved_at_is_recent() -> None:
     """retrieved_at is captured at extraction time (line 247:
     ``moment = now if now is not None else datetime.now(tz=UTC)``).
     The format must end in 'Z' and parse as a recent ISO-8601."""
-    from datetime import UTC as _UTC, datetime
+    from datetime import UTC as _UTC
+    from datetime import datetime
 
-    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
-        return_value=httpx.Response(200, json={})
-    )
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(200, json={}))
     c = UniProtClient()
     try:
         await c.get_entry("P04637")

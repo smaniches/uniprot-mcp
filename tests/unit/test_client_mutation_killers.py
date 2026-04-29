@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import UTC, datetime
 
 import httpx
 import pytest
@@ -68,7 +69,6 @@ from uniprot_mcp.client import (
     canonical_response_hash,
     parse_retry_after,
 )
-from datetime import UTC, datetime
 
 # ---------------------------------------------------------------------------
 # Module-level constants — pin via direct equality
@@ -147,27 +147,27 @@ def test_uniref_identity_tiers_are_50_90_100() -> None:
 # alternation; mutating the regex at any character flips at least one
 # of these examples.
 _ACCESSION_VALID = [
-    "P04637",       # branch 1: P0[A-Z0-9]{3}[0-9] - classic 6-char
-    "Q9Y6K9",       # branch 1: Q9[A-Z0-9]{3}[0-9]
-    "O00187",       # branch 1: O0[A-Z0-9]{3}[0-9]
-    "A0A024R1R8",   # branch 2: 10-char extended (one repetition)
-    "A2BC19",       # branch 2: 6-char alternative
-    "P12345",       # branch 1
-    "P0DPI2",       # branch 1
+    "P04637",  # branch 1: P0[A-Z0-9]{3}[0-9] - classic 6-char
+    "Q9Y6K9",  # branch 1: Q9[A-Z0-9]{3}[0-9]
+    "O00187",  # branch 1: O0[A-Z0-9]{3}[0-9]
+    "A0A024R1R8",  # branch 2: 10-char extended (one repetition)
+    "A2BC19",  # branch 2: 6-char alternative
+    "P12345",  # branch 1
+    "P0DPI2",  # branch 1
 ]
 
 _ACCESSION_INVALID = [
-    "p04637",   # lowercase
-    "P0463",    # too short (5 chars)
+    "p04637",  # lowercase
+    "P0463",  # too short (5 chars)
     "P046377",  # 7 chars (illegal length: must be 6 or 10)
-    "XXXXX",    # no digits
-    "",         # empty
-    "12345",    # all digits
+    "XXXXX",  # no digits
+    "",  # empty
+    "12345",  # all digits
     "P-04637",  # dash inside
     " P04637",  # leading space
     "P04637 ",  # trailing space
-    "P0463A",   # branch 1 ends in non-digit
-    "A0",       # too short
+    "P0463A",  # branch 1 ends in non-digit
+    "A0",  # too short
     "P_04637",  # underscore inside
 ]
 
@@ -185,9 +185,7 @@ def test_accession_re_matches_valid(accession: str) -> None:
 def test_accession_re_rejects_invalid(bad: str) -> None:
     """Each invalid example must NOT match. Pins the anchors (\\A...\\Z)
     and length constraints in ACCESSION_RE."""
-    assert ACCESSION_RE.match(bad) is None, (
-        f"ACCESSION_RE wrongly matched invalid input {bad!r}"
-    )
+    assert ACCESSION_RE.match(bad) is None, f"ACCESSION_RE wrongly matched invalid input {bad!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -203,15 +201,15 @@ def test_keyword_id_re_matches_valid(v: str) -> None:
 @pytest.mark.parametrize(
     "v",
     [
-        "KW-007",     # 3 digits (not 4)
-        "KW-00007",   # 5 digits (not 4)
-        "kw-0007",    # lowercase prefix
-        "KW-ABCD",    # letters in slot
-        "SL-0007",    # wrong prefix
+        "KW-007",  # 3 digits (not 4)
+        "KW-00007",  # 5 digits (not 4)
+        "kw-0007",  # lowercase prefix
+        "KW-ABCD",  # letters in slot
+        "SL-0007",  # wrong prefix
         "",
-        "KW-0007 ",   # trailing space (anchor test)
-        " KW-0007",   # leading space
-        "KW0007",     # missing dash
+        "KW-0007 ",  # trailing space (anchor test)
+        " KW-0007",  # leading space
+        "KW0007",  # missing dash
     ],
 )
 def test_keyword_id_re_rejects_invalid(v: str) -> None:
@@ -268,13 +266,13 @@ def test_uniref_id_re_matches_valid(v: str) -> None:
 @pytest.mark.parametrize(
     "v",
     [
-        "UniRef25_P04637",          # invalid tier
-        "uniref50_P04637",          # lowercase prefix
-        "UniRef50_p04637",          # lowercase suffix
-        "UniRef50_",                # missing suffix
-        "P04637",                   # missing UniRef prefix
-        "UniRef50_UPI0000ABCDEG",   # G is not a hex char
-        "UniRef50P04637",           # missing underscore
+        "UniRef25_P04637",  # invalid tier
+        "uniref50_P04637",  # lowercase prefix
+        "UniRef50_p04637",  # lowercase suffix
+        "UniRef50_",  # missing suffix
+        "P04637",  # missing UniRef prefix
+        "UniRef50_UPI0000ABCDEG",  # G is not a hex char
+        "UniRef50P04637",  # missing underscore
         "",
     ],
 )
@@ -303,12 +301,12 @@ def test_uniparc_id_re_matches_valid(v: str) -> None:
 @pytest.mark.parametrize(
     "v",
     [
-        "UPI",                  # no hex tail
-        "UPI0000",              # 4 hex chars (not 10)
-        "UPI0000ABCDEFG",       # 11 chars
-        "upi0000ABCDEF",        # lowercase prefix
-        "UPI000abcdef0",        # lowercase hex
-        "UPI0000ABCDEZ",        # Z is not [A-F0-9]
+        "UPI",  # no hex tail
+        "UPI0000",  # 4 hex chars (not 10)
+        "UPI0000ABCDEFG",  # 11 chars
+        "upi0000ABCDEF",  # lowercase prefix
+        "UPI000abcdef0",  # lowercase hex
+        "UPI0000ABCDEZ",  # Z is not [A-F0-9]
     ],
 )
 def test_uniparc_id_re_rejects_invalid(v: str) -> None:
@@ -323,8 +321,8 @@ def test_uniparc_id_re_rejects_invalid(v: str) -> None:
 @pytest.mark.parametrize(
     "v",
     [
-        "UP000005640",   # 9 digits
-        "UP000000001",   # 9 digits
+        "UP000005640",  # 9 digits
+        "UP000000001",  # 9 digits
         "UP00000000000",  # 11 digits
     ],
 )
@@ -335,11 +333,11 @@ def test_proteome_id_re_matches_valid(v: str) -> None:
 @pytest.mark.parametrize(
     "v",
     [
-        "UP",                # no digits
-        "UP12345678",        # 8 digits (not 9-11)
-        "up000005640",       # lowercase
-        "UP000005640A",      # trailing letter
-        "UP000000000000",    # 12 digits
+        "UP",  # no digits
+        "UP12345678",  # 8 digits (not 9-11)
+        "up000005640",  # lowercase
+        "UP000005640A",  # trailing letter
+        "UP000000000000",  # 12 digits
     ],
 )
 def test_proteome_id_re_rejects_invalid(v: str) -> None:
@@ -403,9 +401,7 @@ def test_citation_id_re_rejects_invalid(v: str) -> None:
         ("abc", 1, 2.25),
     ],
 )
-def test_parse_retry_after_pinned_outputs(
-    value: str | None, attempt: int, expected: float
-) -> None:
+def test_parse_retry_after_pinned_outputs(value: str | None, attempt: int, expected: float) -> None:
     """Pin parse_retry_after's full decision tree: passthrough, clamp,
     fallback."""
     result = parse_retry_after(value, attempt)
@@ -582,7 +578,9 @@ def test_extract_provenance_full_headers() -> None:
     assert p["retrieved_at"] == _FIXED_RETRIEVED_AT
     assert p["url"] == "https://rest.uniprot.org/uniprotkb/P04637"
     # response_sha256 of canonical empty JSON object {}
-    assert p["response_sha256"] == "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    assert (
+        p["response_sha256"] == "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    )
 
 
 def test_extract_provenance_no_release_headers() -> None:
@@ -640,9 +638,7 @@ def test_release_mismatch_error_message_with_observed() -> None:
 def test_release_mismatch_error_message_with_no_observed() -> None:
     """When observed is None (header absent), message must say
     '(absent)' — pins the disp formatter."""
-    err = ReleaseMismatchError(
-        pinned="2026_02", observed=None, url="https://rest.uniprot.org/x"
-    )
+    err = ReleaseMismatchError(pinned="2026_02", observed=None, url="https://rest.uniprot.org/x")
     assert "(absent)" in str(err)
 
 
