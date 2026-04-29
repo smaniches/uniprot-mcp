@@ -23,3 +23,17 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # release-drafter v7.x has a regression on the pull_request trigger
+      # path: it sends `targetCommitish: refs/pull/N/merge` to GitHub's
+      # update-release API, which is rejected with "Validation Failed:
+      # target_commitish invalid". Tracked upstream at
+      # https://github.com/release-drafter/release-drafter/issues/1125
+      # (open since 2022-04-21). We are on v7.2.0 with the workflow's
+      # `pull_request` trigger removed (commit f98f08cc) — the
+      # `push:branches:[main]` path is the only one we ship from, and
+      # it works correctly. Block further v8+ majors until a fix lands
+      # so we don't get re-bitten on a routine bump; minors and patches
+      # of v7 are still allowed.
+      - dependency-name: "release-drafter/release-drafter"
+        update-types: ["version-update:semver-major"]

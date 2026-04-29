@@ -134,3 +134,46 @@ No runtime execution during audit. Remediation PR includes a fresh test run (off
   src/uniprot_mcp/server.py    | moved; input validation; safe errors; package-qualified imports
   src/uniprot_mcp/py.typed     | moved from repo root (now PEP 561-effective)
 ```
+
+---
+
+## Post-incident note — 2026-04-29 dependency-bump cycle
+
+**Scope:** five open Dependabot PRs (auto-opened 2026-04-26) for major-version GitHub Actions bumps were merged in a single low→high blast-radius queue with a per-PR validation protocol (SHA-tag verification → upstream changelog audit → usage grep → CI on rebased branch → squash-merge → post-merge CI on main → only then advance).
+
+**Final state:** all five merged; main HEAD `0403c0e6`; zero open PRs; CI green.
+
+| PR | Action bump | Merge commit | Notes |
+|---|---|---|---|
+| #9 | `actions/setup-python` 5.6.0 → 6.2.0 | `8e72b1b7` | Resolves Node 20 deprecation warnings on this action; matrix unchanged |
+| #4 | `actions/github-script` 7.1.0 → 9.0.0 | `285f5807` | Single site (`integration.yml` issue-creation on failure); `github.rest.*` API surface unchanged |
+| #8 | `release-drafter/release-drafter` 6.4.0 → 7.2.0 | `53db2a79` | Removed inputs `disable-releaser`/`disable-autolabeler`; we use neither |
+| #5 | `softprops/action-gh-release` 2.6.2 → 3.0.0 | `55a26aa3` | Pure Node 24 runtime bump; behaviour preserved per upstream notes |
+| #6 | `actions/attest-build-provenance` 1.4.4 → 4.1.0 | `0403c0e6` | 3-major-version jump; v4 is a thin wrapper over `actions/attest`; `subject-path` input preserved |
+
+### Two regressions caught in flight (and the fix-forward commits)
+
+**Regression 1 — ruff `RUF100` cascade after PR #9.** The setup-python v6 bump pulled a slightly stricter ruff via the new pip resolution. Five `# noqa: N802` directives in the proteinchem killer-test file became "unused" because `tests/**` already silences `N802` via `[tool.ruff.lint.per-file-ignores]` in `pyproject.toml`. Lint failed on the post-merge main commit. **Fix-forward:** `1eda3048` (`fix(lint): drop unused noqa N802 directives + ruff format`) — `ruff --fix` removed 10 directives across the three killer-test files, plus one manual ASCII swap (RUF003: U+00D7 `×` → ASCII `x`) and one dead-variable removal. CI green on the next commit.
+
+**Regression 2 — release-drafter v7 PR-trigger failure after PR #8.** When `release-drafter@5de93583` runs via `pull_request:` trigger, it sends `targetCommitish: refs/pull/N/merge` to the GitHub update-release API, which rejects the PR-merge ref with `Validation Failed: target_commitish invalid`. The `push:branches:[main]` path is unaffected. The `update_release_draft` job failed deterministically on every PR-triggered CI run from then on. Surfaced when PR #5's rebased CI showed the regression. **Diagnosis:** the `push:main` path actually drafts releases that ship; the PR trigger was a "preview draft on PR" affordance, not load-bearing. **Fix-forward:** `f98f08cc` (`fix(ci): drop PR trigger from release-drafter (v7 regression)`). Upstream contract: this matches [release-drafter/release-drafter#1125](https://github.com/release-drafter/release-drafter/issues/1125) (open since 2022-04-21); we posted a repro/workaround there.
+
+**Hardening against re-bite:** `.github/dependabot.yml` now ignores release-drafter `version-update:semver-major` until upstream fixes #1125. v7 minors and patches still flow.
+
+### End-to-end test deferral for PRs #5 and #6
+
+Both `softprops/action-gh-release` and `actions/attest-build-provenance` are invoked **only** by `release.yml`, which fires on tag push (and `workflow_dispatch`, but the PyPI Trusted Publishing step gates on real-tag context). Triggering `release.yml` via `workflow_dispatch` on a feature branch would create a botched GitHub Release pointing at the branch HEAD, which would (a) pollute the v1.1.x release list and (b) potentially mint a Zenodo DOI for a non-release artefact — both fail the 2030-compliance test.
+
+The cleaner option — pushing a synthetic test tag like `v1.1.3-rc1` — was rejected by user direction on the same compliance grounds: empty release-candidate tags pollute DOI/CHANGELOG history.
+
+**Decision:** accept the deferral; rely on the upstream behaviour contracts for the verdict, with a clear rollback plan ready for the next real release tag.
+
+| Action | Upstream behaviour contract used | Rollback plan if next tag breaks |
+|---|---|---|
+| `softprops/action-gh-release` v3.0.0 | "Pure Node 24 runtime bump; no input/output/asset-upload changes" — [release notes](https://github.com/softprops/action-gh-release/releases/tag/v3.0.0) | `git revert 55a26aa3 && git push` (~1 min recovery) |
+| `actions/attest-build-provenance` v4.1.0 | "Wrapper around `actions/attest`; `subject-path` input preserved" — [release notes](https://github.com/actions/attest-build-provenance/releases/tag/v4.1.0) | `git revert 0403c0e6 && git push` (~1 min recovery) |
+
+The `gh attestation verify` chain (used by `scripts/replicate.sh`) will be re-validated on the first post-bump release; if it fails, the rollback restores v1 attestation format. Existing v1.1.0 / v1.1.1 / v1.1.2 attestations are unaffected — they were produced by the older action versions and verify with current `gh` regardless.
+
+### What this incident validates
+
+The per-PR protocol caught both regressions before the queue could compound them: the lint cascade was caught between PR #9 and PR #4, and the release-drafter regression was caught between PR #8 and PR #5. Without the "stop and report on post-merge red" rule, both would have been silently deferred to the next push and conflated with later changes. The cost was two extra fix-forward commits and one upstream issue comment — cheap insurance for the auditable trail this repo's stated audience expects.
