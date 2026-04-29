@@ -3,8 +3,14 @@ name: Release Drafter
 on:
   push:
     branches: [main]
-  pull_request:
-    types: [opened, reopened, synchronize]
+  # Note: no `pull_request:` trigger. release-drafter v7 sends
+  # `targetCommitish: refs/pull/N/merge` to the GitHub update-release
+  # API on PR-triggered runs, which GitHub rejects as
+  # `invalid target_commitish`. Dropping the PR trigger keeps the
+  # main-branch draft path (the only one that actually shipped
+  # releases) and removes the spurious red check on every PR.
+  # The draft is updated on the merge commit's push to main, which
+  # is the canonical source of truth for the next-release notes.
 
 permissions:
   contents: read
