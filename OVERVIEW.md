@@ -25,14 +25,14 @@ Source: [github.com/smaniches/uniprot-mcp](https://github.com/smaniches/uniprot-
 | The PyPI wheel was built from this exact repo. | SLSA build provenance attestation on every [GitHub Release](https://github.com/smaniches/uniprot-mcp/releases) (v1.1.2 = latest); `gh attestation verify` confirms. End-to-end script: `scripts/replicate.sh`. |
 | **11,590 disease/pathogen rows** in the comprehensive atlas, all sourced verbatim from UniProt. | `examples/atlas/comprehensive_index.tsv` (7,250 human disease rows from 5,296 entries) + `examples/atlas/comprehensive_index_pathogens.tsv` (4,340 entries across 16 pathogens). Reproducibility manifest at `examples/atlas/manifest.json` with SHA-256 of every file + the script's git commit. |
 | Coverage gate currently 91, measured 91.85%. Aspirational 99. | `pyproject.toml` `[tool.coverage.report]` block documents both the regression and the uplift commitment; CI enforces 91 today. |
-| Mutation testing infrastructure ships; the v1.1.0 baseline is partially measured. | `.github/workflows/mutation.yml` (matrix per src/ file); `docs/MUTATION_SCORES.md` records what is measured (cache module: 7 mutants, 0 killed) and what is pending (large modules timed out at 90 min on first matrix; v1.1.x switches to per-test-file scoping). |
+| Mutation testing infrastructure ships; per-module raw kill rates measured for `cache` 82 % (≈100 % behavioural, the 5 survivors are docstring), `proteinchem` 92 % (228/249), `client` 70 % (259/370 after the two-phase sync + async killer uplift); `formatters` and `server` partial pending bisection. | `.github/workflows/mutation.yml` (matrix per src/ file); `docs/MUTATION_SCORES.md` carries the full per-module table + survivor breakdown + v1.2.0 uplift action items. The ≥ 95 % gate is the v1.2.0 target, not the current state. |
 
 ## What is honest about this project
 
 | Limitation | Disclosure |
 |---|---|
 | Coverage regression v1.0.0 100% → v1.1.0 91.85%. | `CHANGELOG.md` Known-issues section names this explicitly + commits to v1.2.0 uplift. |
-| Mutation testing baseline is measurement-first; gate is at 0.0 today, not 95%. | `docs/MUTATION_SCORES.md` says so on the first paragraph. |
+| Mutation testing gate is 0.0 today, not 95%. Per-module raw rates as of `0403c0e` are `cache` 82 %, `proteinchem` 92 %, `client` 70 %; `formatters` + `server` partial. | `docs/MUTATION_SCORES.md` carries the full table + the v1.2.0 path to ≥ 95 %. |
 | The atlas is a research-demonstration corpus, not an authoritative ontology. Some MONDO IDs are approximate matches. | `examples/atlas/METHODOLOGY.md` enumerates what is machine-verified vs community-reviewable; invites issue reports. |
 | Mature-chain numbering offsets (HBB E6V vs E7V; GBA N370S vs N409S) are surfaced explicitly per atlas entry. | `examples/atlas/hbb.md`, `examples/atlas/gba.md`. |
 | `uniprot-mcp` does not replace UniProt; it is a client of it. | `docs/COMPETITIVE_LANDSCAPE.md` honest survey of where this fits. |
