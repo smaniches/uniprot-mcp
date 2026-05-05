@@ -10,7 +10,7 @@ a script.
 A **Model Context Protocol** server that exposes the UniProt protein
 knowledgebase to LLM agents (Claude, and any other MCP client) with
 **per-query provenance verification**. Apache-2.0. Published on PyPI
-as [`uniprot-mcp-server` v1.1.2](https://pypi.org/project/uniprot-mcp-server/1.1.2/).
+as [`uniprot-mcp-server` v1.1.3](https://pypi.org/project/uniprot-mcp-server/1.1.3/).
 Source: [github.com/smaniches/uniprot-mcp](https://github.com/smaniches/uniprot-mcp).
 
 ## What is concrete and verifiable
@@ -20,10 +20,10 @@ Source: [github.com/smaniches/uniprot-mcp](https://github.com/smaniches/uniprot-
 | 41 tools across 8 families. | `src/uniprot_mcp/server.py` (each `@mcp.tool` decorator); `.well-known/mcp.json` lists them; contract test `tests/contract/test_manifest_consistency.py` enforces equality between code and manifest. |
 | Per-response provenance with SHA-256. | `src/uniprot_mcp/client.py` `_extract_provenance` + `canonical_response_hash`; sample footer at `tests/benchmark/run-2026-04-25-roundtrip/transcript.md`. |
 | A `uniprot_provenance_verify` tool with five enumerated verdicts. | `src/uniprot_mcp/server.py` (the tool registration); unit tests in `tests/unit/test_provenance_verify.py`. |
-| 446 offline + 42 live integration tests (real counts via `pytest --collect-only`). | `pytest tests/unit tests/property tests/client tests/contract -q` — verifiable on any machine. |
-| 30/30 sealed-prompt benchmark verified against live UniProt 2026-04-26. | `tests/benchmark/run-2026-04-26-v1.1.0/` (transcript) + the cryptographic seals at `tests/benchmark/expected.hashes.jsonl`. |
-| The PyPI wheel was built from this exact repo. | SLSA build provenance attestation on every [GitHub Release](https://github.com/smaniches/uniprot-mcp/releases) (v1.1.2 = latest); `gh attestation verify` confirms. End-to-end script: `scripts/replicate.sh`. |
-| **11,590 disease/pathogen rows** in the comprehensive atlas, all sourced verbatim from UniProt. | `examples/atlas/comprehensive_index.tsv` (7,250 human disease rows from 5,296 entries) + `examples/atlas/comprehensive_index_pathogens.tsv` (4,340 entries across 16 pathogens). Reproducibility manifest at `examples/atlas/manifest.json` with SHA-256 of every file + the script's git commit. |
+| 742 offline + 42 live integration tests (real counts via `pytest --collect-only` on the v1.1.3 commit). | `pytest --ignore=tests/integration -q` for the offline 742; `pytest --integration tests/integration` for the 42. |
+| 30/30 sealed-prompt benchmark verified against live UniProt 2026-04-26. | `tests/benchmark/run-2026-04-26-v1.1.0/` (transcript) + the cryptographic seals at `tests/benchmark/expected.hashes.jsonl`. Third-party verification path: `tests/benchmark/verify_against_hashes.py` (no plaintext seal needed). |
+| The PyPI wheel was built from this exact repo. | SLSA build provenance attestation on every [GitHub Release](https://github.com/smaniches/uniprot-mcp/releases) (v1.1.3 = latest); `gh attestation verify` confirms. End-to-end script: `scripts/replicate.sh`. |
+| **11,590 disease + pathogen rows** in the comprehensive index, sourced verbatim from UniProt. | `examples/atlas/comprehensive_index.tsv` (7,250 human disease rows from 5,296 entries, UniProt disease ID + OMIM cross-references where present) + `examples/atlas/comprehensive_index_pathogens.tsv` (4,340 entries across 16 pathogens). Reproducibility manifest at `examples/atlas/manifest.json` re-sealed in v1.1.3 with SHA-256 of every committed file + the script's git commit; contract test `tests/contract/test_atlas_manifest.py` fails any future drift. **Note:** MONDO / PharmGKB / ARO cross-ontology mappings live only in the 25-entry curated atlas (`examples/atlas/atlas.json`), not in the 11,590-row index. |
 | Coverage gate currently 91, measured 91.85%. Aspirational 99. | `pyproject.toml` `[tool.coverage.report]` block documents both the regression and the uplift commitment; CI enforces 91 today. |
 | Mutation testing infrastructure ships; per-module raw kill rates measured for `cache` 82 % (≈100 % behavioural, the 5 survivors are docstring), `proteinchem` 92 % (228/249), `client` 70 % (259/370 after the two-phase sync + async killer uplift); `formatters` and `server` partial pending bisection. | `.github/workflows/mutation.yml` (matrix per src/ file); `docs/MUTATION_SCORES.md` carries the full per-module table + survivor breakdown + v1.2.0 uplift action items. The ≥ 95 % gate is the v1.2.0 target, not the current state. |
 
@@ -66,7 +66,7 @@ pwsh scripts/replicate.ps1  # Windows
 
 The script:
 
-1. Downloads `uniprot-mcp-server==1.1.2` from PyPI (override with the `VERSION` env var to pin any released version); SHA-256s it.
+1. Downloads `uniprot-mcp-server==1.1.3` from PyPI (override with the `VERSION` env var to pin any released version); SHA-256s it.
 2. Cross-checks that hash against PyPI's API + the GitHub Release
    asset + the SLSA build-provenance subject digest. **All four must
    match.**

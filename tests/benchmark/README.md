@@ -10,13 +10,24 @@ Marketing-grade benchmarks select for the system author's preferences. This benc
 2. **Three comparators per run.** Every prompt is answered by `uniprot-mcp` v1.0.1, by vanilla Claude with WebFetch, and by a manual primary-source pass. The comparison is a delta, not an absolute.
 3. **Independent grading.** Two graders score blind, one arbitrator resolves disagreements. Grader names and affiliations are recorded in `graders.md` per run.
 
-A reader who only trusts cryptographic guarantees can:
+### Two reproducibility paths
+
+**Third-party (fresh checkout — no plaintext seal needed).** Re-derive every Tier A / Tier B answer live and compare its canonical SHA-256 to the committed `expected.hashes.jsonl`:
+
+```bash
+python tests/benchmark/verify_against_hashes.py tests/benchmark/expected.hashes.jsonl
+```
+
+This path needs only the committed repository, network access to `rest.uniprot.org`, and Python ≥ 3.11. It does **not** need `expected.jsonl` (gitignored — see below). Tier C set-inclusion prompts (28, 29) are surfaced and skipped: the live answer may legitimately be a superset of the seal, so the hash bytes legitimately differ. Maintainers verify those via the second path.
+
+**Maintainer (local plaintext seal in hand).** Once `expected.jsonl` exists in your working tree:
 
 ```bash
 python tests/benchmark/verify.py tests/benchmark/expected.jsonl tests/benchmark/expected.hashes.jsonl
+python tests/benchmark/verify_answers.py tests/benchmark/expected.jsonl
 ```
 
-If `verify.py` exits 0, the expected-answer file has not been altered since the commit that introduced `expected.hashes.jsonl`. If it exits non-zero, the benchmark for this run is invalidated.
+`verify.py` exit 0 confirms the local plaintext was not edited since the commit that sealed it. `verify_answers.py` confirms the live answer matches the seal (exact match for Tier A/B, set-inclusion for Tier C 28/29). If either exits non-zero, the benchmark for that run is invalidated.
 
 ## Files
 

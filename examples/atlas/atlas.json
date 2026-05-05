@@ -15,13 +15,13 @@
     "chembl": "https://www.ebi.ac.uk/chembl/target_report_card/CHEMBL"
   },
   "@type": "schema:Dataset",
-  "schema:identifier": "uniprot-mcp/atlas/v1.1.2",
+  "schema:identifier": "uniprot-mcp/atlas/v1.1.3",
   "schema:name": "uniprot-mcp disease & target atlas",
-  "schema:description": "Curated worked examples spanning the major axes of biomedical research, each demonstrating the uniprot-mcp tool surface end-to-end on a real disease/protein pair. Each entry is one Markdown file plus a structured record in this manifest. The atlas pins the shape of the answer (which tools to call, what provenance fields to expect) rather than the content (which UniProt drifts between releases). Adopters can run the per-entry tool sequence against any UniProt release and verify drift via uniprot_provenance_verify.",
+  "schema:description": "Curated worked examples spanning the major axes of biomedical research, each demonstrating the uniprot-mcp tool surface end-to-end on a real disease/protein pair. Each entry is one Markdown file plus a structured record in this manifest. The atlas pins the shape of the answer (which tools to call, what provenance fields to expect) rather than the content (which UniProt drifts between releases). Adopters can run the per-entry tool sequence against any UniProt release and verify drift via uniprot_provenance_verify. v1.1.3 corrected four MONDO ontology ID assignments that conflicted across entries (TP53/ERBB2 sharing mondo:0007254; HBB/FBN1 sharing mondo:0011382; GBA/SNCA sharing mondo:0008199; MYH7/LMNA sharing mondo:0011712); the new IDs were verified against the canonical MONDO ontology (purl.obolibrary.org/obo/MONDO_*) via OLS4.",
   "schema:license": "https://www.apache.org/licenses/LICENSE-2.0",
-  "schema:version": "1.1.2",
+  "schema:version": "1.1.3",
   "schema:dateCreated": "2026-04-26",
-  "schema:dateModified": "2026-04-27",
+  "schema:dateModified": "2026-05-05",
   "schema:isAccessibleForFree": true,
   "schema:creator": {
     "@type": "schema:Person",
@@ -62,7 +62,7 @@
       "gene": "TP53",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0007254", "name": "Li-Fraumeni syndrome"}
+        {"@id": "mondo:0018875", "name": "Li-Fraumeni syndrome"}
       ],
       "omim": ["191170", "151623"],
       "diseaseClass": "Hereditary cancer",
@@ -183,7 +183,7 @@
       "gene": "ERBB2",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0007254", "name": "HER2-positive breast cancer subtype"},
+        {"@id": "mondo:0006244", "name": "HER2-positive breast carcinoma"},
         {"@id": "mondo:0006520", "name": "Gastric adenocarcinoma"}
       ],
       "omim": ["164870", "137215"],
@@ -289,7 +289,7 @@
         {"@id": "mondo:0007947", "name": "Marfan syndrome"},
         {"@id": "mondo:0011625", "name": "Acromicric dysplasia"},
         {"@id": "mondo:0009098", "name": "Geleophysic dysplasia 2"},
-        {"@id": "mondo:0011382", "name": "Stiff skin syndrome"}
+        {"@id": "mondo:0008492", "name": "Stiff skin syndrome"}
       ],
       "omim": ["134797", "154700", "102370"],
       "diseaseClass": "Single-gene rare disease",
@@ -341,7 +341,7 @@
         {"@id": "mondo:0009207", "name": "Gaucher disease type 1"},
         {"@id": "mondo:0009208", "name": "Gaucher disease type 2"},
         {"@id": "mondo:0009209", "name": "Gaucher disease type 3"},
-        {"@id": "mondo:0008199", "name": "Parkinson disease 1 (genetic risk modifier)"}
+        {"@id": "mondo:1040030", "name": "GBA1-related Parkinson disease, susceptibility"}
       ],
       "omim": ["606463", "230800", "230900", "231000"],
       "diseaseClass": "Metabolic / lysosomal",
@@ -374,7 +374,7 @@
       "gene": "SNCA",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0008199", "name": "Parkinson disease 1, autosomal dominant"},
+        {"@id": "mondo:0008200", "name": "autosomal dominant Parkinson disease 1"},
         {"@id": "mondo:0008245", "name": "Dementia with Lewy bodies"},
         {"@id": "mondo:0008298", "name": "Multiple system atrophy"}
       ],
@@ -393,7 +393,7 @@
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
         {"@id": "mondo:0024533", "name": "Hypertrophic cardiomyopathy 1"},
-        {"@id": "mondo:0011712", "name": "Dilated cardiomyopathy 1S"},
+        {"@id": "mondo:0013262", "name": "dilated cardiomyopathy 1S"},
         {"@id": "mondo:0011688", "name": "Laing distal myopathy"}
       ],
       "omim": ["160760", "192600", "613426", "160500"],
@@ -410,7 +410,7 @@
       "gene": "LMNA",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0011712", "name": "Dilated cardiomyopathy 1A"},
+        {"@id": "mondo:0007269", "name": "dilated cardiomyopathy 1A"},
         {"@id": "mondo:0008977", "name": "Emery-Dreifuss muscular dystrophy 2"},
         {"@id": "mondo:0008034", "name": "Hutchinson-Gilford progeria syndrome"},
         {"@id": "mondo:0011055", "name": "Familial partial lipodystrophy 2"},
@@ -496,7 +496,7 @@
   ],
   "fairPrinciples": {
     "findable": {
-      "persistentIdentifier": "PyPI uniprot-mcp-server v1.1.2; GitHub commit cited via SLSA attestation; Zenodo concept DOI 10.5281/zenodo.19817710 (always-latest version)",
+      "persistentIdentifier": "PyPI uniprot-mcp-server v1.1.3; GitHub commit cited via SLSA attestation; Zenodo concept DOI 10.5281/zenodo.19817710 (always-latest version)",
       "metadata": "this JSON-LD record + per-entry Markdown",
       "searchable": "GitHub repo + PyPI + Zenodo (concept DOI 10.5281/zenodo.19817710)"
     },

@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "generated_at_utc": "2026-04-26T21:40:42.637943Z",
+  "generated_at_utc": "2026-05-05T21:19:13Z",
   "tool": {
     "name": "uniprot-mcp/build_comprehensive_index.py",
     "path": "examples/atlas/build_comprehensive_index.py",
     "sha256": "dbd62896fca6cc842893763f16db1abb3d8d376ff0ede6a34f96c0a5da5f2429",
-    "git_commit_at_generation": "da33b1771299baafd35a4d77d360b665eed37e19",
+    "git_commit_at_generation": "b4e1f01d41ac1195de81a284f026f135e1395b6d",
     "git_repo": "https://github.com/smaniches/uniprot-mcp"
   },
   "source": {
@@ -14,18 +14,19 @@
     "license": "CC BY 4.0",
     "citation": "The UniProt Consortium. UniProt: the Universal Protein Knowledgebase in 2025. Nucleic Acids Research (2025). doi:10.1093/nar/gkae1010"
   },
+  "reseal_note": "v1.1.3 reseal: the previous manifest's TSV SHA-256 commitments did not match the on-disk files (the manifest was generated at git da33b17 and the TSVs were edited later without a manifest refresh). The TSV plaintext is unchanged in this v1.1.3 patch; only the manifest's hashes, byte sizes, generated_at_utc, and git_commit_at_generation were refreshed against the current on-disk content. The contract test tests/contract/test_atlas_manifest.py now fails any future drift.",
   "files": [
     {
       "path": "examples/atlas/comprehensive_index.tsv",
-      "sha256": "078711347db7d5205219ceae325c92db357fc569365d9a9534851dda8a75ef75",
+      "sha256": "36f7001999075c44ba6e0e570dc046bc5d85822dceffb9243fdd7f2342c64124",
       "rows_excl_header": 7250,
-      "bytes": 1215505
+      "bytes": 1208254
     },
     {
       "path": "examples/atlas/comprehensive_index_pathogens.tsv",
-      "sha256": "b40b5c674d0091e8c011168ecc29c2da512897b2c1df617ba936634f7ff8e3e9",
+      "sha256": "a44939e6ceb8bbd60047815c61c0b5f68ca6ccbf2f3a70c76e2bc76a0873aa55",
       "rows_excl_header": 4340,
-      "bytes": 542101
+      "bytes": 537760
     }
   ]
 }

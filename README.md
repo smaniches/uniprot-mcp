@@ -4,7 +4,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![MCP compatible](https://img.shields.io/badge/MCP-compatible-6e56cf.svg)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-735_offline_%2B_42_live-success)](#testing)
+[![Tests](https://img.shields.io/badge/tests-742_offline_%2B_42_live-success)](#testing)
 [![Coverage](https://img.shields.io/badge/coverage-91.85%25-yellow)](pyproject.toml)
 [![Provenance: SHA-256 + verify](https://img.shields.io/badge/provenance-SHA--256_+_verify-blue)](#provenance--verification)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
@@ -38,7 +38,7 @@ If you are a biomedical researcher visiting this repo, the highest-signal places
 
 | Resource | What it gives you |
 |---|---|
-| **[`examples/atlas/`](examples/atlas/)** | 25 disease & target worked examples — TP53, BRCA1, CFTR, HTT, EGFR, BRAF, KRAS, TEM-1 β-lactamase, more — each linking the canonical UniProt accession to MONDO / OMIM / PharmGKB / ARO IDs and the relevant tool sequence. JSON-LD manifest at `examples/atlas/atlas.json` for machine consumption. Methodology (how compiled, what's verified, what's community-reviewable) at `examples/atlas/METHODOLOGY.md`. |
+| **[`examples/atlas/`](examples/atlas/)** | Two artifacts with deliberately different scopes: <br>• **Curated atlas (25 entries).** TP53, BRCA1, CFTR, HTT, EGFR, BRAF, KRAS, TEM-1 β-lactamase, more — each linking the canonical UniProt accession to MONDO / OMIM / PharmGKB / ARO IDs and the relevant tool sequence. JSON-LD manifest at `examples/atlas/atlas.json`. <br>• **Comprehensive index (11,590 rows).** UniProt's curated disease + pathogen surface as two TSVs (`comprehensive_index.tsv` 7,250 human disease rows, `comprehensive_index_pathogens.tsv` 4,340 pathogen rows). Each row carries a UniProt disease ID and an OMIM cross-reference where available. MONDO / PharmGKB / ARO mappings exist only in the 25-entry curated atlas, not in the 11,590-row index. SHA-256 reproducibility manifest at `examples/atlas/manifest.json`. <br>Methodology (how compiled, what's verified, what's community-reviewable) at `examples/atlas/METHODOLOGY.md`. |
 | **[`examples/01..04.jsonl`](examples/)** | Full Claude-Desktop transcripts of clinical-variant interpretation (TP53 R175H), drug-target dossier (BRCA1), provenance verification a year later, pathogen drug-discovery (TEM-1). |
 | **[`tests/benchmark/`](tests/benchmark/)** | Pre-registered 30-prompt benchmark with SHA-256 commitments on `main`. The 2026-04-26 v1.1.0 run verified 30/30 against live UniProt — transcript at `tests/benchmark/run-2026-04-26-v1.1.0/`. |
 | **[`scripts/replicate.sh`](scripts/replicate.sh)** | One-command verification that the published PyPI wheel was built from this exact repo (cross-checks SHA-256 across PyPI / GitHub Release / SLSA attestation; runs `--self-test`; re-runs the benchmark live). POSIX + `scripts/replicate.ps1` for Windows. |
@@ -57,7 +57,7 @@ Issues / corrections welcome at https://github.com/smaniches/uniprot-mcp/issues.
 | Per-query auditability | `uniprot_provenance_verify` re-checks any prior response | not possible | not possible |
 | Release pinning | `--pin-release=YYYY_MM` raises on drift | n/a | n/a |
 | Pre-registered benchmark | 30 prompts, SHA-256 committed on `main` + reproducible verifier | n/a | n/a |
-| Local provenance cache | offline replay via `UNIPROT_MCP_CACHE_DIR` | n/a | n/a |
+| Local provenance cache | `uniprot_replay_from_cache` read primitive (cache write-through is a v1.2.0 roadmap item — see [§Provenance & verification](#provenance--verification)) | n/a | n/a |
 | Clinical primitives | sequence chemistry / position-aware features / HGVS variant lookup / disease associations / AlphaFold pLDDT / ClinVar | none | none |
 | Composition tool | `uniprot_target_dossier` — one call, nine sections | n/a | n/a |
 | Input validation | regex + length cap before any HTTP call | none | partial |
@@ -231,14 +231,25 @@ uniprot-mcp
 # as an agent-actionable error envelope.
 ```
 
-For offline replay (post-cache-population):
+For offline replay, `uniprot_replay_from_cache(url)` reads a
+previously-recorded response from a directory pointed at by
+`UNIPROT_MCP_CACHE_DIR`:
 
 ```bash
 export UNIPROT_MCP_CACHE_DIR=~/.uniprot-mcp-cache
 uniprot-mcp
-# every successful response is mirrored to disk; later replay via
-# uniprot_replay_from_cache(url) without touching the upstream.
+# uniprot_replay_from_cache(url) returns the entry at
+# $UNIPROT_MCP_CACHE_DIR/<sha256(url)>.json if present.
 ```
+
+> **Status note (v1.1.3).** `uniprot_replay_from_cache` is a **read
+> primitive**. The cache must currently be populated by an external
+> process — for example, by the maintainer-provided benchmark capture
+> script, or by you wrapping `httpx` calls and writing to the directory
+> yourself in the documented JSON shape (see `src/uniprot_mcp/cache.py`).
+> Automatic write-through on every successful tool call is a tracked
+> v1.2.0 roadmap item; the production code in v1.1.x does **not**
+> mirror responses to disk by default.
 
 A live end-to-end demonstration is committed at
 [`tests/benchmark/run-2026-04-25-roundtrip/transcript.md`](tests/benchmark/run-2026-04-25-roundtrip/transcript.md)
@@ -254,8 +265,14 @@ with **SHA-256-committed expected answers** on `main`. The plaintext
 published; the cryptographic commitments mean the author cannot
 rewrite "correct" answers post-hoc.
 
-A reviewer can re-derive every Tier A and B answer from primary-source
-UniProt REST in two commands:
+**Third-party verification path (no plaintext seal needed).** Re-derive every Tier A / B answer live and compare its canonical SHA-256 to the committed `expected.hashes.jsonl` — no `expected.jsonl` required:
+
+```bash
+python tests/benchmark/verify_against_hashes.py tests/benchmark/expected.hashes.jsonl
+# OK: 28 hash commitment(s) verified live (2 set-inclusion prompt(s) skipped)
+```
+
+**Maintainer verification path (with the local plaintext seal).**
 
 ```bash
 python tests/benchmark/verify_answers.py tests/benchmark/expected.jsonl
@@ -325,7 +342,9 @@ For pinned, reproducibility-grade access:
 }
 ```
 
-For offline replay via the local provenance cache:
+To enable `uniprot_replay_from_cache` reads against a cache directory
+you have populated yourself (write-through is a v1.2.0 roadmap item —
+see [§Provenance & verification](#provenance--verification)):
 
 ```json
 {
@@ -399,13 +418,15 @@ uniprot-mcp --self-test
   )
 ```
 
-**5. Air-gapped clinical workflow with sealed cache.**
+**5. Replay a previously-cached answer offline (read primitive — see status note below).**
 
 ```bash
-# Day 1, online: cache populates as queries run.
+# Pre-condition: $UNIPROT_MCP_CACHE_DIR/<sha256(url)>.json already exists,
+# populated by the maintainer benchmark capture script or an external
+# wrapper. Automatic write-through on every successful tool call is a
+# tracked v1.2.0 roadmap item — uniprot-mcp 1.1.x does NOT mirror
+# responses to disk by default.
 export UNIPROT_MCP_CACHE_DIR=~/sealed-cache
-# … every uniprot-mcp tool call writes to ~/sealed-cache/<sha>.json
-# Day N, offline: replay any prior answer.
 > uniprot_replay_from_cache("https://rest.uniprot.org/uniprotkb/P04637")
 ```
 
@@ -422,7 +443,7 @@ export UNIPROT_MCP_CACHE_DIR=~/sealed-cache
 | Integration | `tests/integration/` | Live UniProt + AlphaFold; opt-in via `--integration`. |
 | Benchmark | `tests/benchmark/` | 30 SHA-256-committed prompts + reproducible verifier. |
 
-**735 offline + 42 live integration tests, all green** (real counts via `pytest --collect-only` on commit `ed0c76e`; the offline jump from the prior 446 is the v1.1.x mutation-killer files for `cache`, `proteinchem`, `client`). Line + branch coverage measured at **91.85 %** at v1.1.0; the `[tool.coverage.report]` block in `pyproject.toml` documents the regression and the v1.2.0 uplift commitment back to 99 %. Mypy (strict), ruff (check + format), bandit (0 issues at any severity), pip-audit (`--strict`, no known vulnerabilities) all clean. **Mutation testing infrastructure ships and is measurement-first:** per-module raw kill rates as of `0403c0e` are `cache` 82 %, `proteinchem` 92 %, `client` 70 %; the ≥ 95 % gate is the v1.2.0 target, not the current state. Full per-module table at [`docs/MUTATION_SCORES.md`](docs/MUTATION_SCORES.md).
+**742 offline + 42 live integration tests, all green** at v1.1.3 (real counts via `pytest --collect-only --ignore=tests/integration` and `pytest --collect-only tests/integration`; the offline jump from the v1.1.0 baseline of 446 is the v1.1.x mutation-killer files for `cache`, `proteinchem`, `client` plus the v1.1.3 atlas-manifest contract test and the duplicate-ontology-id consistency check). Line + branch coverage measured at **91.85 %** at v1.1.0; v1.1.1 / v1.1.2 / v1.1.3 are metadata-and-correctness releases that did not touch source-code paths, so the v1.1.0 measurement remains the operative figure. The `[tool.coverage.report]` block in `pyproject.toml` documents the regression vs v1.0.0 and the v1.2.0 uplift commitment back to 99 %. Mypy (strict), ruff (check + format), bandit (0 issues at any severity), pip-audit (`--strict`, no known vulnerabilities) all clean. **Mutation testing infrastructure ships and is measurement-first:** see the per-module table at [`docs/MUTATION_SCORES.md`](docs/MUTATION_SCORES.md) for the latest matrix-workflow results; the ≥ 95 % gate is the v1.2.0 target, not the current state.
 
 ```bash
 # Fast, offline (CI on every push):
