@@ -139,7 +139,7 @@ These items were explicitly out of scope for v1.1.3 and remain open:
 ## 6. Explicit scope statement
 
 This is a documentation, correctness, and atlas re-sealing release.
-**No** of the following are touched in v1.1.3:
+**None** of the following are touched in v1.1.3:
 
 - No tool surface change. The 41-tool surface is identical.
 - No `Provenance` TypedDict shape change.

@@ -224,7 +224,9 @@ def test_no_duplicate_disease_ontology_id_with_distinct_names(manifest: dict) ->
                 "aliases_whitelist.json must be a JSON object with an "
                 '\'aliases\' array of {"id": ..., "justification": ...} entries'
             )
-        whitelist = {entry["id"] for entry in data["aliases"] if isinstance(entry, dict)}
+        whitelist = {
+            entry["id"] for entry in data["aliases"] if isinstance(entry, dict) and "id" in entry
+        }
 
     id_to_names: dict[str, set[str]] = collections.defaultdict(set)
     for entry in manifest["entries"]:

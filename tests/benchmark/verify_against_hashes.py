@@ -16,8 +16,8 @@ Usage::
 
 Exit codes:
   0 — every Tier A / Tier B prompt's derived hash matches the
-       commitment, and Tier C set-inclusion prompts (28, 29) reproduce
-       the sealed items as a subset of the live response.
+       commitment; Tier C set-inclusion prompts (28, 29) are reported
+       and skipped for manual / maintainer verification.
   1 — at least one prompt did not verify.
   2 — usage / IO error.
 
@@ -25,10 +25,11 @@ Tier C set-inclusion semantics: prompts 28 and 29 commit a *sealed*
 answer that may be a strict subset of the live answer (UniProt
 adds new feature types or cross-DB references over time). The hash
 of the live answer therefore does **not** match the committed hash
-in those two cases. We surface them with a ``set-inclusion: hash
-verified separately required`` marker rather than failing — the
-sealed hash check is left to maintainers running with the local
-``expected.jsonl``. The other 28 prompts must hash-match exactly.
+in those two cases. We surface them with a ``SKIP — set-inclusion
+prompt`` marker rather than failing — the sealed hash check is left
+to maintainers running with the local ``expected.jsonl`` via
+``verify.py`` + ``verify_answers.py``. The other 28 prompts must
+hash-match exactly.
 
 SPDX-License-Identifier: Apache-2.0
 """
