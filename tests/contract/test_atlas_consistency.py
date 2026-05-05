@@ -218,9 +218,9 @@ def test_no_duplicate_disease_ontology_id_with_distinct_names(manifest: dict) ->
         try:
             data = json.loads(whitelist_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            pytest.fail(f"aliases_whitelist.json is not valid JSON: {exc}")
+            raise AssertionError(f"aliases_whitelist.json is not valid JSON: {exc}") from exc
         if not isinstance(data, dict) or not isinstance(data.get("aliases"), list):
-            pytest.fail(
+            raise AssertionError(
                 "aliases_whitelist.json must be a JSON object with an "
                 '\'aliases\' array of {"id": ..., "justification": ...} entries'
             )
