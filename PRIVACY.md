@@ -8,9 +8,9 @@ This document describes what data flows through `uniprot-mcp` when you run it, w
 
 ## The short version
 
-`uniprot-mcp` is a **stateless** MCP server. It does not collect, store, or transmit personal data anywhere. It calls one external service: the public [UniProt REST API](https://rest.uniprot.org). It writes one log file: standard error on the host that runs it. That is the entire privacy surface.
+`uniprot-mcp` is a **stateless** MCP server. It does not collect, store, or transmit personal data anywhere. It calls **three** external services: the public [UniProt REST API](https://rest.uniprot.org) (most tools), [AlphaFold-DB](https://alphafold.ebi.ac.uk) (only `uniprot_get_alphafold_confidence`), and [NCBI eutils ClinVar](https://eutils.ncbi.nlm.nih.gov) (only `uniprot_resolve_clinvar`). It writes one log file: standard error on the host that runs it. That is the entire privacy surface — the per-origin breakdown is in [§Third parties](#third-parties) below.
 
-If you are evaluating this for HIPAA, GDPR, or institutional IRB review: there is no PII / PHI handling, no analytics, no telemetry, no third-party SDK, no remote write. The risk surface is identical to running `curl https://rest.uniprot.org/...` on the same machine.
+If you are evaluating this for HIPAA, GDPR, or institutional IRB review: there is no PII / PHI handling, no analytics, no telemetry, no third-party SDK, no remote write. The risk surface is identical to running `curl https://rest.uniprot.org/...`, `curl https://alphafold.ebi.ac.uk/...`, or `curl https://eutils.ncbi.nlm.nih.gov/...` on the same machine.
 
 ---
 
@@ -40,7 +40,7 @@ If you are evaluating this for HIPAA, GDPR, or institutional IRB review: there i
 3. **UniProt → uniprot-mcp**: JSON or FASTA response. We extract release headers (`X-UniProt-Release`, `X-UniProt-Release-Date`) for the provenance footer.
 4. **uniprot-mcp → MCP client**: formatted Markdown / JSON / FASTA, including the provenance footer (release, retrieved-at timestamp, query URL).
 
-Nothing else leaves the process.
+The diagram above shows the primary UniProt flow. Two specific tools — `uniprot_get_alphafold_confidence` and `uniprot_resolve_clinvar` — additionally call `alphafold.ebi.ac.uk` and `eutils.ncbi.nlm.nih.gov` respectively. Those origins are enumerated in [§Third parties](#third-parties) below; no other origin is ever consulted.
 
 ---
 

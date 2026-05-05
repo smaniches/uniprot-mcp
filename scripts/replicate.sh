@@ -15,12 +15,15 @@
 #      commit on `smaniches/uniprot-mcp` (requires `gh attestation verify`).
 #   4. Installs the wheel in an isolated venv.
 #   5. Runs `uniprot-mcp --self-test` to confirm the binary works.
-#   6. Re-derives every benchmark answer from live UniProt
-#      (tests/benchmark/verify_answers.py) and compares to the
-#      committed SHA-256 commitments.
+#   6. Re-derives every benchmark answer from live UniProt and
+#      hash-compares the derived bytes against the committed
+#      tests/benchmark/expected.hashes.jsonl. The plaintext
+#      tests/benchmark/expected.jsonl is gitignored (it is the seal
+#      itself; only its SHA-256 is committed) and is therefore not
+#      required by this script.
 #
-# Exit code 0 iff every step passes. The point: a third party can run
-# this script against a fresh checkout of the repo and prove, without
+# Exit code 0 iff every step passes. The point: a third party with a
+# fresh checkout of this repo and network access can prove, without
 # trusting the author, that the published wheel was built from a
 # specific git commit and produces the sealed benchmark answers.
 #
@@ -33,7 +36,7 @@
 
 set -euo pipefail
 
-VERSION="${VERSION:-1.1.2}"
+VERSION="${VERSION:-1.1.3}"
 PKG="uniprot-mcp-server"
 REPO="smaniches/uniprot-mcp"
 
@@ -82,10 +85,15 @@ step "5. uniprot-mcp --self-test (live UniProt)"
 ok "self-test passed"
 
 step "6. Re-derive benchmark answers from live UniProt + check SHA-256 seal"
-"$WORK/venv/bin/python" tests/benchmark/verify.py \
-  tests/benchmark/expected.jsonl tests/benchmark/expected.hashes.jsonl
-"$WORK/venv/bin/python" tests/benchmark/verify_answers.py \
-  tests/benchmark/expected.jsonl
+# Hash-only path: re-derives every Tier A / Tier B answer live and
+# compares its canonical SHA-256 to the committed
+# tests/benchmark/expected.hashes.jsonl. Does NOT require the
+# gitignored tests/benchmark/expected.jsonl (which is the local-only
+# seal plaintext). Tier C set-inclusion prompts (28, 29) are reported
+# and skipped — maintainers verify those with the local plaintext via
+# tests/benchmark/verify.py + verify_answers.py.
+"$WORK/venv/bin/python" tests/benchmark/verify_against_hashes.py \
+  tests/benchmark/expected.hashes.jsonl
 ok "benchmark replication complete"
 
 printf "\n\033[1;32m==== REPLICATION SUCCESS ====\033[0m\n"

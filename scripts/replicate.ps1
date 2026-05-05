@@ -11,7 +11,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$VERSION = if ($env:VERSION) { $env:VERSION } else { "1.1.0" }
+$VERSION = if ($env:VERSION) { $env:VERSION } else { "1.1.3" }
 $PKG = "uniprot-mcp-server"
 $REPO = "smaniches/uniprot-mcp"
 
@@ -59,8 +59,14 @@ try {
     OK "self-test passed"
 
     Step "6. Re-derive benchmark answers from live UniProt + check SHA-256 seal"
-    & "$WORK\venv\Scripts\python.exe" tests\benchmark\verify.py tests\benchmark\expected.jsonl tests\benchmark\expected.hashes.jsonl
-    & "$WORK\venv\Scripts\python.exe" tests\benchmark\verify_answers.py tests\benchmark\expected.jsonl
+    # Hash-only path: re-derives every Tier A / Tier B answer live and
+    # compares its canonical SHA-256 to the committed
+    # tests\benchmark\expected.hashes.jsonl. Does NOT require the
+    # gitignored tests\benchmark\expected.jsonl. Tier C set-inclusion
+    # prompts (28, 29) are reported and skipped — maintainers verify
+    # those with the local plaintext via tests\benchmark\verify.py +
+    # verify_answers.py.
+    & "$WORK\venv\Scripts\python.exe" tests\benchmark\verify_against_hashes.py tests\benchmark\expected.hashes.jsonl
     OK "benchmark replication complete"
 
     Write-Host "`n==== REPLICATION SUCCESS ====" -ForegroundColor Green

@@ -198,6 +198,55 @@ def test_atlas_size_minimum(manifest: dict) -> None:
     )
 
 
+def test_no_duplicate_disease_ontology_id_with_distinct_names(manifest: dict) -> None:
+    """Each disease ontology @id must be associated with at most one
+    normalized (lowercased, stripped) disease name across the curated
+    atlas. A reused ID with a different name is almost always a
+    copy-paste error — the kind that surfaced in v1.1.2 review and
+    motivated this test in v1.1.3.
+
+    The optional ``examples/atlas/aliases_whitelist.json`` lists IDs
+    where multiple distinct labels are intentional (alias / preferred
+    form pairs documented by hand). Entries listed there are exempt;
+    every other ID must collapse to a single name.
+    """
+    import collections
+
+    whitelist_path = ATLAS_DIR / "aliases_whitelist.json"
+    whitelist: set[str] = set()
+    if whitelist_path.exists():
+        try:
+            data = json.loads(whitelist_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            pytest.fail(f"aliases_whitelist.json is not valid JSON: {exc}")
+        if not isinstance(data, dict) or not isinstance(data.get("aliases"), list):
+            pytest.fail(
+                "aliases_whitelist.json must be a JSON object with an "
+                '\'aliases\' array of {"id": ..., "justification": ...} entries'
+            )
+        whitelist = {entry["id"] for entry in data["aliases"] if isinstance(entry, dict)}
+
+    id_to_names: dict[str, set[str]] = collections.defaultdict(set)
+    for entry in manifest["entries"]:
+        for disease in entry.get("diseases", []):
+            ontology_id = disease.get("@id")
+            name = (disease.get("name") or "").strip().lower()
+            if ontology_id and name:
+                id_to_names[ontology_id].add(name)
+
+    conflicts = {
+        oid: sorted(names)
+        for oid, names in id_to_names.items()
+        if len(names) > 1 and oid not in whitelist
+    }
+    assert not conflicts, (
+        "Duplicate ontology @id values map to distinct disease names:\n"
+        + "\n".join(f"  {oid}: {names!r}" for oid, names in conflicts.items())
+        + "\nIf the divergence is intentional, document each id in "
+        "examples/atlas/aliases_whitelist.json with a justification field."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Optional live-API verification (opt-in via --integration)
 # ---------------------------------------------------------------------------
