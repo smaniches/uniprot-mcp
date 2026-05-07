@@ -32,6 +32,18 @@ mechanism. Comparison and citations: [docs/COMPETITIVE_LANDSCAPE.md](docs/COMPET
 
 ---
 
+## Installation
+
+
+```bash
+pip install uniprot-mcp-server
+```
+
+
+> **Note:** There is an unrelated package named `uniprot-mcp` on PyPI
+> (different author, 5 tools, MIT). This package is `uniprot-mcp-server`.
+> Running `pip install uniprot-mcp` will install the wrong package silently.
+
 ## For researchers — where to start
 
 If you are a biomedical researcher visiting this repo, the highest-signal places to look are:

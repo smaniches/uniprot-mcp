@@ -44,7 +44,12 @@ NCBI_EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 TIMEOUT = 30.0
 MAX_RETRIES = 3
 MAX_RETRY_AFTER_SECONDS = 120.0  # cap server-dictated waits
-UA = "uniprot-mcp/1.1.3 (+https://github.com/smaniches/uniprot-mcp)"
+from importlib.metadata import version as _pkg_version, PackageNotFoundError as _PNF
+try:
+    _v = _pkg_version("uniprot-mcp-server")
+except _PNF:
+    _v = "dev"
+UA = f"uniprot-mcp/{_v} (+https://github.com/smaniches/uniprot-mcp)"
 
 # Official UniProt accession format.
 # https://www.uniprot.org/help/accession_numbers
