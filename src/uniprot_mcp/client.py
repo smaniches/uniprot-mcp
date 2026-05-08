@@ -31,6 +31,8 @@ import os
 import re
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 from typing import Any, TypedDict
 
 import httpx
@@ -44,7 +46,11 @@ NCBI_EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 TIMEOUT = 30.0
 MAX_RETRIES = 3
 MAX_RETRY_AFTER_SECONDS = 120.0  # cap server-dictated waits
-UA = "uniprot-mcp/1.1.3 (+https://github.com/smaniches/uniprot-mcp)"
+try:
+    _v = _pkg_version("uniprot-mcp-server")
+except PackageNotFoundError:
+    _v = "dev"
+UA = f"uniprot-mcp/{_v} (+https://github.com/smaniches/uniprot-mcp)"
 
 # Official UniProt accession format.
 # https://www.uniprot.org/help/accession_numbers
