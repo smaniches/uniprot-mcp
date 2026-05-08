@@ -47,8 +47,8 @@ TIMEOUT = 30.0
 MAX_RETRIES = 3
 MAX_RETRY_AFTER_SECONDS = 120.0  # cap server-dictated waits
 try:
-    _v = _pkg_version("uniprot-mcp-server")
-except PackageNotFoundError:
+    _v = _pkg_version("uniprot-mcp-server") or "dev"
+except Exception:
     _v = "dev"
 UA = f"uniprot-mcp/{_v} (+https://github.com/smaniches/uniprot-mcp)"
 

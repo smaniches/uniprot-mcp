@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.1.4] - 2026-05-08
+
+### Fixed
+- client.py: broaden importlib.metadata exception catch from
+  PackageNotFoundError to Exception so a corrupt or ambiguous
+  dist-info (e.g. two dist-info directories present simultaneously)
+  does not emit a DeprecationWarning that ilterwarnings = error
+  converts into a collection error across all 26 test modules.
+- .gitattributes: add explicit *.tsv text eol=lf rule to prevent
+  CRLF checkout of atlas TSV files on Windows, which caused
+  	est_every_manifest_sha256_matches_file to fail on Windows CI.
 ## [1.1.3] - 2026-05-05
 
 Trust-repair patch. Documentation, correctness, and atlas re-sealing

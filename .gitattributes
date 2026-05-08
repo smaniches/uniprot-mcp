@@ -8,3 +8,5 @@
 *.cff  text eol=lf
 LICENSE text eol=lf
 NOTICE  text eol=lf
+
+*.tsv text eol=lf
