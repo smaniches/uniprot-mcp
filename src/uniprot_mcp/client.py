@@ -31,7 +31,6 @@ import os
 import re
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
-from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 from typing import Any, TypedDict
 
