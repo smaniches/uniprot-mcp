@@ -1164,7 +1164,7 @@ def fmt_target_dossier(
         "",
         (
             "_Comprehensive single-call characterisation. "
-            "Each section is a structured view of the UniProt entry.  Provenance "
+            "Each section is a structured view of the UniProt entry. Provenance "
             "footer carries the underlying entry's release tag and SHA-256._"
         ),
         "",
