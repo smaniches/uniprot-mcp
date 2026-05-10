@@ -6,13 +6,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write       # create GitHub Release
-  id-token: write       # Sigstore / PyPI Trusted Publishing
-  attestations: write   # SLSA provenance
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write       # SLSA provenance OIDC
+      attestations: write   # actions/attest-build-provenance + attest-sbom
     outputs:
       sbom: ${{ steps.sbom.outputs.path }}
     steps:
@@ -54,6 +56,9 @@ jobs:
   publish-pypi:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write       # PyPI Trusted Publishing OIDC
     environment:
       name: pypi
       url: https://pypi.org/project/uniprot-mcp-server/
@@ -71,6 +76,9 @@ jobs:
   sign-and-release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write       # create GitHub Release
+      id-token: write       # Sigstore signing OIDC
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
