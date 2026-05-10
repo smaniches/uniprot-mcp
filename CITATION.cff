@@ -27,7 +27,7 @@ authors:
     email: "santiago.maniches@gmail.com"
     orcid: "https://orcid.org/0009-0005-6480-1987"
     affiliation: "TOPOLOGICA LLC"
-version: 1.1.4
+version: 1.1.5
 date-released: "2026-05-05"
 license: Apache-2.0
 identifiers:
@@ -62,4 +62,3 @@ references:
     year: 2025
     journal: "Nucleic Acids Research"
     doi: "10.1093/nar/gkae1010"
-
