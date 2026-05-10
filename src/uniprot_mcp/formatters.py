@@ -1162,9 +1162,11 @@ def fmt_target_dossier(
     lines: list[str] = [
         f"# Target dossier: {accession}",
         "",
-        "_Comprehensive single-call characterisation. "
-        "Each section is a structured view of the UniProt entry.  Provenance "
-        "footer carries the underlying entry's release tag and SHA-256._",
+        (
+            "_Comprehensive single-call characterisation. "
+            "Each section is a structured view of the UniProt entry.  Provenance "
+            "footer carries the underlying entry's release tag and SHA-256._"
+        ),
         "",
     ]
 
