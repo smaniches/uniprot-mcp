@@ -22,11 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - client.py: broaden importlib.metadata exception catch from
   PackageNotFoundError to Exception so a corrupt or ambiguous
   dist-info (e.g. two dist-info directories present simultaneously)
-  does not emit a DeprecationWarning that ilterwarnings = error
+  does not emit a DeprecationWarning that \filterwarnings = error
   converts into a collection error across all 26 test modules.
 - .gitattributes: add explicit *.tsv text eol=lf rule to prevent
   CRLF checkout of atlas TSV files on Windows, which caused
-  	est_every_manifest_sha256_matches_file to fail on Windows CI.
+  \test_every_manifest_sha256_matches_file to fail on Windows CI.
 ## [1.1.3] - 2026-05-05
 
 Trust-repair patch. Documentation, correctness, and atlas re-sealing
@@ -442,7 +442,7 @@ wheel's metadata via `importlib.metadata`, so it cannot drift from
 - `batch_entries` no longer returns HTTP 400 when one malformed accession
   is mixed into an otherwise valid batch.
 
-[Unreleased]: https://github.com/smaniches/uniprot-mcp/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/smaniches/repo/compare/v1.1.2...HEAD
 [1.1.2]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.2
 [1.1.1]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.1
 [1.1.0]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.0
