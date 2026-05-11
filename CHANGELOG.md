@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.5] - 2026-05-10
+
+### Changed
+- Published release artifacts for `uniprot-mcp-server` 1.1.5.
+
+### Supply chain
+- Release artifacts include CycloneDX SBOM metadata and Sigstore/PyPI provenance.
+- PyPI provenance for 1.1.5 records publication from `refs/tags/v.1.1.5` at commit `a8013d41047d66ecfac20f36f300e2bbf0510fab`.
+- The canonical release tag is `v1.1.5`; the dotted compatibility tag `v.1.1.5` is retained only to preserve end-to-end provenance verification for the PyPI attestation chain.
+
 ## [1.1.4] - 2026-05-08
 
 ### Fixed
@@ -433,6 +443,7 @@ wheel's metadata via `importlib.metadata`, so it cannot drift from
   is mixed into an otherwise valid batch.
 
 [Unreleased]: https://github.com/smaniches/uniprot-mcp/compare/v1.1.2...HEAD
+[1.1.5]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.5
 [1.1.2]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.2
 [1.1.1]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.1
 [1.1.0]: https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.0
