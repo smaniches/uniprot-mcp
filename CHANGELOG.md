@@ -6,13 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 1.1.5
+
+### Changed
+- Published release artifacts for `uniprot-mcp-server` 1.1.5.
+
+### Supply chain
+- Release artifacts include CycloneDX SBOM metadata and Sigstore/PyPI provenance.
+- PyPI provenance for 1.1.5 records publication from `refs/tags/v.1.1.5` at commit `a8013d41047d66ecfac20f36f300e2bbf0510fab`.
+- The canonical release tag is `v1.1.5`; the dotted compatibility tag `v.1.1.5` is retained only to preserve end-to-end provenance verification for the PyPI attestation chain.
+
 ## [1.1.4] - 2026-05-08
 
 ### Fixed
 - client.py: broaden importlib.metadata exception catch from
   PackageNotFoundError to Exception so a corrupt or ambiguous
   dist-info (e.g. two dist-info directories present simultaneously)
-  does not emit a DeprecationWarning that ilterwarnings = error
+  does not emit a DeprecationWarning that ilterwarnings = error
   converts into a collection error across all 26 test modules.
 - .gitattributes: add explicit *.tsv text eol=lf rule to prevent
   CRLF checkout of atlas TSV files on Windows, which caused
