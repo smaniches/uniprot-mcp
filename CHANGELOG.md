@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - client.py: broaden importlib.metadata exception catch from
   PackageNotFoundError to Exception so a corrupt or ambiguous
   dist-info (e.g. two dist-info directories present simultaneously)
-  does not emit a DeprecationWarning that ilterwarnings = error
+  does not emit a DeprecationWarning that ilterwarnings = error
   converts into a collection error across all 26 test modules.
 - .gitattributes: add explicit *.tsv text eol=lf rule to prevent
   CRLF checkout of atlas TSV files on Windows, which caused
