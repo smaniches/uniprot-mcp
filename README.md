@@ -8,7 +8,7 @@
 [![Coverage](https://img.shields.io/badge/coverage-91.85%25-yellow)](pyproject.toml)
 [![Provenance: SHA-256 + verify](https://img.shields.io/badge/provenance-SHA--256_+_verify-blue)](#provenance--verification)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20109942.svg)](https://doi.org/10.5281/zenodo.20109942)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20109942-3C5A99?logo=zenodo&logoColor=white)](https://doi.org/10.5281/zenodo.20109942)
 
 A **Model Context Protocol** server for the
 [UniProt](https://www.uniprot.org) protein knowledgebase with
