@@ -492,6 +492,13 @@ bandit -r src/uniprot_mcp && pip-audit --strict
 
 ---
 
+## Related MCP servers by the same author
+
+- [`alphafold-sovereign-mcp`](https://github.com/smaniches/alphafold-sovereign-mcp) — Model Context Protocol server for AlphaFold DB and 13 other biomedical data sources, with a local SQLite knowledge graph (`pip install --pre alphafold-sovereign-mcp`).
+- [`semantic-scholar-mcp`](https://github.com/smaniches/semantic-scholar-mcp) — Model Context Protocol server for Semantic Scholar (200M+ academic papers), providing 14 tools for paper search, citation graph traversal, author profiles, and recommendations (`pip install s2-mcp-server`).
+
+---
+
 ## Citation
 
 Cite via [`CITATION.cff`](CITATION.cff) (GitHub renders a "Cite this
