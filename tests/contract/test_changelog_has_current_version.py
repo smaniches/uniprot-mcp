@@ -10,16 +10,19 @@ the tag, ``release.yml`` is already running.
 from __future__ import annotations
 
 import re
+import tomllib
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def _canonical_version() -> str:
-    text = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    match = re.search(r'^version\s*=\s*"([^"]+)"', text, re.MULTILINE)
-    assert match, "pyproject.toml: cannot find [project].version"
-    return match.group(1)
+    # Use tomllib (stdlib on Python 3.11+, matches our minimum
+    # requires-python) rather than regex — avoids false matches if the
+    # string ``version =`` ever appears in a tool config or a
+    # multi-line dependency block.
+    with (REPO_ROOT / "pyproject.toml").open("rb") as f:
+        return str(tomllib.load(f)["project"]["version"])
 
 
 def test_changelog_has_heading_for_current_version() -> None:

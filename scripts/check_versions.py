@@ -93,8 +93,12 @@ def _sites() -> list[Site]:
         Site(
             path=ROOT / "tests" / "unit" / "test_client_mutation_killers.py",
             label="tests/unit/test_client_mutation_killers.py (UA pin)",
+            # Match any PEP 440 version segment (digits + `.post`, `.dev`,
+            # `rc`, `a`, `b`, etc.) — `[^ ]+` is wider than the canonical
+            # release pattern so post-releases and pre-releases don't
+            # silently bypass the check.
             pattern=re.compile(
-                r'"uniprot-mcp/([\d.]+) \(\+https://github\.com/smaniches/uniprot-mcp\)"'
+                r'"uniprot-mcp/([^ ]+) \(\+https://github\.com/smaniches/uniprot-mcp\)"'
             ),
             rewrite=lambda v: f'"uniprot-mcp/{v} (+https://github.com/smaniches/uniprot-mcp)"',
         ),
