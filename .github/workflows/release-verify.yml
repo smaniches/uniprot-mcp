@@ -8,13 +8,22 @@ name: Release verification
 #   2. GitHub Release assets — sdist + wheel + sigstore + sbom present
 #   3. Provenance            — `gh attestation verify` passes against the
 #                              wheel with --repo smaniches/uniprot-mcp
-#   4. Zenodo                — concept DOI 10.5281/zenodo.20109942 has a
-#                              version record matching the released tag
+#   4. Zenodo                — the concept record at conceptrecid=19817710
+#                              has resolved its "latest version" pointer
+#                              to the released tag (Zenodo stores the
+#                              version field with the `v` prefix, e.g.
+#                              `v1.1.6`).
 #
 # A failure on any link opens an issue labelled `release-drift` so the
 # next-release fix is anchored to a concrete artifact gap (mirrors the
 # pattern in integration.yml). The Zenodo lookup retries for ~5 min
 # because the webhook deposit can lag the GitHub Release publish.
+#
+# Strategy note for the Zenodo step: we GET the concept record directly
+# (records/<conceptrecid>) and check that its `metadata.version` field
+# matches the new tag. This is more reliable than the records-API search
+# (`q=conceptdoi:"..." AND version:"..."`), which silently drops the
+# `version:` clause and returns 0 hits for unrelated reasons.
 
 on:
   release:
@@ -35,7 +44,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
-      ZENODO_CONCEPT_DOI: "10.5281/zenodo.20109942"
+      # The concept record ID. The concept DOI itself is
+      # 10.5281/zenodo.19817710 — that string is the Zenodo-side
+      # identifier shown on the README badge and CITATION.cff.
+      ZENODO_CONCEPT_RECID: "19817710"
       PYPI_NAME: "uniprot-mcp-server"
     steps:
       - name: Derive plain version from tag
@@ -107,21 +119,24 @@ jobs:
         run: |
           set -euo pipefail
           v="${{ steps.version.outputs.version }}"
-          # Zenodo records API search by concept DOI + version. The
-          # deposit is asynchronous on the Zenodo side — retry for ~5 min.
-          query="conceptdoi:%22${ZENODO_CONCEPT_DOI}%22+AND+version:%22${v}%22"
-          url="https://zenodo.org/api/records?q=${query}&size=1"
+          # Zenodo stores `metadata.version` with the `v` prefix
+          # (e.g. v1.1.5, v1.1.6). The concept record's
+          # `metadata.version` is always the latest version's tag —
+          # so when the webhook mints v1.1.6, this field flips from
+          # v1.1.5 to v1.1.6. The deposit is async; retry for ~5 min.
+          want="v${v}"
+          url="https://zenodo.org/api/records/${ZENODO_CONCEPT_RECID}"
           for i in 1 2 3 4 5 6 7 8 9 10; do
-            hits=$(curl -fsSL -H "Accept: application/json" "$url" \
-                     | python3 -c 'import json,sys;print(json.load(sys.stdin).get("hits",{}).get("total",0))')
-            if [ "$hits" -ge 1 ]; then
-              echo "Zenodo: concept ${ZENODO_CONCEPT_DOI} has version ${v} (hits=$hits)"
+            got=$(curl -fsSL -H "Accept: application/json" "$url" \
+                    | python3 -c 'import json,sys;print(json.load(sys.stdin).get("metadata",{}).get("version",""))')
+            if [ "$got" = "$want" ]; then
+              echo "Zenodo: concept record ${ZENODO_CONCEPT_RECID} latest version is ${got}"
               exit 0
             fi
-            echo "Zenodo not ready, attempt $i/10; sleeping 30s"
+            echo "Zenodo not ready (got=${got:-<empty>}, want=${want}), attempt $i/10; sleeping 30s"
             sleep 30
           done
-          echo "Zenodo: no record for concept ${ZENODO_CONCEPT_DOI} version ${v} after 5 minutes"
+          echo "Zenodo: concept record ${ZENODO_CONCEPT_RECID} did not advance to ${want} after 5 minutes"
           exit 1
 
       - name: Open release-drift issue on failure

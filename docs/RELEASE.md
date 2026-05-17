@@ -66,7 +66,7 @@ and the duplicate DOI is forever.
 The Zenodo–GitHub integration is enabled per-account. Once flipped
 on for the repo, every new GitHub Release triggers Zenodo to read
 `.zenodo.json` and mint a new version DOI under the concept DOI
-`10.5281/zenodo.20109942`. Typical latency: 30 s – 5 min.
+`10.5281/zenodo.19817710`. Typical latency: 30 s – 5 min.
 
 **Enabling the webhook (one-time):**
 
