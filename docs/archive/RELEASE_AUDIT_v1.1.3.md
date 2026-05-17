@@ -1,5 +1,11 @@
 # Release audit — v1.1.3
 
+> **ARCHIVED — version-pinned audit doc, retained for audit trail.**
+> Moved here from the repo root in v1.1.6. The auditable record for
+> any subsequent release lives in `CHANGELOG.md`'s release entry plus
+> the SLSA/Sigstore/SBOM attestations attached to that release's
+> GitHub Release assets.
+
 **Release type.** Trust-repair patch. Documentation, correctness, and
 atlas re-sealing only. **No code-path changes** to any production
 module in `src/uniprot_mcp/` other than the `User-Agent` version

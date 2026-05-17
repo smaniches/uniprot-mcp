@@ -1,0 +1,9 @@
+# Default owner for everything in the repo. New PRs auto-request
+# review from this account; branch-protection's "require review from
+# code owners" rule (if enabled) gates merge on owner approval.
+#
+# Single-maintainer project — every path is owned by @smaniches. Add
+# more granular ownership lines above this catch-all if/when the
+# contributor base grows.
+
+* @smaniches

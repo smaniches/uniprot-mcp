@@ -44,3 +44,23 @@ repos:
     hooks:
       - id: codespell
         args: ["--ignore-words-list=nd,te,hsa"]
+
+  # Local hook: keep every version-bearing file in lockstep with
+  # pyproject.toml's [project].version. Catches drift before push;
+  # the same script is also enforced in CI via the contract test
+  # tests/contract/test_version_consistency.py.
+  - repo: local
+    hooks:
+      - id: check-versions
+        name: check-versions (pyproject is canonical)
+        entry: python scripts/check_versions.py
+        language: system
+        pass_filenames: false
+        files: |
+          (?x)^(
+            pyproject\.toml
+            |CITATION\.cff
+            |server\.json
+            |\.well-known/mcp\.json
+            |tests/unit/test_client_mutation_killers\.py
+          )$

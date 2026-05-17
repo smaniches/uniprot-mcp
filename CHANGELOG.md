@@ -6,6 +6,71 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.6] - 2026-05-17
+
+Release-chain durability + repo polish. **No production code-path
+changes** to any module under `src/uniprot_mcp/`; the tool surface,
+provenance contracts, error envelopes, and HTTP behaviour are
+unchanged from v1.1.5.
+
+### Added
+- **`scripts/check_versions.py`** — single-source-of-truth version
+  check. `pyproject.toml`'s `[project].version` is canonical; the
+  script asserts every other file naming the version (`CITATION.cff`,
+  `server.json` ×2, `.well-known/mcp.json`, the
+  `tests/unit/test_client_mutation_killers.py` UA pin) agrees
+  exactly, and supports `--fix` to propagate the canonical version
+  on a bump.
+- **`tests/contract/test_version_consistency.py`** — the contract
+  test that runs the version-consistency script under pytest, so CI
+  fails closed on drift.
+- **`tests/contract/test_changelog_has_current_version.py`** —
+  asserts `CHANGELOG.md` carries a `## [X.Y.Z]` heading for the
+  current `pyproject.toml` version. Catches "silent version bump"
+  before a tag push starts the release chain. Closes the class of
+  regression that bit v1.1.4 (UA test pin desync) and v1.1.5
+  (provenance repair).
+- **`.github/workflows/release-verify.yml`** — fires on
+  `release: [published]`; verifies, with retries, that every link in
+  the release chain landed: PyPI publish, GitHub Release assets
+  (sdist + wheel + sbom + sigstore), SLSA build-provenance via
+  `gh attestation verify`, and a Zenodo version DOI under concept
+  `10.5281/zenodo.20109942`. On failure opens a `release-drift`
+  issue (same pattern as the nightly `integration.yml`).
+- **`docs/RELEASE.md`** — end-to-end release runbook: the four-link
+  chain, the manual-once Zenodo + PyPI Trusted-Publisher setup,
+  per-symptom troubleshooting table, and the "never re-push a tag"
+  rule.
+- **`.github/CODEOWNERS`** — single `* @smaniches` line so future
+  PRs auto-request the maintainer.
+- **Pre-commit hook** wiring for `check_versions.py` (local hook,
+  `language: system`, no extra config file).
+
+### Changed
+- **README test-count badge** refreshed from `742 offline + 42 live`
+  to `744 offline + 42 live` to reflect the two new contract tests
+  added in this release.
+- **Historical planning docs archived under `docs/archive/`** for
+  audit trail: `docs/PENDING_V1.md`, top-level
+  `RELEASE_AUDIT_v1.1.3.md`, and `docs/MERGE_PLAN.md`. None of them
+  describe current-state; the README + `CHANGELOG.md` + new
+  `docs/RELEASE.md` are the live references. `mkdocs.yml` excludes
+  `archive/*.md` from the published site; nav swaps the obsolete
+  "Merge plan" entry for the new "Release runbook" entry.
+
+### Dependencies
+- `chore(deps): bump github/codeql-action from 4.35.4 to 4.35.5`
+  (PR #31, merged).
+
+### Supply chain
+- Release artifacts include CycloneDX SBOM metadata, Sigstore
+  signing, SLSA build provenance, and PyPI Trusted-Publishing
+  provenance (unchanged from v1.1.5).
+- `release-verify.yml` now provides automated proof that all four
+  links of the release chain landed, instead of trusting the
+  fire-and-forget exit codes.
+
+
 ## [1.1.5] - 2026-05-10
 
 ### Changed
@@ -33,7 +98,7 @@ Trust-repair patch. Documentation, correctness, and atlas re-sealing
 only — **no production code-path changes** beyond the User-Agent
 version string. No tool surface change. No behaviour change for any
 caller. The full per-item audit is at
-[`RELEASE_AUDIT_v1.1.3.md`](RELEASE_AUDIT_v1.1.3.md).
+[`docs/archive/RELEASE_AUDIT_v1.1.3.md`](docs/archive/RELEASE_AUDIT_v1.1.3.md).
 
 ### Fixed
 

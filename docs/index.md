@@ -88,7 +88,7 @@ uniprot-mcp --self-test
 | Mutation testing ≥ 95 % gate | _post-billing-reset_ |
 | 3 × 3 CI matrix on `main` | _post-billing-reset_ |
 
-[Read the full release plan →](MERGE_PLAN.md)
+[Read the release runbook →](RELEASE.md)
 
 ## Citation
 
