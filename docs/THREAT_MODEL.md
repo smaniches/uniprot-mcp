@@ -67,7 +67,7 @@ We **do not** defend against full host compromise (root on the user's machine). 
 - `httpx.AsyncClient` is constructed with `base_url="https://rest.uniprot.org"` and `follow_redirects=True`. The `redirectURL` is dispatched through the **same** client — it must be a relative path or a same-origin URL or httpx's redirect policy rejects it.
 - Cross-origin redirects from UniProt are vanishingly unlikely in the operational record, but they are not affirmatively blocked here.
 
-**Deferred hardening.** Add an explicit allowlist (`url.startswith("https://rest.uniprot.org/")` or relative-path-only) before following the `redirectURL`. Tracked for `v1.1`. Until then: a TLS-pinned UniProt with a reputable public API origin is the best available trust anchor.
+**Deferred hardening.** Add an explicit allowlist (`url.startswith("https://rest.uniprot.org/")` or relative-path-only) before following the `redirectURL`. **Still tracked at v1.1.6 — not yet shipped.** Target window: v1.2.0. Until then: a TLS-pinned UniProt with a reputable public API origin is the best available trust anchor.
 
 ### T3b — Cross-origin allowlist for non-UniProt endpoints
 
@@ -84,8 +84,8 @@ We **do not** defend against full host compromise (root on the user's machine). 
 
 | Origin | First used in | Tools |
 |---|---|---|
-| `alphafold.ebi.ac.uk` | `f6ab794` | `uniprot_get_alphafold_confidence` |
-| `eutils.ncbi.nlm.nih.gov` | (this commit) | `uniprot_resolve_clinvar` |
+| `alphafold.ebi.ac.uk` | v1.1.0 (`f6ab794`) | `uniprot_get_alphafold_confidence` |
+| `eutils.ncbi.nlm.nih.gov` | v1.1.0 | `uniprot_resolve_clinvar` |
 
 ### T4 — Regex DoS via pathological input
 
@@ -164,7 +164,7 @@ We **do not** defend against full host compromise (root on the user's machine). 
 - Canonical-ID regexes use `\A...\Z` anchors so Unicode characters can't slip past line-end matching.
 - Allowlist comparisons (`{"markdown", "json"}`, `{"F", "P", "C"}`) are exact-string against ASCII-only literals.
 
-**Deferred hardening.** Apply NFKC Unicode normalisation to free-text inputs (currently relevant only for `query` and `organism`). Tracked for `v1.1`.
+**Deferred hardening.** Apply NFKC Unicode normalisation to free-text inputs (currently relevant only for `query` and `organism`). **Still tracked at v1.1.6 — not yet shipped.** Target window: v1.2.0.
 
 ---
 
