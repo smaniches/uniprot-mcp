@@ -14,9 +14,10 @@ Usage:
                                                 # the canonical version
                                                 # from pyproject.toml
 
-The script is intentionally stdlib-only (no toml or yaml deps) so it
-can be a pre-commit ``language: system`` hook without a Python env
-bootstrap.
+The script depends only on Python stdlib (``tomllib`` is stdlib on
+3.11+, which matches the project's ``requires-python = ">=3.11"``),
+so it can run as a ``pre-commit`` ``language: system`` hook without a
+Python env bootstrap.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import tomllib
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -48,17 +50,17 @@ class Site:
 
 
 def _read_canonical_version() -> str:
-    """Read ``[project].version`` from ``pyproject.toml`` by regex.
+    """Read ``[project].version`` from ``pyproject.toml`` via tomllib.
 
-    Stdlib's ``tomllib`` would be cleaner but only exists on 3.11+
-    and we want this script to run unchanged under pre-commit's
-    isolated env. A single regex over a short, stable file is fine.
+    Using tomllib (rather than a regex against the file text) means a
+    stray ``version =`` in a tool config or a multi-line dependency
+    block can never produce a false match.
     """
-    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    match = re.search(r'^version\s*=\s*"([^"]+)"', text, re.MULTILINE)
-    if not match:
-        raise SystemExit("pyproject.toml: cannot find [project].version")
-    return match.group(1)
+    with (ROOT / "pyproject.toml").open("rb") as f:
+        version = tomllib.load(f).get("project", {}).get("version")
+    if not isinstance(version, str):
+        raise SystemExit("pyproject.toml: [project].version is missing or not a string")
+    return version
 
 
 def _sites() -> list[Site]:
