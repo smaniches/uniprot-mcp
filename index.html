@@ -1270,7 +1270,7 @@ still returns the same bytes.</p>
 </tr>
 <tr>
 <td>Tests</td>
-<td><strong>446 offline + 42 live integration</strong></td>
+<td><strong>744 offline + 42 live integration</strong></td>
 </tr>
 <tr>
 <td>Static analysis</td>
@@ -1285,12 +1285,12 @@ still returns the same bytes.</p>
 <td><strong>30 SHA-256 commitments on <code>main</code></strong></td>
 </tr>
 <tr>
-<td>Mutation testing ≥ 95 % gate</td>
-<td><em>post-billing-reset</em></td>
+<td>Mutation testing</td>
+<td>Workflow shipped (<code>.github/workflows/mutation.yml</code>); measurement-first per-module baseline in <a href="MUTATION_SCORES/"><code>docs/MUTATION_SCORES.md</code></a>. ≥ 95 % kill rate is the v1.2.0 target, not the current state.</td>
 </tr>
 <tr>
 <td>3 × 3 CI matrix on <code>main</code></td>
-<td><em>post-billing-reset</em></td>
+<td><strong>Green</strong> (Ubuntu / Windows / macOS × Python 3.11 / 3.12 / 3.13)</td>
 </tr>
 </tbody>
 </table>

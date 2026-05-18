@@ -1472,10 +1472,13 @@
 - <code>_check_accession</code> runs <strong>before</strong> the network call; offline tests assert with <code>respx</code> that no HTTP request is issued for an invalid accession.</p>
 <h3 id="t3-ssrf-via-redirect-abuse">T3 — SSRF via redirect abuse<a class="headerlink" href="#t3-ssrf-via-redirect-abuse" title="Permanent link">&para;</a></h3>
 <p><strong>Scenario.</strong> <code>id_mapping_results</code> follows a <code>redirectURL</code> from the UniProt response (<code>src/uniprot_mcp/client.py:163-165</code>). A compromised UniProt response could point that URL at internal hosts (<code>http://169.254.169.254/...</code> AWS metadata, <code>file:///</code>, etc.).</p>
-<p><strong>Mitigations.</strong>
-- <code>httpx.AsyncClient</code> is constructed with <code>base_url="https://rest.uniprot.org"</code> and <code>follow_redirects=True</code>. The <code>redirectURL</code> is dispatched through the <strong>same</strong> client — it must be a relative path or a same-origin URL or httpx's redirect policy rejects it.
-- Cross-origin redirects from UniProt are vanishingly unlikely in the operational record, but they are not affirmatively blocked here.</p>
-<p><strong>Deferred hardening.</strong> Add an explicit allowlist (<code>url.startswith("https://rest.uniprot.org/")</code> or relative-path-only) before following the <code>redirectURL</code>. Tracked for <code>v1.1</code>. Until then: a TLS-pinned UniProt with a reputable public API origin is the best available trust anchor.</p>
+<p><strong>Mitigations (precise; what <code>httpx</code> does and does not do).</strong>
+- The <code>httpx.AsyncClient</code> is constructed with <code>base_url="https://rest.uniprot.org"</code> and <code>follow_redirects=True</code> (see <code>src/uniprot_mcp/client.py:296-300</code>).
+- <strong>What <code>base_url</code> does:</strong> when the request URL is a <em>relative</em> path, httpx resolves it against <code>base_url</code>. So a <code>redirectURL</code> of <code>"/uniprotkb/P04637"</code> is dispatched to <code>https://rest.uniprot.org/uniprotkb/P04637</code>. Empirically every <code>redirectURL</code> UniProt returns is same-origin (typically a relative path under <code>/idmapping/results/</code>).
+- <strong>What <code>base_url</code> does <em>not</em> do:</strong> it does not constrain <em>absolute</em> URLs in the <code>redirectURL</code> field. If UniProt's <code>redirectURL</code> were <code>"https://attacker.example.com/x"</code>, <code>httpx</code> with <code>follow_redirects=True</code> would dispatch the request to that origin — <code>base_url</code> is not an allowlist. The only same-origin behaviour <code>httpx</code> enforces by default is dropping the <code>Authorization</code> header on cross-origin redirects (and we don't send one).
+- <strong>What actually limits the blast radius today:</strong> (a) UniProt is the trust anchor; (b) the surface is one JSON-extracted field in one polling code path (<code>id_mapping_results</code>); (c) the <code>User-Agent</code> we send carries no secrets and no <code>Authorization</code> header is ever set, so a malicious cross-origin destination cannot exfiltrate anything from our side.</p>
+<p><strong>Residual risk.</strong> A compromise of <code>rest.uniprot.org</code> (or a same-network MITM with TLS bypass) that injects a hostile <code>redirectURL</code> would steer one HTTP request to that destination. The MCP server makes no follow-up actions based on the response body, so the worst-case outcome is a leaked request fingerprint (UA + IP) to the attacker-controlled host.</p>
+<p><strong>Deferred hardening.</strong> Add an explicit allowlist (<code>url.startswith("https://rest.uniprot.org/")</code> or <code>not url.startswith(("http://", "https://"))</code> — i.e. relative-path-only) before the <code>redirectURL</code> is dispatched. <strong>Still tracked at v1.1.6 — not yet shipped.</strong> Target window: v1.2.0. Until then the security boundary is the trustworthiness of UniProt as an upstream, not client-side enforcement.</p>
 <h3 id="t3b-cross-origin-allowlist-for-non-uniprot-endpoints">T3b — Cross-origin allowlist for non-UniProt endpoints<a class="headerlink" href="#t3b-cross-origin-allowlist-for-non-uniprot-endpoints" title="Permanent link">&para;</a></h3>
 <p><strong>Scenario.</strong> <code>uniprot_get_alphafold_confidence</code> consults <code>https://alphafold.ebi.ac.uk</code> — the only origin outside <code>rest.uniprot.org</code> that uniprot-mcp calls. A future tool could be tempted to widen the allowlist further (NCBI eutils for ClinVar, PDB REST, etc.), and a careless addition would expand the SSRF surface beyond what the threat model accounts for.</p>
 <p><strong>Mitigations.</strong>
@@ -1495,12 +1498,12 @@
 <tbody>
 <tr>
 <td><code>alphafold.ebi.ac.uk</code></td>
-<td><code>f6ab794</code></td>
+<td>v1.1.0 (<code>f6ab794</code>)</td>
 <td><code>uniprot_get_alphafold_confidence</code></td>
 </tr>
 <tr>
 <td><code>eutils.ncbi.nlm.nih.gov</code></td>
-<td>(this commit)</td>
+<td>v1.1.0</td>
 <td><code>uniprot_resolve_clinvar</code></td>
 </tr>
 </tbody>
@@ -1555,7 +1558,7 @@
 - Validation regexes use ASCII subsets (<code>[A-Za-z0-9]</code>).
 - Canonical-ID regexes use <code>\A...\Z</code> anchors so Unicode characters can't slip past line-end matching.
 - Allowlist comparisons (<code>{"markdown", "json"}</code>, <code>{"F", "P", "C"}</code>) are exact-string against ASCII-only literals.</p>
-<p><strong>Deferred hardening.</strong> Apply NFKC Unicode normalisation to free-text inputs (currently relevant only for <code>query</code> and <code>organism</code>). Tracked for <code>v1.1</code>.</p>
+<p><strong>Deferred hardening.</strong> Apply NFKC Unicode normalisation to free-text inputs (currently relevant only for <code>query</code> and <code>organism</code>). <strong>Still tracked at v1.1.6 — not yet shipped.</strong> Target window: v1.2.0.</p>
 <hr />
 <h2 id="reporting-a-finding">Reporting a finding<a class="headerlink" href="#reporting-a-finding" title="Permanent link">&para;</a></h2>
 <p>See <a href="https://github.com/smaniches/uniprot-mcp/blob/main/SECURITY.md"><code>SECURITY.md</code></a>. Encrypted contact (PGP / Signal) on request.</p>
