@@ -12,7 +12,7 @@
         <meta name="author" content="Santiago Maniches">
       
       
-        <link rel="canonical" href="https://smaniches.github.io/uniprot-mcp/MERGE_PLAN/">
+        <link rel="canonical" href="https://smaniches.github.io/uniprot-mcp/RELEASE/">
       
       
         <link rel="prev" href="../INCIDENT_LOG/">
@@ -27,7 +27,7 @@
     
     
       
-        <title>Merge plan - uniprot-mcp</title>
+        <title>Release runbook - uniprot-mcp</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#merge-flip-plan-hardening-v2-main-public" class="md-skip">
+        <a href="#release-runbook" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Merge plan
+              Release runbook
             
           </span>
         </div>
@@ -883,7 +883,7 @@
   <span class="md-ellipsis">
     
   
-    Merge plan
+    Release runbook
   
 
     
@@ -901,7 +901,7 @@
   <span class="md-ellipsis">
     
   
-    Merge plan
+    Release runbook
   
 
     
@@ -927,10 +927,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#branch-graph-current" class="md-nav__link">
+  <a href="#the-chain" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Branch graph (current)
+        The chain
       
     </span>
   </a>
@@ -938,22 +938,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#merge-order-of-operations" class="md-nav__link">
+  <a href="#step-by-step" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Merge order of operations
+        Step-by-step
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Merge order of operations">
+    <nav class="md-nav" aria-label="Step-by-step">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#phase-0-keep-hardening-v2-healthy-as-it-grows" class="md-nav__link">
+  <a href="#1-pre-tag-on-the-release-branch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 0 — keep hardening-v2 healthy as it grows
+        1. Pre-tag (on the release branch)
       
     </span>
   </a>
@@ -961,10 +961,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#phase-1-close-every-pending_v1md-item-on-hardening-v2" class="md-nav__link">
+  <a href="#2-tag-push" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 1 — close every PENDING_V1.md item on hardening-v2
+        2. Tag push
       
     </span>
   </a>
@@ -972,10 +972,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#phase-2-pre-merge-dry-run-on-hardening-v2" class="md-nav__link">
+  <a href="#3-releaseyml-jobs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 2 — pre-merge dry run on hardening-v2
+        3. release.yml jobs
       
     </span>
   </a>
@@ -983,10 +983,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#phase-3-open-the-pr-request-review-merge" class="md-nav__link">
+  <a href="#4-zenodo-webhook-passive" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 3 — open the PR, request review, merge
+        4. Zenodo webhook (passive)
       
     </span>
   </a>
@@ -994,10 +994,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#phase-4-tag-and-the-flip-itself" class="md-nav__link">
+  <a href="#5-pypi-trusted-publishing-passive" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 4 — tag and the flip itself
+        5. PyPI Trusted Publishing (passive)
       
     </span>
   </a>
@@ -1005,10 +1005,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#phase-5-post-flip-validation" class="md-nav__link">
+  <a href="#6-post-tag-verification-automatic" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 5 — post-flip validation
+        6. Post-tag verification (automatic)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-citationcff-version-doi-append-next-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. CITATION.cff version-DOI append (next cycle)
       
     </span>
   </a>
@@ -1021,10 +1032,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#rollback" class="md-nav__link">
+  <a href="#when-a-release-goes-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rollback
+        When a release goes wrong
       
     </span>
   </a>
@@ -1032,21 +1043,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#branch-hygiene-after-merge" class="md-nav__link">
+  <a href="#rolling-forward-not-back" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Branch hygiene after merge
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-this-plan-deliberately-does-not-do" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What this plan deliberately does not do
+        Rolling forward, not back
       
     </span>
   </a>
@@ -1096,10 +1096,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#branch-graph-current" class="md-nav__link">
+  <a href="#the-chain" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Branch graph (current)
+        The chain
       
     </span>
   </a>
@@ -1107,22 +1107,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#merge-order-of-operations" class="md-nav__link">
+  <a href="#step-by-step" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Merge order of operations
+        Step-by-step
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Merge order of operations">
+    <nav class="md-nav" aria-label="Step-by-step">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#phase-0-keep-hardening-v2-healthy-as-it-grows" class="md-nav__link">
+  <a href="#1-pre-tag-on-the-release-branch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 0 — keep hardening-v2 healthy as it grows
+        1. Pre-tag (on the release branch)
       
     </span>
   </a>
@@ -1130,10 +1130,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#phase-1-close-every-pending_v1md-item-on-hardening-v2" class="md-nav__link">
+  <a href="#2-tag-push" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 1 — close every PENDING_V1.md item on hardening-v2
+        2. Tag push
       
     </span>
   </a>
@@ -1141,10 +1141,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#phase-2-pre-merge-dry-run-on-hardening-v2" class="md-nav__link">
+  <a href="#3-releaseyml-jobs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 2 — pre-merge dry run on hardening-v2
+        3. release.yml jobs
       
     </span>
   </a>
@@ -1152,10 +1152,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#phase-3-open-the-pr-request-review-merge" class="md-nav__link">
+  <a href="#4-zenodo-webhook-passive" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 3 — open the PR, request review, merge
+        4. Zenodo webhook (passive)
       
     </span>
   </a>
@@ -1163,10 +1163,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#phase-4-tag-and-the-flip-itself" class="md-nav__link">
+  <a href="#5-pypi-trusted-publishing-passive" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 4 — tag and the flip itself
+        5. PyPI Trusted Publishing (passive)
       
     </span>
   </a>
@@ -1174,10 +1174,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#phase-5-post-flip-validation" class="md-nav__link">
+  <a href="#6-post-tag-verification-automatic" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phase 5 — post-flip validation
+        6. Post-tag verification (automatic)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-citationcff-version-doi-append-next-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. CITATION.cff version-DOI append (next cycle)
       
     </span>
   </a>
@@ -1190,10 +1201,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#rollback" class="md-nav__link">
+  <a href="#when-a-release-goes-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rollback
+        When a release goes wrong
       
     </span>
   </a>
@@ -1201,21 +1212,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#branch-hygiene-after-merge" class="md-nav__link">
+  <a href="#rolling-forward-not-back" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Branch hygiene after merge
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-this-plan-deliberately-does-not-do" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What this plan deliberately does not do
+        Rolling forward, not back
       
     </span>
   </a>
@@ -1239,7 +1239,7 @@
 
 
   
-    <a href="https://github.com/smaniches/uniprot-mcp/edit/main/docs/MERGE_PLAN.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/smaniches/uniprot-mcp/edit/main/docs/RELEASE.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1247,186 +1247,156 @@
   
 
 
-<h1 id="merge-flip-plan-hardening-v2-main-public">Merge &amp; flip plan — <code>hardening-v2</code> → <code>main</code> → public<a class="headerlink" href="#merge-flip-plan-hardening-v2-main-public" title="Permanent link">&para;</a></h1>
-<p><strong>Status date:</strong> 2026-04-24. Tracks the path from the current
-<code>hardening-v2</code> working branch to the first public-listed <code>v1.0.1</code>
-release. Authoritative companion to <code>docs/PENDING_V1.md</code>.</p>
-<hr />
-<h2 id="branch-graph-current">Branch graph (current)<a class="headerlink" href="#branch-graph-current" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>main           6b73e02  feat: initial release of uniprot-mcp 0.1.0     [v0.1.0 — private baseline]
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                  │
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                  └──► hardening-v2 (active)
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                        a365dae  raise the bar — supply-chain, snapshots
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                        d6fef42  audit remediation — src layout, …
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>                        f9a6c1b  ruff auto-fixes
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                        8de1ffe  ci: mypy src-path; bump tool coverage
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                        6c368cb  ruff format
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                        e646595  mypy: explicit dict types
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>                        1401845  remove CodeQL + Scorecard (private-repo)
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>                        6f9b737  audit remediation (#1)
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>                        020c2a8  raise coverage gate to 99 %
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>                        ──── (4 commits in this session) ────
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>                        549d259  PENDING_V1.md
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                        843ace5  SHA-pin Actions + SBOM attestation
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>                        4e441f7  search fuzz + Retry-After delay tests
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>                        eab93ef  provenance on every response (§3a.3)
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>                        ──── (Wave A docs commits, Wave B, Wave D, Wave E ahead)
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>audit-remediation     ← legacy branch, contained in hardening-v2 — delete after merge
+<h1 id="release-runbook">Release runbook<a class="headerlink" href="#release-runbook" title="Permanent link">&para;</a></h1>
+<p>How a <code>uniprot-mcp</code> release ships, link by link, and what to check
+when something looks wrong. The chain is designed to be re-runnable
+and auditable years after the fact — every artefact carries a
+provenance attestation, an SBOM, and a Zenodo DOI.</p>
+<h2 id="the-chain">The chain<a class="headerlink" href="#the-chain" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git tag v1.1.6  ──►  release.yml (Actions)  ──►  PyPI (Trusted Publishing, OIDC)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>       │                       │
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>       │                       ├──►  GitHub Release (assets: dist/*, sbom.cdx.json, *.sigstore.json)
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>       │                       │            │
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>       │                       │            ├──►  release-verify.yml (this PR)
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>       │                       │            │            ├── pip index versions uniprot-mcp-server
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>       │                       │            │            ├── gh release view (asset presence)
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>       │                       │            │            ├── gh attestation verify (SLSA)
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>       │                       │            │            └── Zenodo records API (concept DOI lookup)
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>       │                       │            │
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>       │                       │            └──►  Zenodo webhook  ──►  version DOI minted
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>       │                       │
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>       │                       └──►  Sigstore signing (gh-action-sigstore-python)
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>       │
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>       └──►  release-drafter.yml (next-release draft updated on every push to main)
 </code></pre></div>
-<p><code>hardening-v2</code> is therefore strictly ahead of both <code>main</code> and
-<code>audit-remediation</code>; no rebase or back-merge is required.</p>
-<hr />
-<h2 id="merge-order-of-operations">Merge order of operations<a class="headerlink" href="#merge-order-of-operations" title="Permanent link">&para;</a></h2>
-<h3 id="phase-0-keep-hardening-v2-healthy-as-it-grows">Phase 0 — keep <code>hardening-v2</code> healthy as it grows<a class="headerlink" href="#phase-0-keep-hardening-v2-healthy-as-it-grows" title="Permanent link">&para;</a></h3>
-<p>Every commit on <code>hardening-v2</code> lands with:</p>
+<h2 id="step-by-step">Step-by-step<a class="headerlink" href="#step-by-step" title="Permanent link">&para;</a></h2>
+<h3 id="1-pre-tag-on-the-release-branch">1. Pre-tag (on the release branch)<a class="headerlink" href="#1-pre-tag-on-the-release-branch" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>pytest</code> green on the offline suite (unit + property + client + contract).</li>
-<li><code>mypy src/uniprot_mcp</code> clean.</li>
-<li><code>ruff check src tests</code> clean.</li>
-<li><code>ruff format --check src tests</code> clean.</li>
-<li><code>bandit -r src/uniprot_mcp</code> clean.</li>
-<li><code>pip-audit --strict</code> clean <em>(when network is available — billing-blocked CI cannot run this; we run locally before each push)</em>.</li>
+<li>[ ] <code>python scripts/check_versions.py</code> exits 0
+      (every version-bearing file agrees with <code>pyproject.toml</code>).</li>
+<li>[ ] <code>pytest tests/unit tests/property tests/client tests/contract</code>
+      green (includes <code>test_version_consistency</code> and
+      <code>test_changelog_has_current_version</code>).</li>
+<li>[ ] <code>CHANGELOG.md</code> has a <code>## [X.Y.Z] - YYYY-MM-DD</code> entry.</li>
+<li>[ ] PR is merged into <code>main</code>; CI on the merge commit is green.</li>
 </ul>
-<p>Pushes happen after each coherent batch — never accumulate a multi-commit unpushed state. The session that pushed two commits late hit the boundary of acceptable; the rule going forward is <em>push within the same turn the commit lands</em>.</p>
-<h3 id="phase-1-close-every-pending_v1md-item-on-hardening-v2">Phase 1 — close every PENDING_V1.md item on <code>hardening-v2</code><a class="headerlink" href="#phase-1-close-every-pending_v1md-item-on-hardening-v2" title="Permanent link">&para;</a></h3>
-<p>Wave A → Wave B → Wave D in order, with Wave E (mutation, 3×3 matrix, docs.yml, branch protection) deferred until <strong>after</strong> the GitHub Actions billing reset (~2026-05-01). Every closure recorded in PENDING_V1.md §6.</p>
-<p><strong>Checkpoint:</strong> <code>hardening-v2</code> cannot ship to <code>main</code> until §1, §2, §3 are all green or explicitly waived in PENDING_V1.md §4 with a documented reason.</p>
-<h3 id="phase-2-pre-merge-dry-run-on-hardening-v2">Phase 2 — pre-merge dry run on <code>hardening-v2</code><a class="headerlink" href="#phase-2-pre-merge-dry-run-on-hardening-v2" title="Permanent link">&para;</a></h3>
-<p>Before opening the PR:</p>
-<ol>
-<li>Local clean clone test — <code>git clone . /tmp/uniprot-mcp-clean &amp;&amp; cd /tmp/... &amp;&amp; pip install -e ".[test,dev]" &amp;&amp; pytest</code>. Catches anything that depends on the developer's working-tree state (cached wheels, editable installs, env vars).</li>
-<li><code>--self-test</code> against live UniProt. Should print <code>[live] P04637 -&gt; TP53 OK [PASS]</code>.</li>
-<li><code>python -m build</code> produces a wheel and sdist; both inspect cleanly with <code>tarfile.open</code> / <code>zipfile.ZipFile</code> for unexpected files (no <code>__pycache__</code>, no <code>.pyc</code>, no editable-install metadata).</li>
-<li><code>gh pr create --draft</code> with the merge description below — keep it draft so reviewers can comment without it being mergeable yet.</li>
-</ol>
-<h3 id="phase-3-open-the-pr-request-review-merge">Phase 3 — open the PR, request review, merge<a class="headerlink" href="#phase-3-open-the-pr-request-review-merge" title="Permanent link">&para;</a></h3>
-<p>PR title: <code>Release uniprot-mcp v1.0.1 — public-flip readiness</code>.</p>
-<p>PR body: a structured summary keyed off PENDING_V1.md sections, plus a <strong>changelog summary</strong> that becomes the body of the GitHub Release notes. Use the heredoc-form below.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>## Summary
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>First public release of uniprot-mcp. Closes the AUDIT.md follow-up
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>list, raises every formatter to provenance-aware output, expands the
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>tool surface from 10 to N, ships a pre-registered benchmark, and
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>flips the repository visibility on the same day this PR merges.
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>## Closes (PENDING_V1.md)
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>- §1.1 …  – §1.7  AUDIT-driven follow-ups (six items)
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>- §2.1 …  – §2.8  Launch-plan gates (eight items)
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>- §3a.* / §3b.* / §3c.* / §3d.* Raise-the-bar additions
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>## Test plan
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>- [x] Offline suite green: `pytest tests/unit tests/property tests/client tests/contract`
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>- [x] Live integration green: `pytest --integration tests/integration`
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>- [x] mypy: `mypy src/uniprot_mcp`
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>- [x] ruff: `ruff check src tests &amp;&amp; ruff format --check src tests`
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>- [x] Bandit: `bandit -r src/uniprot_mcp`
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>- [x] pip-audit: `pip-audit --strict`
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>- [x] Mutation: ≥ 95 % kill on every source module — see `MUTATION_SCORES.md`
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>- [x] Benchmark run: `tests/benchmark/run-2026-MM-DD/` on disk
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>- [x] `python -m build` produces clean wheel + sdist
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>- [x] `--self-test` green against live UniProt
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>- [x] Independent reviewer ran the suite locally
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>- [x] Beta cohort ≥ 3 successful replications (RESULTS.md)
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>
-<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>🤖 Generated with [Claude Code](https://claude.com/claude-code)
+<h3 id="2-tag-push">2. Tag push<a class="headerlink" href="#2-tag-push" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v1.1.6<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;v1.1.6&quot;</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.6
 </code></pre></div>
-<p><strong>Merge strategy:</strong> preserve commit history. Use a <strong>merge commit</strong> (not squash) so each closure is independently <code>git blame</code>-able. Public scientific software benefits from a granular history; reviewers and citers should be able to point at the exact commit a feature landed.</p>
-<p>If branch protection on <code>main</code> requires linear history (recommended for OSS hygiene), use <strong>rebase merge</strong> instead. Both preserve commit-level detail; squash erases it.</p>
-<h3 id="phase-4-tag-and-the-flip-itself">Phase 4 — tag and the flip itself<a class="headerlink" href="#phase-4-tag-and-the-flip-itself" title="Permanent link">&para;</a></h3>
-<p>Immediately after merge:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>git<span class="w"> </span>pull<span class="w"> </span>--ff-only
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v1.0.1<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release v1.0.1 — first public uniprot-mcp&quot;</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.0.1
-</code></pre></div>
-<p>Pushing the tag fires <code>release.yml</code>, which:</p>
-<ol>
-<li>Builds the wheel + sdist.</li>
-<li>Generates the CycloneDX SBOM.</li>
-<li>Attests SLSA build provenance + SBOM (added in <code>843ace5</code>).</li>
-<li>Publishes to PyPI via Trusted Publishing (must be configured in pending-publisher mode beforehand — PENDING_V1.md §1.5).</li>
-<li>Signs artefacts with Sigstore.</li>
-<li>Creates a GitHub Release with auto-generated notes + attached artefacts.</li>
-</ol>
-<p>While the release workflow runs (~6 min), perform the <strong>visibility flip</strong>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>gh<span class="w"> </span>repo<span class="w"> </span>edit<span class="w"> </span>smaniches/uniprot-mcp<span class="w"> </span>--visibility<span class="w"> </span>public<span class="w"> </span>--accept-visibility-change-consequences
-</code></pre></div>
-<p>The flip is irreversible without GitHub Support intervention. <strong>Do not flip until</strong> the release workflow has finished green and the tag is signed-off in the PyPI dashboard.</p>
-<p>After flip:</p>
-<ol>
-<li>Re-add <code>codeql.yml</code> and <code>scorecard.yml</code> workflows (they were removed for private-repo billing reasons in commit <code>1401845</code>). Push to <code>main</code>. Both workflows activate on the next event.</li>
-<li>Verify the GitHub Pages docs build (Phase 1 §2.4 docs.yml) and the URL is reachable.</li>
-<li>Verify Dependabot, Secret Scanning, Push Protection, and CodeQL alerts are all enabled in the repo settings (private repos do not all surface these).</li>
-<li>Submit MCP Registry PR, Smithery listing, Anthropic Connectors form, Glama listing — drafts for all four already on disk per PENDING_V1.md §3c.3.</li>
-</ol>
-<h3 id="phase-5-post-flip-validation">Phase 5 — post-flip validation<a class="headerlink" href="#phase-5-post-flip-validation" title="Permanent link">&para;</a></h3>
-<p>Within 24 h of the flip, verify:</p>
+<p>The tag triggers <code>.github/workflows/release.yml</code>. Watch the run at
+<code>https://github.com/smaniches/uniprot-mcp/actions/workflows/release.yml</code>.</p>
+<h3 id="3-releaseyml-jobs">3. <code>release.yml</code> jobs<a class="headerlink" href="#3-releaseyml-jobs" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th>Check</th>
-<th>How</th>
+<th>Job</th>
+<th>Output</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>PyPI page renders correctly</td>
-<td>https://pypi.org/project/uniprot-mcp-server/1.0.1/</td>
+<td><code>build</code></td>
+<td>sdist + wheel; CycloneDX SBOM (<code>sbom.cdx.json</code>); SLSA build-provenance attestation; SBOM attestation; uploads as <code>release-artifacts</code></td>
 </tr>
 <tr>
-<td><code>pip install uniprot-mcp-server</code> from a clean venv works</td>
-<td><code>python -m venv /tmp/v &amp;&amp; /tmp/v/bin/pip install uniprot-mcp-server &amp;&amp; /tmp/v/bin/uniprot-mcp --self-test</code></td>
+<td><code>publish-pypi</code></td>
+<td>PyPI upload via OIDC Trusted Publishing (no token)</td>
 </tr>
 <tr>
-<td>Sigstore signature verifies</td>
-<td><code>python -m sigstore verify identity --cert-identity 'https://github.com/smaniches/uniprot-mcp/.github/workflows/release.yml@refs/tags/v1.0.1' dist/*.whl</code></td>
-</tr>
-<tr>
-<td>SLSA attestation verifies</td>
-<td><code>gh attestation verify dist/*.whl --repo smaniches/uniprot-mcp</code></td>
-</tr>
-<tr>
-<td>SBOM attestation verifies</td>
-<td><code>gh attestation verify dist/*.whl --repo smaniches/uniprot-mcp --predicate-type https://cyclonedx.org/bom</code></td>
-</tr>
-<tr>
-<td>CodeQL ran and is green</td>
-<td>https://github.com/smaniches/uniprot-mcp/security/code-scanning</td>
-</tr>
-<tr>
-<td>Scorecard score is published</td>
-<td>https://securityscorecards.dev/viewer/?uri=github.com/smaniches/uniprot-mcp</td>
-</tr>
-<tr>
-<td>Zenodo DOI minted</td>
-<td>https://zenodo.org/account/settings/github/ — auto-creates one per tag once the integration is enabled</td>
+<td><code>sign-and-release</code></td>
+<td>Sigstore signatures (<code>*.sigstore.json</code>); GitHub Release created with all assets</td>
 </tr>
 </tbody>
 </table>
-<p>If any of the above fail, do <strong>not</strong> announce. Open a <code>release-defect</code> issue, fix forward with <code>v1.0.2</code>. Do not retract the tag — that breaks SLSA/Sigstore guarantees for any consumer that has already pinned to it.</p>
-<hr />
-<h2 id="rollback">Rollback<a class="headerlink" href="#rollback" title="Permanent link">&para;</a></h2>
-<p>The release pipeline is idempotent up to PyPI's "no-overwrite" policy: a published <code>v1.0.1</code> cannot be re-uploaded. Therefore:</p>
+<p>If any job fails: read the failure, fix on a follow-up commit, push
+a <em>new</em> tag (<code>v1.1.6.post1</code> or <code>v1.1.7</code>). Do not delete and re-push
+the original tag — Zenodo treats the original as a separate version
+and the duplicate DOI is forever.</p>
+<h3 id="4-zenodo-webhook-passive">4. Zenodo webhook (passive)<a class="headerlink" href="#4-zenodo-webhook-passive" title="Permanent link">&para;</a></h3>
+<p>The Zenodo–GitHub integration is enabled per-account. Once flipped
+on for the repo, every new GitHub Release triggers Zenodo to read
+<code>.zenodo.json</code> and mint a new version DOI under the concept DOI
+<code>10.5281/zenodo.19817710</code>. Typical latency: 30 s – 5 min.</p>
+<p><strong>Enabling the webhook (one-time):</strong></p>
+<ol>
+<li>Visit <code>https://zenodo.org/account/settings/github/</code>.</li>
+<li>Toggle the <code>smaniches/uniprot-mcp</code> repo to ON.</li>
+<li>Confirm the GitHub-side webhook at
+   <code>https://github.com/smaniches/uniprot-mcp/settings/hooks</code> shows a
+   recent successful delivery to <code>zenodo.org/api/hooks/receivers/...</code>
+   with HTTP 200.</li>
+</ol>
+<p>The webhook is idempotent — re-enabling and re-disabling will not
+mint duplicate DOIs.</p>
+<h3 id="5-pypi-trusted-publishing-passive">5. PyPI Trusted Publishing (passive)<a class="headerlink" href="#5-pypi-trusted-publishing-passive" title="Permanent link">&para;</a></h3>
+<p>The publisher entry on
+<code>https://pypi.org/manage/account/publishing/</code> binds:</p>
 <ul>
-<li><strong>Bug discovered before flip</strong>: amend on <code>hardening-v2</code>, force-push, no public exposure.</li>
-<li><strong>Bug discovered after PyPI publish but before MCP-Registry submission</strong>: yank from PyPI (<code>uniprot-mcp==1.0.1</code> becomes uninstallable by name; older versions remain). Ship <code>v1.0.2</code>. Do not delete the GitHub Release — write a <code>Yanked due to &lt;issue&gt;</code> line in its notes.</li>
-<li><strong>Bug discovered after directories listed</strong>: same as above plus update the directory listings to point at the new version. The MCP Registry has a versioning model; Smithery and Anthropic do not retract listings.</li>
-<li><strong>Catastrophic security defect post-flip</strong>: file a CVE; advise users to pin to a fixed version; ship a patched release immediately. Repository visibility cannot be reverted to private without losing CodeQL/Scorecard history; do not attempt.</li>
+<li>Project: <code>uniprot-mcp-server</code></li>
+<li>Owner: <code>smaniches</code></li>
+<li>Repository: <code>uniprot-mcp</code></li>
+<li>Workflow: <code>release.yml</code></li>
+<li>Environment: <code>pypi</code></li>
 </ul>
-<hr />
-<h2 id="branch-hygiene-after-merge">Branch hygiene after merge<a class="headerlink" href="#branch-hygiene-after-merge" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Delete <code>audit-remediation</code> (already subsumed): <code>git push origin --delete audit-remediation</code>.</li>
-<li>Keep <code>hardening-v2</code> on origin until v1.1 work begins; then either delete it or rename to <code>hardening-v2-archive</code>.</li>
-<li>Enable branch protection on <code>main</code>: required reviewers ≥ 1, required status checks (CI matrix + integration), no force pushes, no direct commits, signed commits required.</li>
-</ul>
-<hr />
-<h2 id="what-this-plan-deliberately-does-not-do">What this plan deliberately does not do<a class="headerlink" href="#what-this-plan-deliberately-does-not-do" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>No rebase of <code>main</code> onto <code>hardening-v2</code>.</strong> <code>main</code> is the stable public reference; we merge into it, we don't rewrite it.</li>
-<li><strong>No squash merge.</strong> Granular history is more valuable than a tidy log entry.</li>
-<li><strong>No surprise visibility flip.</strong> The flip is gated on every Phase 5 verification passing. If they don't pass, the repo stays private and we ship <code>v1.0.2</code> first.</li>
-<li><strong>No simultaneous orchestrator (<code>topologica-bio</code>) flip.</strong> That repo has its own merge plan; this one is independent. <code>uniprot-mcp</code> flips on its own evidence.</li>
-</ul>
+<p>If the entry is missing (e.g. after a PyPI account migration), the
+<code>publish-pypi</code> job will fail with <code>OIDC token verification</code>. Re-add
+the publisher entry with the four fields above.</p>
+<h3 id="6-post-tag-verification-automatic">6. Post-tag verification (automatic)<a class="headerlink" href="#6-post-tag-verification-automatic" title="Permanent link">&para;</a></h3>
+<p><code>release-verify.yml</code> fires on <code>release: [published]</code>. It re-runs
+each link in the chain and opens a <code>release-drift</code> issue if any
+link's artifact is missing after a generous timeout. Greenable in
+~5 min on a healthy release.</p>
+<p>To re-trigger verification manually for an older tag:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>gh workflow run release-verify.yml --field tag=v1.1.6
+</code></pre></div>
+<h3 id="7-citationcff-version-doi-append-next-cycle">7. CITATION.cff version-DOI append (next cycle)<a class="headerlink" href="#7-citationcff-version-doi-append-next-cycle" title="Permanent link">&para;</a></h3>
+<p>Each release mints a Zenodo version DOI that is only known <em>after</em>
+the deposit lands. The convention: the v1.1.6 release adds the
+v1.1.6 changelog entry; the <em>following</em> release cycle (v1.1.7)
+appends the v1.1.6 version DOI to <code>CITATION.cff</code> <code>identifiers:</code>.
+This is why the file currently lists DOIs for v1.1.1 and v1.1.2
+but not v1.1.5 — that entry will be added with v1.1.6's polish
+work.</p>
+<h2 id="when-a-release-goes-wrong">When a release goes wrong<a class="headerlink" href="#when-a-release-goes-wrong" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Probable cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>publish-pypi</code> fails with <code>Token request error</code></td>
+<td>OIDC publisher entry missing on PyPI</td>
+<td>re-add at <code>pypi.org/manage/account/publishing/</code></td>
+</tr>
+<tr>
+<td><code>release-verify</code> opens an issue saying "Zenodo: no record"</td>
+<td>Webhook never enabled or deposit took &gt;5 min</td>
+<td>check Zenodo dashboard; if record exists, the verify timeout is too tight — bump the loop</td>
+</tr>
+<tr>
+<td><code>release-verify</code> says "missing sigstore bundle"</td>
+<td><code>sign-and-release</code> job was skipped (likely a permissions regression)</td>
+<td>re-grant <code>id-token: write</code> on the job, re-run the workflow</td>
+</tr>
+<tr>
+<td><code>pip install uniprot-mcp-server==X</code> says version not found</td>
+<td>PyPI CDN lag, usually clears in 60 s</td>
+<td>wait, retry; if persistent, check <code>pypi.org/project/uniprot-mcp-server/#history</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="rolling-forward-not-back">Rolling forward, not back<a class="headerlink" href="#rolling-forward-not-back" title="Permanent link">&para;</a></h2>
+<p><strong>Never delete or re-push a release tag.</strong> PyPI rejects re-uploads
+of the same <code>(name, version)</code>. Zenodo treats the second push as a
+separate version. GitHub renders both as duplicate releases. If a
+release goes wrong, ship a <code>.postN</code> or a <code>Z+1</code> patch — fast forward
+only.</p>
 
 
 
