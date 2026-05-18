@@ -57,9 +57,9 @@ def _read_canonical_version() -> str:
     block can never produce a false match.
     """
     with (ROOT / "pyproject.toml").open("rb") as f:
-        version = tomllib.load(f)["project"]["version"]
+        version = tomllib.load(f).get("project", {}).get("version")
     if not isinstance(version, str):
-        raise SystemExit("pyproject.toml: [project].version is not a string")
+        raise SystemExit("pyproject.toml: [project].version is missing or not a string")
     return version
 
 
