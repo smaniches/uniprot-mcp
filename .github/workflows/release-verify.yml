@@ -70,10 +70,11 @@ jobs:
         id: pypi
         run: |
           set -euo pipefail
-          python -m pip install --upgrade pip
           # `pip index versions` lists every published version; grep for an
           # exact match. Retry up to 5 times with 30s backoff to absorb
-          # PyPI CDN lag.
+          # PyPI CDN lag. pip is preinstalled on ubuntu-latest; no upgrade
+          # needed (and an unpinned `pip install --upgrade pip` would trip
+          # Scorecard's Pinned-Dependencies check).
           for i in 1 2 3 4 5; do
             if pip index versions "$PYPI_NAME" 2>/dev/null \
                  | grep -E "(^|[^0-9])${{ steps.version.outputs.version }}([^0-9]|$)"; then
@@ -124,11 +125,17 @@ jobs:
           # `metadata.version` is always the latest version's tag —
           # so when the webhook mints v1.1.6, this field flips from
           # v1.1.5 to v1.1.6. The deposit is async; retry for ~5 min.
+          #
+          # The fetch is split into curl-to-file + python read-from-file
+          # so we never pipe a network response straight into a language
+          # interpreter — Scorecard's Pinned-Dependencies check flags the
+          # `curl | python` pipe pattern even when the python runs a
+          # literal inline script.
           want="v${v}"
           url="https://zenodo.org/api/records/${ZENODO_CONCEPT_RECID}"
           for i in 1 2 3 4 5 6 7 8 9 10; do
-            got=$(curl -fsSL -H "Accept: application/json" "$url" \
-                    | python3 -c 'import json,sys;print(json.load(sys.stdin).get("metadata",{}).get("version",""))')
+            curl -fsSL -H "Accept: application/json" "$url" -o /tmp/zenodo.json
+            got=$(python3 -c 'import json;print(json.load(open("/tmp/zenodo.json")).get("metadata",{}).get("version",""))')
             if [ "$got" = "$want" ]; then
               echo "Zenodo: concept record ${ZENODO_CONCEPT_RECID} latest version is ${got}"
               exit 0
