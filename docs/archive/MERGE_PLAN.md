@@ -1,8 +1,14 @@
 # Merge & flip plan — `hardening-v2` → `main` → public
 
+> **ARCHIVED — pre-flip planning, retained for audit trail.** The
+> flip happened 2026-04-26 and shipped v1.0.1. Current operational
+> state lives in `README.md`, `CHANGELOG.md`, `docs/RELEASE.md`, and
+> `docs/MUTATION_SCORES.md`. Moved here from `docs/MERGE_PLAN.md` in
+> v1.1.6.
+
 **Status date:** 2026-04-24. Tracks the path from the current
 `hardening-v2` working branch to the first public-listed `v1.0.1`
-release. Authoritative companion to `docs/PENDING_V1.md`.
+release. Authoritative companion to `docs/archive/PENDING_V1.md`.
 
 ---
 

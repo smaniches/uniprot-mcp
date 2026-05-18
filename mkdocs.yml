@@ -61,7 +61,7 @@ nav:
       - Competitive landscape: COMPETITIVE_LANDSCAPE.md
       - Incident policy: INCIDENT_POLICY.md
       - Incident log: INCIDENT_LOG.md
-      - Merge plan: MERGE_PLAN.md
+      - Release runbook: RELEASE.md
 
 extra:
   social:
@@ -74,8 +74,10 @@ extra_css:
   - stylesheets/custom.css
 
 # Files in docs/ that should not appear in the published site even if
-# referenced from other markdown — e.g. operational PENDING_V1 lives
-# in docs/ for git-history reasons but is not user-facing.
+# referenced from other markdown.
+#   * archive/ — historical pre-flip planning docs retained for the
+#     audit trail (PENDING_V1, MERGE_PLAN, RELEASE_AUDIT_v1.1.3).
+#   * POSTMORTEM_TEMPLATE.md — fill-in template, not a published page.
 exclude_docs: |
-  PENDING_V1.md
+  archive/*.md
   POSTMORTEM_TEMPLATE.md

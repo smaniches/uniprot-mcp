@@ -4,11 +4,11 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![MCP compatible](https://img.shields.io/badge/MCP-compatible-6e56cf.svg)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-742_offline_%2B_42_live-success)](#testing)
+[![Tests](https://img.shields.io/badge/tests-744_offline_%2B_42_live-success)](#testing)
 [![Coverage](https://img.shields.io/badge/coverage-91.85%25-yellow)](pyproject.toml)
 [![Provenance: SHA-256 + verify](https://img.shields.io/badge/provenance-SHA--256_+_verify-blue)](#provenance--verification)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20109942-3C5A99?logo=zenodo&logoColor=white)](https://doi.org/10.5281/zenodo.20109942)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.19817710-3C5A99?logo=zenodo&logoColor=white)](https://doi.org/10.5281/zenodo.19817710)
 
 A **Model Context Protocol** server for the
 [UniProt](https://www.uniprot.org) protein knowledgebase with
@@ -455,7 +455,7 @@ export UNIPROT_MCP_CACHE_DIR=~/sealed-cache
 | Integration | `tests/integration/` | Live UniProt + AlphaFold; opt-in via `--integration`. |
 | Benchmark | `tests/benchmark/` | 30 SHA-256-committed prompts + reproducible verifier. |
 
-**742 offline + 42 live integration tests, all green** at v1.1.3 (real counts via `pytest --collect-only --ignore=tests/integration` and `pytest --collect-only tests/integration`; the offline jump from the v1.1.0 baseline of 446 is the v1.1.x mutation-killer files for `cache`, `proteinchem`, `client` plus the v1.1.3 atlas-manifest contract test and the duplicate-ontology-id consistency check). Line + branch coverage measured at **91.85 %** at v1.1.0; v1.1.1 / v1.1.2 / v1.1.3 are metadata-and-correctness releases that did not touch source-code paths, so the v1.1.0 measurement remains the operative figure. The `[tool.coverage.report]` block in `pyproject.toml` documents the regression vs v1.0.0 and the v1.2.0 uplift commitment back to 99 %. Mypy (strict), ruff (check + format), bandit (0 issues at any severity), pip-audit (`--strict`, no known vulnerabilities) all clean. **Mutation testing infrastructure ships and is measurement-first:** see the per-module table at [`docs/MUTATION_SCORES.md`](docs/MUTATION_SCORES.md) for the latest matrix-workflow results; the ≥ 95 % gate is the v1.2.0 target, not the current state.
+**744 offline + 42 live integration tests, all green** at v1.1.6 (real counts via `pytest --collect-only --ignore=tests/integration` and `pytest --collect-only tests/integration`; the offline jump from the v1.1.0 baseline of 446 is the v1.1.x mutation-killer files for `cache`, `proteinchem`, `client`, the v1.1.3 atlas-manifest contract test, the duplicate-ontology-id consistency check, and the v1.1.6 version-consistency + changelog-presence contract tests). Line + branch coverage measured at **91.85 %** at v1.1.0; v1.1.1 / v1.1.2 / v1.1.3 are metadata-and-correctness releases that did not touch source-code paths, so the v1.1.0 measurement remains the operative figure. The `[tool.coverage.report]` block in `pyproject.toml` documents the regression vs v1.0.0 and the v1.2.0 uplift commitment back to 99 %. Mypy (strict), ruff (check + format), bandit (0 issues at any severity), pip-audit (`--strict`, no known vulnerabilities) all clean. **Mutation testing infrastructure ships and is measurement-first:** see the per-module table at [`docs/MUTATION_SCORES.md`](docs/MUTATION_SCORES.md) for the latest matrix-workflow results; the ≥ 95 % gate is the v1.2.0 target, not the current state.
 
 ```bash
 # Fast, offline (CI on every push):
@@ -482,10 +482,15 @@ bandit -r src/uniprot_mcp && pip-audit --strict
   integration breakage triggers a postmortem entry.
 - [`AUDIT.md`](AUDIT.md) — pre-1.0.1 professional audit, P0/P1
   remediations recorded.
-- [`docs/MERGE_PLAN.md`](docs/MERGE_PLAN.md) — five-phase merge → tag
-  → flip operational plan with rollback policy.
-- [`docs/PENDING_V1.md`](docs/PENDING_V1.md) — the binary punch list
-  to v1.0.1.
+- [`docs/RELEASE.md`](docs/RELEASE.md) — release runbook covering the
+  tag → PyPI → Sigstore → GitHub Release → Zenodo chain, including
+  the `release-verify.yml` post-tag verification job and the
+  one-time setup for the Zenodo + PyPI webhooks.
+- [`docs/archive/`](docs/archive/) — pre-flip planning docs retained
+  for audit trail (`PENDING_V1.md`, `MERGE_PLAN.md`,
+  `RELEASE_AUDIT_v1.1.3.md`). Not part of the published docs site;
+  current operational status lives in `README.md`, `CHANGELOG.md`,
+  and `docs/MUTATION_SCORES.md`.
 - [`mkdocs.yml`](mkdocs.yml) — Material-themed docs site, deployable to
   `gh-pages` via [`.github/workflows/docs.yml`](.github/workflows/docs.yml).
   Build locally with `pip install -e ".[docs]" && mkdocs serve`.
