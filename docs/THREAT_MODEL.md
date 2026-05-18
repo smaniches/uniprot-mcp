@@ -63,11 +63,15 @@ We **do not** defend against full host compromise (root on the user's machine). 
 
 **Scenario.** `id_mapping_results` follows a `redirectURL` from the UniProt response (`src/uniprot_mcp/client.py:163-165`). A compromised UniProt response could point that URL at internal hosts (`http://169.254.169.254/...` AWS metadata, `file:///`, etc.).
 
-**Mitigations.**
-- `httpx.AsyncClient` is constructed with `base_url="https://rest.uniprot.org"` and `follow_redirects=True`. The `redirectURL` is dispatched through the **same** client — it must be a relative path or a same-origin URL or httpx's redirect policy rejects it.
-- Cross-origin redirects from UniProt are vanishingly unlikely in the operational record, but they are not affirmatively blocked here.
+**Mitigations (precise; what `httpx` does and does not do).**
+- The `httpx.AsyncClient` is constructed with `base_url="https://rest.uniprot.org"` and `follow_redirects=True` (see `src/uniprot_mcp/client.py:296-300`).
+- **What `base_url` does:** when the request URL is a *relative* path, httpx resolves it against `base_url`. So a `redirectURL` of `"/uniprotkb/P04637"` is dispatched to `https://rest.uniprot.org/uniprotkb/P04637`. Empirically every `redirectURL` UniProt returns is same-origin (typically a relative path under `/idmapping/results/`).
+- **What `base_url` does *not* do:** it does not constrain *absolute* URLs in the `redirectURL` field. If UniProt's `redirectURL` were `"https://attacker.example.com/x"`, `httpx` with `follow_redirects=True` would dispatch the request to that origin — `base_url` is not an allowlist. The only same-origin behaviour `httpx` enforces by default is dropping the `Authorization` header on cross-origin redirects (and we don't send one).
+- **What actually limits the blast radius today:** (a) UniProt is the trust anchor; (b) the surface is one JSON-extracted field in one polling code path (`id_mapping_results`); (c) the `User-Agent` we send carries no secrets and no `Authorization` header is ever set, so a malicious cross-origin destination cannot exfiltrate anything from our side.
 
-**Deferred hardening.** Add an explicit allowlist (`url.startswith("https://rest.uniprot.org/")` or relative-path-only) before following the `redirectURL`. Tracked for `v1.1`. Until then: a TLS-pinned UniProt with a reputable public API origin is the best available trust anchor.
+**Residual risk.** A compromise of `rest.uniprot.org` (or a same-network MITM with TLS bypass) that injects a hostile `redirectURL` would steer one HTTP request to that destination. The MCP server makes no follow-up actions based on the response body, so the worst-case outcome is a leaked request fingerprint (UA + IP) to the attacker-controlled host.
+
+**Deferred hardening.** Add an explicit allowlist (`url.startswith("https://rest.uniprot.org/")` or `not url.startswith(("http://", "https://"))` — i.e. relative-path-only) before the `redirectURL` is dispatched. **Still tracked at v1.1.6 — not yet shipped.** Target window: v1.2.0. Until then the security boundary is the trustworthiness of UniProt as an upstream, not client-side enforcement.
 
 ### T3b — Cross-origin allowlist for non-UniProt endpoints
 
@@ -84,8 +88,8 @@ We **do not** defend against full host compromise (root on the user's machine). 
 
 | Origin | First used in | Tools |
 |---|---|---|
-| `alphafold.ebi.ac.uk` | `f6ab794` | `uniprot_get_alphafold_confidence` |
-| `eutils.ncbi.nlm.nih.gov` | (this commit) | `uniprot_resolve_clinvar` |
+| `alphafold.ebi.ac.uk` | v1.1.0 (`f6ab794`) | `uniprot_get_alphafold_confidence` |
+| `eutils.ncbi.nlm.nih.gov` | v1.1.0 | `uniprot_resolve_clinvar` |
 
 ### T4 — Regex DoS via pathological input
 
@@ -164,7 +168,7 @@ We **do not** defend against full host compromise (root on the user's machine). 
 - Canonical-ID regexes use `\A...\Z` anchors so Unicode characters can't slip past line-end matching.
 - Allowlist comparisons (`{"markdown", "json"}`, `{"F", "P", "C"}`) are exact-string against ASCII-only literals.
 
-**Deferred hardening.** Apply NFKC Unicode normalisation to free-text inputs (currently relevant only for `query` and `organism`). Tracked for `v1.1`.
+**Deferred hardening.** Apply NFKC Unicode normalisation to free-text inputs (currently relevant only for `query` and `organism`). **Still tracked at v1.1.6 — not yet shipped.** Target window: v1.2.0.
 
 ---
 

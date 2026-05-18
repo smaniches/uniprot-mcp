@@ -122,8 +122,19 @@ rather than transparently rewrite the request.
 ## The cache layer (optional)
 
 `UNIPROT_MCP_CACHE_DIR=/path/to/cache` opts in to local caching.
-Every successful response is written to disk as
-`<cache_dir>/<sha256(url)>.json` with the schema:
+
+**Scope in v1.1.x — read primitive only.** The cache is a *read*
+surface for offline replay. `uniprot_replay_from_cache(url)` reads
+from `<cache_dir>/<sha256(url)>.json` and returns the record without
+hitting UniProt. **Automatic write-through is a v1.2.0 roadmap item.**
+Today the cache directory must be populated externally — either by a
+prior export, or by tests that explicitly call `ProvenanceCache.write`.
+This was clarified in v1.1.3 (see `CHANGELOG.md` — the v1.1.2 wording
+that promised "every successful response is mirrored to disk" was
+retracted).
+
+When the cache is populated, each entry is a JSON record with the
+schema:
 
 ```json
 {
@@ -133,20 +144,25 @@ Every successful response is written to disk as
 }
 ```
 
-Atomic writes (tempfile + `os.replace`) — a crashed process never
-leaves a half-written entry behind.
+`ProvenanceCache.write` (used by the test fixtures and by future
+auto-write code paths) uses atomic file replacement (tempfile +
+`os.replace`) so a crashed process never leaves a half-written entry
+behind.
 
 The `uniprot_replay_from_cache(url)` tool reads from that cache
-without touching the upstream. Useful for:
+without touching the upstream. Use cases once the directory is
+populated:
 
-- **Air-gapped clinical workflows.** A clinical informatician can
-  cache a sealed snapshot of UniProt and run analyses offline.
-- **Reproducing a year-old answer.** The same Provenance record
-  that's in your six-month-old report points at the same cache
-  entry.
-- **Reducing UniProt's load.** When running a benchmark or test
-  suite twice in close succession, the cache absorbs the duplicate
-  traffic.
+- **Air-gapped clinical workflows.** Pre-export a sealed snapshot of
+  the UniProt entries a workflow consults; run analyses on a machine
+  with no network access to UniProt.
+- **Reproducing a year-old answer.** The same Provenance record in
+  your six-month-old report points at the same cache entry (the cache
+  key is `sha256(url)`), so `replay_from_cache` returns the exact
+  bytes the report cited.
+- **Reducing UniProt's load.** When iterating on a notebook or test
+  suite, pre-populate the cache from one round of live calls and
+  replay for subsequent iterations.
 
 ## Compliance-officer model
 
@@ -163,10 +179,14 @@ that question with **yes**:
 - **What happens when something breaks?** Yes — release-mismatch
   raises loudly, the cache lets you replay sealed snapshots, the
   verify tool distinguishes drift modes.
-- **Compliance-grade differentiator?** Yes — no other public
-  bioinformatics MCP carries per-query verifiable provenance.
+- **Compliance-grade differentiator?** Yes — at the time of the most
+  recent survey (2026-04-26, recorded in
+  [`docs/COMPETITIVE_LANDSCAPE.md`](COMPETITIVE_LANDSCAPE.md)) no
+  other public bioinformatics MCP attached per-query verifiable
+  provenance to its responses. That survey is open to corrections;
+  file an issue if you know of one.
 
-That's the wedge.
+That is the operational value proposition.
 
 ## See also
 

@@ -81,12 +81,12 @@ uniprot-mcp --self-test
 | Layer | State |
 |---|---|
 | Tool surface | **41 tools** across 8 families |
-| Tests | **446 offline + 42 live integration** |
+| Tests | **744 offline + 42 live integration** |
 | Static analysis | **mypy strict** + **ruff** + **bandit** + **pip-audit** clean |
 | Provenance verification | **Live round-trip-tested against real UniProt** |
 | Pre-registered benchmark | **30 SHA-256 commitments on `main`** |
-| Mutation testing ≥ 95 % gate | _post-billing-reset_ |
-| 3 × 3 CI matrix on `main` | _post-billing-reset_ |
+| Mutation testing | Workflow shipped (`.github/workflows/mutation.yml`); measurement-first per-module baseline in [`docs/MUTATION_SCORES.md`](MUTATION_SCORES.md). ≥ 95 % kill rate is the v1.2.0 target, not the current state. |
+| 3 × 3 CI matrix on `main` | **Green** (Ubuntu / Windows / macOS × Python 3.11 / 3.12 / 3.13) |
 
 [Read the release runbook →](RELEASE.md)
 

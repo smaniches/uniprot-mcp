@@ -24,7 +24,7 @@ uniprot-mcp --self-test
 Expected output:
 
 ```
-[tools] registered: 38/38
+[tools] registered: 41/41
 [live] P04637 -> TP53 OK
 [PASS]
 ```
