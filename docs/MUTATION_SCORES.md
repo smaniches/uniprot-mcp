@@ -24,11 +24,13 @@ constants only used as a sentinel comparison).
 **Current state (v1.1.6): measurement-first.**
 The gate threshold is temporarily 0.0 — we record the actual measured
 kill rate per module without failing the workflow on it, so we can
-establish an honest baseline. As of the 2026-04-27 run, **4 of 6
-modules have a measured kill rate above zero** (`cache` 82 %,
-`proteinchem` 36 %, `client` 59 %, `formatters` 62 % on first 832
-mutants); the two largest modules (`formatters`, `server`) timed out
-mid-pass on that run and need bisection work to fully measure. The
+establish an honest baseline. As of the v1.1.6 release (following the
+2026-04-28 uplift runs), **4 of 6 modules have a measured kill rate
+above zero**: `cache` 82 %, `proteinchem` 92 %, `client` 70 %,
+`formatters` 62 % (numbers reconciled against the per-module table
+below). The two largest modules (`formatters`, `server`) timed out
+mid-pass on their longest runs and need bisection work to fully
+measure. The
 matrix workflow (`.github/workflows/mutation.yml`) runs weekly and
 on demand; subsequent runs incrementally close gaps. Once every
 module is fully measured AND a targeted uplift PR has tightened the
