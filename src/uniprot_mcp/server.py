@@ -143,10 +143,12 @@ MAX_PROVENANCE_URL_LEN: Final[int] = 1_000
 # future schema with ample margin.
 MAX_RELEASE_TAG_LEN: Final[int] = 16
 ALLOWED_RESPONSE_FORMATS: Final[frozenset[str]] = frozenset({"markdown", "json"})
-ALLOWED_ACCEPT_HEADERS: Final[frozenset[str]] = frozenset({
-    "application/json",
-    "text/plain;format=fasta",
-})
+ALLOWED_ACCEPT_HEADERS: Final[frozenset[str]] = frozenset(
+    {
+        "application/json",
+        "text/plain;format=fasta",
+    }
+)
 
 # Module-level lazy client. No lifespan. No ctx injection. Just works.
 _uniprot: UniProtClient | None = None
@@ -1703,9 +1705,7 @@ async def uniprot_provenance_verify(
         _check_len("response_sha256", response_sha256, 64)
         _check_format(response_format)
         if accept_header not in ALLOWED_ACCEPT_HEADERS:
-            raise _InputError(
-                f"accept_header must be one of {sorted(ALLOWED_ACCEPT_HEADERS)}"
-            )
+            raise _InputError(f"accept_header must be one of {sorted(ALLOWED_ACCEPT_HEADERS)}")
         if not url.startswith("https://rest.uniprot.org/"):
             raise _InputError(
                 "url must begin with https://rest.uniprot.org/ — only UniProt REST "

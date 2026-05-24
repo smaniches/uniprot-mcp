@@ -731,7 +731,12 @@ def test_provenance_dict_has_seven_documented_fields() -> None:
     """The Provenance TypedDict declares exactly: source, release,
     release_date, retrieved_at, url, response_sha256, accept_header."""
     expected = {
-        "source", "release", "release_date", "retrieved_at",
-        "url", "response_sha256", "accept_header",
+        "source",
+        "release",
+        "release_date",
+        "retrieved_at",
+        "url",
+        "response_sha256",
+        "accept_header",
     }
     assert set(Provenance.__annotations__.keys()) == expected
