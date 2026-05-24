@@ -15,6 +15,7 @@ class Provenance(TypedDict):
     retrieved_at: str      # ISO-8601 UTC, second precision
     url: str               # fully resolved request URL incl. query string
     response_sha256: str   # SHA-256 of the canonical body
+    accept_header: str     # Accept header used ("application/json" or "text/plain;format=fasta")
 ```
 
 `response_sha256` is computed on a **canonical** serialization:
@@ -24,6 +25,14 @@ class Provenance(TypedDict):
   verification; real content drift DOES.
 - For non-JSON (FASTA, plain text): raw response bytes hashed
   unchanged.
+
+**Limitation:** JSON canonicalization sorts dictionary keys but does
+**not** sort array elements. If UniProt returns list elements (e.g.,
+cross-references, features) in a different order between requests
+within the same release, the canonical hash may differ. This is a
+known edge case; the `hash_drift` verdict covers it. For byte-level
+reproducibility of a specific answer, use the FTP release snapshot
+rather than the live REST API.
 
 ## How it's surfaced
 
@@ -70,9 +79,10 @@ sequence remains a valid FASTA record.
 
 ## Verification tool
 
-`uniprot_provenance_verify(url, release="", response_sha256="")`
+`uniprot_provenance_verify(url, release="", response_sha256="", accept_header="application/json")`
 re-fetches the URL with a fresh HTTP client (bypasses any
-pin-release configuration) and compares:
+pin-release configuration) using the supplied `accept_header` for
+content negotiation, and compares:
 
 1. URL reachability (HTTP success).
 2. Release tag (the `X-UniProt-Release` header) — only checked if

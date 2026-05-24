@@ -121,3 +121,37 @@ async def test_roundtrip_url_unreachable_against_live_uniprot() -> None:
     payload = json.loads(out)
     assert payload["status"] == "url_unreachable", f"unexpected verdict: {payload}"
     assert payload["url_resolves"] is False
+
+
+async def test_roundtrip_fasta_verifies_against_live_uniprot(client: UniProtClient) -> None:
+    """The FASTA happy path — record a Provenance from a real FASTA
+    query, then re-verify it using the recorded accept_header. Status
+    must be ``verified``. Regression test for Bug A (guaranteed hash
+    mismatch when verify used hardcoded application/json)."""
+    await client.get_fasta("P04637")
+    prov = client.last_provenance
+    assert prov is not None
+    assert prov["accept_header"] == "text/plain;format=fasta"
+    assert len(prov["response_sha256"]) == 64
+
+    out = await uniprot_provenance_verify(
+        url=prov["url"],
+        release=prov["release"] or "",
+        response_sha256=prov["response_sha256"],
+        accept_header=prov["accept_header"],
+        response_format="json",
+    )
+    payload = json.loads(out)
+    assert payload["status"] == "verified", f"unexpected verdict: {payload}"
+    assert payload["hash_match"] is True
+
+
+async def test_json_hash_stability_across_fetches(client: UniProtClient) -> None:
+    """Fetch the same entry twice and compare canonical hashes.
+    Diagnostic for Bug B (JSON hash drift). If this fails, the cause
+    is array-order instability in the UniProt API response."""
+    await client.get_entry("Q8NBP7")
+    hash1 = client.last_provenance["response_sha256"]
+    await client.get_entry("Q8NBP7")
+    hash2 = client.last_provenance["response_sha256"]
+    assert hash1 == hash2, f"Hash unstable within single session: {hash1[:16]}… != {hash2[:16]}…"

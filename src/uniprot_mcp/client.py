@@ -158,6 +158,11 @@ class Provenance(TypedDict):
                           are hashed. The :func:`provenance_verify` MCP
                           tool re-fetches the URL and compares this hash
                           to detect post-hoc upstream drift.
+      accept_header     — the ``Accept`` request header value used for the
+                          original request. Required by the verification
+                          tool to re-fetch with the correct content
+                          negotiation (e.g. ``"text/plain;format=fasta"``
+                          vs ``"application/json"``).
     """
 
     source: str
@@ -166,6 +171,7 @@ class Provenance(TypedDict):
     retrieved_at: str
     url: str
     response_sha256: str
+    accept_header: str
 
 
 __all__ = [
@@ -251,6 +257,9 @@ def _extract_provenance(response: httpx.Response, *, now: datetime | None = None
     it at ``None`` so retrieval time is captured at extraction moment.
     """
     moment = now if now is not None else datetime.now(tz=UTC)
+    accept = "application/json"
+    if response.request is not None:
+        accept = response.request.headers.get("accept", "application/json")
     return Provenance(
         source=SOURCE_NAME,
         release=response.headers.get(_RELEASE_HEADER),
@@ -258,6 +267,7 @@ def _extract_provenance(response: httpx.Response, *, now: datetime | None = None
         retrieved_at=moment.strftime("%Y-%m-%dT%H:%M:%SZ"),
         url=str(response.url),
         response_sha256=canonical_response_hash(response),
+        accept_header=accept,
     )
 
 
@@ -520,6 +530,7 @@ class UniProtClient:
                     retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
                     url=str(r_search.url),
                     response_sha256=canonical_response_hash(r_search),
+                    accept_header="application/json",
                 )
                 return {"records": [], "total": total}
             r_summary = await ext.get(
@@ -541,6 +552,7 @@ class UniProtClient:
             retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             url=str(r_summary.url),
             response_sha256=canonical_response_hash(r_summary),
+            accept_header="application/json",
         )
         return {"records": records, "total": total}
 
@@ -570,6 +582,7 @@ class UniProtClient:
                 retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 url=str(resp.url),
                 response_sha256=canonical_response_hash(resp),
+                accept_header="application/json",
             )
             return {}
         record: dict[str, Any] = payload[0]
@@ -582,6 +595,7 @@ class UniProtClient:
             retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             url=str(resp.url),
             response_sha256=canonical_response_hash(resp),
+            accept_header="application/json",
         )
         return record
 

@@ -244,3 +244,82 @@ async def test_verify_markdown_renders_drift_with_advice_pointing_at_ftp() -> No
         )
     assert "**Status:** release_drift" in out
     assert "FTP snapshot" in out  # advice text mentions the recommended remediation
+
+
+# ---------------------------------------------------------------------------
+# FASTA accept_header — Bug A regression tests
+# ---------------------------------------------------------------------------
+
+
+async def test_verify_fasta_provenance_uses_correct_accept_header() -> None:
+    """FASTA provenance must verify when accept_header is passed correctly.
+    Regression test for guaranteed-mismatch bug where verify always
+    used Accept: application/json regardless of original request."""
+    fasta_body = ">sp|Q8NBP7|PC4L1_HUMAN\nMEEPQSDPSV\n"
+    fasta_resp = httpx.Response(
+        200,
+        text=fasta_body,
+        headers={
+            "content-type": "text/plain;format=fasta",
+            "X-UniProt-Release": "2026_02",
+        },
+    )
+    recorded_hash = canonical_response_hash(fasta_resp)
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/Q8NBP7").mock(return_value=fasta_resp)
+        out = await uniprot_provenance_verify(
+            "https://rest.uniprot.org/uniprotkb/Q8NBP7",
+            release="2026_02",
+            response_sha256=recorded_hash,
+            accept_header="text/plain;format=fasta",
+            response_format="json",
+        )
+    payload = json.loads(out)
+    assert payload["status"] == "verified"
+    assert payload["hash_match"] is True
+    assert payload["release_match"] is True
+
+
+async def test_verify_fasta_with_json_accept_reports_hash_drift() -> None:
+    """If a FASTA hash is verified with the default JSON accept, the
+    hash must drift because the upstream serves different content."""
+    fasta_body = ">sp|Q8NBP7|PC4L1_HUMAN\nMEEPQSDPSV\n"
+    fasta_resp = httpx.Response(
+        200,
+        text=fasta_body,
+        headers={
+            "content-type": "text/plain;format=fasta",
+            "X-UniProt-Release": "2026_02",
+        },
+    )
+    recorded_hash = canonical_response_hash(fasta_resp)
+    # Re-fetch returns JSON because default accept_header is application/json
+    json_resp = httpx.Response(
+        200,
+        json={"primaryAccession": "Q8NBP7"},
+        headers={
+            "content-type": "application/json",
+            "X-UniProt-Release": "2026_02",
+        },
+    )
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/Q8NBP7").mock(return_value=json_resp)
+        out = await uniprot_provenance_verify(
+            "https://rest.uniprot.org/uniprotkb/Q8NBP7",
+            release="2026_02",
+            response_sha256=recorded_hash,
+            accept_header="application/json",
+            response_format="json",
+        )
+    payload = json.loads(out)
+    assert payload["status"] == "hash_drift"
+    assert payload["hash_match"] is False
+
+
+async def test_verify_rejects_invalid_accept_header() -> None:
+    out = await uniprot_provenance_verify(
+        _TP53_URL,
+        accept_header="text/html",
+    )
+    assert "Input error" in out
+    assert "accept_header" in out
