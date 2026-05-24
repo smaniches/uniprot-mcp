@@ -1269,6 +1269,7 @@ third party can re-check any prior answer.</p>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">retrieved_at</span><span class="p">:</span> <span class="nb">str</span>      <span class="c1"># ISO-8601 UTC, second precision</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span>               <span class="c1"># fully resolved request URL incl. query string</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">response_sha256</span><span class="p">:</span> <span class="nb">str</span>   <span class="c1"># SHA-256 of the canonical body</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">accept_header</span><span class="p">:</span> <span class="nb">str</span>     <span class="c1"># Accept header used (&quot;application/json&quot; or &quot;text/plain;format=fasta&quot;)</span>
 </code></pre></div>
 <p><code>response_sha256</code> is computed on a <strong>canonical</strong> serialization:</p>
 <ul>
@@ -1278,6 +1279,13 @@ third party can re-check any prior answer.</p>
 <li>For non-JSON (FASTA, plain text): raw response bytes hashed
   unchanged.</li>
 </ul>
+<p><strong>Limitation:</strong> JSON canonicalization sorts dictionary keys but does
+<strong>not</strong> sort array elements. If UniProt returns list elements (e.g.,
+cross-references, features) in a different order between requests
+within the same release, the canonical hash may differ. This is a
+known edge case; the <code>hash_drift</code> verdict covers it. For byte-level
+reproducibility of a specific answer, use the FTP release snapshot
+rather than the live REST API.</p>
 <h2 id="how-its-surfaced">How it's surfaced<a class="headerlink" href="#how-its-surfaced" title="Permanent link">&para;</a></h2>
 <h3 id="markdown-footer-default">Markdown footer (default)<a class="headerlink" href="#markdown-footer-default" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>---
@@ -1311,9 +1319,10 @@ third party can re-check any prior answer.</p>
 FASTA parser (BLAST+, biopython <code>SeqIO</code>, emboss <code>seqret</code>). The
 sequence remains a valid FASTA record.</p>
 <h2 id="verification-tool">Verification tool<a class="headerlink" href="#verification-tool" title="Permanent link">&para;</a></h2>
-<p><code>uniprot_provenance_verify(url, release="", response_sha256="")</code>
+<p><code>uniprot_provenance_verify(url, release="", response_sha256="", accept_header="application/json")</code>
 re-fetches the URL with a fresh HTTP client (bypasses any
-pin-release configuration) and compares:</p>
+pin-release configuration) using the supplied <code>accept_header</code> for
+content negotiation, and compares:</p>
 <ol>
 <li>URL reachability (HTTP success).</li>
 <li>Release tag (the <code>X-UniProt-Release</code> header) — only checked if
