@@ -727,8 +727,16 @@ def test_uniprot_client_env_var_empty_string_means_unpinned(
 # ---------------------------------------------------------------------------
 
 
-def test_provenance_dict_has_six_documented_fields() -> None:
+def test_provenance_dict_has_seven_documented_fields() -> None:
     """The Provenance TypedDict declares exactly: source, release,
-    release_date, retrieved_at, url, response_sha256."""
-    expected = {"source", "release", "release_date", "retrieved_at", "url", "response_sha256"}
+    release_date, retrieved_at, url, response_sha256, accept_header."""
+    expected = {
+        "source",
+        "release",
+        "release_date",
+        "retrieved_at",
+        "url",
+        "response_sha256",
+        "accept_header",
+    }
     assert set(Provenance.__annotations__.keys()) == expected

@@ -182,6 +182,8 @@ def _provenance_md_footer(provenance: Provenance) -> list[str]:
     else:
         release_text = SOURCE_NAME
 
+    accept_header = provenance.get("accept_header", "application/json")
+
     lines = [
         "",
         "---",
@@ -190,6 +192,7 @@ def _provenance_md_footer(provenance: Provenance) -> list[str]:
     ]
     if response_sha256:
         lines.append(f"_SHA-256: {response_sha256}_")
+    lines.append(f"_Accept: {accept_header}_")
     return lines
 
 
@@ -203,6 +206,7 @@ def _provenance_fasta_header(provenance: Provenance) -> list[str]:
     release = provenance.get("release")
     release_date = provenance.get("release_date")
     response_sha256 = provenance.get("response_sha256", "")
+    accept_header = provenance.get("accept_header", "application/json")
     lines: list[str] = [f";Source: {SOURCE_NAME}"]
     if release and release_date:
         lines.append(f";Release: {release} ({release_date})")
@@ -212,6 +216,7 @@ def _provenance_fasta_header(provenance: Provenance) -> list[str]:
     lines.append(f";URL: {provenance['url']}")
     if response_sha256:
         lines.append(f";SHA-256: {response_sha256}")
+    lines.append(f";Accept: {accept_header}")
     return lines
 
 

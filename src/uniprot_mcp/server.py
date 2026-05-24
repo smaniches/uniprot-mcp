@@ -143,6 +143,12 @@ MAX_PROVENANCE_URL_LEN: Final[int] = 1_000
 # future schema with ample margin.
 MAX_RELEASE_TAG_LEN: Final[int] = 16
 ALLOWED_RESPONSE_FORMATS: Final[frozenset[str]] = frozenset({"markdown", "json"})
+ALLOWED_ACCEPT_HEADERS: Final[frozenset[str]] = frozenset(
+    {
+        "application/json",
+        "text/plain;format=fasta",
+    }
+)
 
 # Module-level lazy client. No lifespan. No ctx injection. Just works.
 _uniprot: UniProtClient | None = None
@@ -261,7 +267,12 @@ def _parse_variant_change(value: str) -> tuple[str, int, str]:
 
 
 def _safe_error(tool: str, exc: BaseException) -> str:
-    """Format an agent-safe error. Detail goes to stderr log, not the LLM."""
+    """Format an agent-safe error. Detail goes to stderr log, not the LLM.
+
+    Output is intentionally human-readable plain text with no structured
+    error codes. Automation should branch on MCP-level isError, not on
+    string content.
+    """
     logger.exception("tool=%s failed", tool)
     if isinstance(exc, _InputError):
         return f"Input error in {tool}: {exc}"
@@ -1668,14 +1679,21 @@ async def uniprot_provenance_verify(
     url: str,
     release: str = "",
     response_sha256: str = "",
+    accept_header: str = "application/json",
     response_format: str = "markdown",
 ) -> str:
     """Re-fetch a previously recorded UniProt URL and verify it still
     returns the same release identifier and the same canonical response
     body (SHA-256). Pass the values from a prior response's provenance
-    footer (`url`, `release`, `response_sha256`); empty optional fields
-    skip the corresponding check. Returns a verification report with
-    explicit pass / drift / unreachable verdicts per check.
+    footer (`url`, `release`, `response_sha256`, `accept_header`); empty
+    optional fields skip the corresponding check. Returns a verification
+    report with explicit pass / drift / unreachable verdicts per check.
+
+    ``accept_header`` must match the Accept header used for the original
+    request (default ``application/json``; use ``text/plain;format=fasta``
+    for FASTA-originated provenance). Replaying the wrong header causes a
+    guaranteed hash mismatch because the upstream serves different content
+    depending on content negotiation.
 
     This is the single tool that converts every prior uniprot-mcp
     response into an independently auditable artefact — a year from
@@ -1686,6 +1704,8 @@ async def uniprot_provenance_verify(
         _check_len("release", release, MAX_RELEASE_TAG_LEN)
         _check_len("response_sha256", response_sha256, 64)
         _check_format(response_format)
+        if accept_header not in ALLOWED_ACCEPT_HEADERS:
+            raise _InputError(f"accept_header must be one of {sorted(ALLOWED_ACCEPT_HEADERS)}")
         if not url.startswith("https://rest.uniprot.org/"):
             raise _InputError(
                 "url must begin with https://rest.uniprot.org/ — only UniProt REST "
@@ -1695,6 +1715,7 @@ async def uniprot_provenance_verify(
             url=url,
             recorded_release=release or None,
             recorded_sha256=response_sha256 or None,
+            accept_header=accept_header,
             response_format=response_format,
         )
     except Exception as exc:
@@ -1706,11 +1727,13 @@ async def _provenance_verify_impl(
     url: str,
     recorded_release: str | None,
     recorded_sha256: str | None,
+    accept_header: str,
     response_format: str,
 ) -> str:
     """Worker for ``uniprot_provenance_verify``. Re-fetches ``url`` with
     a fresh httpx client (bypasses the singleton's pin-release config)
-    and produces a structured verdict.
+    and produces a structured verdict. Uses the supplied ``accept_header``
+    to replicate the content negotiation of the original request.
     """
     report: dict[str, object] = {
         "url": url,
@@ -1719,7 +1742,7 @@ async def _provenance_verify_impl(
     }
     async with httpx.AsyncClient(
         timeout=httpx.Timeout(30.0),
-        headers={"User-Agent": UA, "Accept": "application/json"},
+        headers={"User-Agent": UA, "Accept": accept_header},
         follow_redirects=True,
     ) as client:
         try:

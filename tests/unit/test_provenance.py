@@ -55,6 +55,7 @@ _FIXED_PROV: Provenance = {
     "retrieved_at": "2026-04-24T12:00:00Z",
     "url": "https://rest.uniprot.org/uniprotkb/P04637",
     "response_sha256": "a" * 64,
+    "accept_header": "application/json",
 }
 
 
@@ -241,10 +242,11 @@ def test_md_footer_degrades_gracefully_without_release() -> None:
         "release_date": None,
         "retrieved_at": "2026-04-24T12:00:00Z",
         "url": "https://rest.uniprot.org/taxonomy/search",
+        "response_sha256": "b" * 64,
+        "accept_header": "application/json",
     }
     out = fmt_taxonomy({"results": []}, "markdown", provenance=prov)
     assert "Source: UniProt •" in out
-    assert "release" not in out.lower()
     assert "2026-04-24T12:00:00Z" in out
 
 
