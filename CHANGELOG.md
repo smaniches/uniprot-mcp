@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.7] - 2026-05-24
+
+Provenance-verification fix + repo hygiene. No changes to the MCP tool
+surface or query behaviour.
+
+### Fixed
+- **Provenance replay now records and honours the `Accept` header**
+  (#38). Verification requests that omitted or mismatched the header
+  could produce content-type mismatches against the sealed response.
+- **Scorecard: cleared two Pinned-Dependencies findings** in the
+  release-verify workflow (#34).
+
+### Changed
+- `scripts/check_versions.py` refactored to use `tomllib` and safer
+  `.get()` key access (#33).
+- Documentation accuracy pass: fixed overclaims, synced stale test
+  counts, softened version-control vernacular (#35).
+
 ## [1.1.6] - 2026-05-17
 
 Release-chain durability + repo polish. **No production code-path
