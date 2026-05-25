@@ -115,7 +115,7 @@ def test_user_agent_string_is_pinned_exactly() -> None:
     """UA is logged at the upstream service. The version-string portion
     is bumped lock-step with releases (currently 1.1.6). Pin both the
     product token and the URL hint."""
-    assert UA == "uniprot-mcp/1.1.6 (+https://github.com/smaniches/uniprot-mcp)"
+    assert UA == "uniprot-mcp/1.1.7 (+https://github.com/smaniches/uniprot-mcp)"
 
 
 def test_source_name_is_uniprot() -> None:
