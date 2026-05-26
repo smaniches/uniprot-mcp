@@ -189,12 +189,12 @@ that question with **yes**:
 - **What happens when something breaks?** Yes — release-mismatch
   raises loudly, the cache lets you replay sealed snapshots, the
   verify tool distinguishes drift modes.
-- **Compliance-grade differentiator?** Yes — at the time of the most
-  recent survey (2026-04-26, recorded in
+- **Differentiating feature in the reviewed set?** At the time of
+  the most recent survey (2026-04-26, recorded in
   [`docs/COMPETITIVE_LANDSCAPE.md`](COMPETITIVE_LANDSCAPE.md)) no
-  other public bioinformatics MCP attached per-query verifiable
-  provenance to its responses. That survey is open to corrections;
-  file an issue if you know of one.
+  other public bioinformatics MCP in the reviewed set attached
+  per-query verifiable provenance to its responses. That survey is
+  open to corrections; file an issue if you know of one.
 
 That is the operational value proposition.
 

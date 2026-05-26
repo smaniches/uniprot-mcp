@@ -1,11 +1,15 @@
 # Competitive landscape — bio-MCP servers (April 2026)
 
+**Last full review:** 2026-04-26. Maintenance procedure:
+[`COMPETITIVE_LANDSCAPE_MAINTENANCE.md`](COMPETITIVE_LANDSCAPE_MAINTENANCE.md).
+
 This page records what `uniprot-mcp` does that other Model Context
 Protocol servers in the biomedical space do not, *as observed on
-2026-04-26*. The bio-MCP ecosystem is moving fast; the table below
-will be updated when changes are detected. **If you are the author of
-one of these servers and an entry is wrong or out of date, please
-file an issue and I will correct it.**
+2026-04-26 in the reviewed set documented here*. The bio-MCP
+ecosystem is moving fast; the table below will be updated when
+changes are detected. **If you are the author of one of these servers
+and an entry is wrong or out of date, please file an issue and I will
+correct it.**
 
 The point of this page is not to disparage any other server — most
 are excellent at what they do, with broader scope or larger user
@@ -35,9 +39,9 @@ about, so an adopter can pick the right tool for their workflow.
 
 ClinVar-specific MCP and a ChEMBL-only MCP were not found as standalone servers — only as facets of meta-routers.
 
-## What `uniprot-mcp` does that no surveyed bio-MCP does
+## What `uniprot-mcp` does that no server in the reviewed set does (as of 2026-04-26)
 
-1. **Per-response SHA-256 + canonicalised `Provenance` footer** on every tool result (release tag, retrieval timestamp, resolved URL, body digest). No other bio-MCP scanned attaches a body digest. BioMCP attaches an installer SHA-256 only.
+1. **Per-response SHA-256 + canonicalised `Provenance` footer** on every tool result (release tag, retrieval timestamp, resolved URL, body digest). No other bio-MCP in the reviewed set attaches a body digest. BioMCP attaches an installer SHA-256 only.
 2. **`uniprot_provenance_verify` re-fetch primitive** with five enumerated verdicts (`verified`, `release_drift`, `hash_drift`, `release_and_hash_drift`, `url_unreachable`) and per-verdict advice. GitHub code search across repos finds zero other implementations of `provenance_verify` / `hash_drift` / `release_drift` semantics.
 3. **`UNIPROT_PIN_RELEASE` / `--pin-release=YYYY_MM` release pinning** that raises on drift inside the running server. Not present in any competitor README.
 4. **`uniprot_target_dossier` nine-section composition** (identity / function / chemistry / structure / drug-target / disease / variants / functional annotations / cross-refs) in one call.
@@ -74,4 +78,4 @@ The survey was performed via:
 
 Each candidate's README was read for: per-response digest behaviour, verify-style primitives, release-pinning semantics, supply-chain attestations. Where the README was ambiguous, the source was inspected.
 
-If you find a server I missed, **please file an issue**. I will update this page and adjust the README's claim accordingly.
+If you find a server I missed, **please file an issue**. I will update this page and adjust the README's claim accordingly. See [`COMPETITIVE_LANDSCAPE_MAINTENANCE.md`](COMPETITIVE_LANDSCAPE_MAINTENANCE.md) for the full update procedure.

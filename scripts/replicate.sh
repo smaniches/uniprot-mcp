@@ -36,7 +36,7 @@
 
 set -euo pipefail
 
-VERSION="${VERSION:-1.1.3}"
+VERSION="${VERSION:-1.1.7}"
 PKG="uniprot-mcp-server"
 REPO="smaniches/uniprot-mcp"
 
