@@ -1,6 +1,6 @@
 # Benchmark v1 — `uniprot-mcp` pre-registered evaluation
 
-> The single artifact that converts "another bio MCP" into "the reference." Pre-registered prompts, SHA-256-committed expected answers, third-party-reproducible scoring under three independent conditions. See [`AUDIT.md`](AUDIT.md) for per-prompt independence.
+> Pre-registered prompts, SHA-256-committed expected answers, third-party-reproducible scoring under three independent conditions. See [`AUDIT.md`](AUDIT.md) for per-prompt independence.
 
 ## Why this exists
 
