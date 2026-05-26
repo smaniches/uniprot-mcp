@@ -856,10 +856,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-uniprot-mcp-does-that-no-surveyed-bio-mcp-does" class="md-nav__link">
+  <a href="#what-uniprot-mcp-does-that-no-server-in-the-reviewed-set-does-as-of-2026-04-26" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What uniprot-mcp does that no surveyed bio-MCP does
+        What uniprot-mcp does that no server in the reviewed set does (as of 2026-04-26)
       
     </span>
   </a>
@@ -1037,10 +1037,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-uniprot-mcp-does-that-no-surveyed-bio-mcp-does" class="md-nav__link">
+  <a href="#what-uniprot-mcp-does-that-no-server-in-the-reviewed-set-does-as-of-2026-04-26" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What uniprot-mcp does that no surveyed bio-MCP does
+        What uniprot-mcp does that no server in the reviewed set does (as of 2026-04-26)
       
     </span>
   </a>
@@ -1106,12 +1106,15 @@
 
 
 <h1 id="competitive-landscape-bio-mcp-servers-april-2026">Competitive landscape — bio-MCP servers (April 2026)<a class="headerlink" href="#competitive-landscape-bio-mcp-servers-april-2026" title="Permanent link">&para;</a></h1>
+<p><strong>Last full review:</strong> 2026-04-26. Maintenance procedure:
+<a href="../COMPETITIVE_LANDSCAPE_MAINTENANCE/"><code>COMPETITIVE_LANDSCAPE_MAINTENANCE.md</code></a>.</p>
 <p>This page records what <code>uniprot-mcp</code> does that other Model Context
 Protocol servers in the biomedical space do not, <em>as observed on
-2026-04-26</em>. The bio-MCP ecosystem is moving fast; the table below
-will be updated when changes are detected. <strong>If you are the author of
-one of these servers and an entry is wrong or out of date, please
-file an issue and I will correct it.</strong></p>
+2026-04-26 in the reviewed set documented here</em>. The bio-MCP
+ecosystem is moving fast; the table below will be updated when
+changes are detected. <strong>If you are the author of one of these servers
+and an entry is wrong or out of date, please file an issue and I will
+correct it.</strong></p>
 <p>The point of this page is not to disparage any other server — most
 are excellent at what they do, with broader scope or larger user
 bases than <code>uniprot-mcp</code>. The point is to be specific about the
@@ -1317,9 +1320,9 @@ about, so an adopter can pick the right tool for their workflow.</p>
 </tbody>
 </table>
 <p>ClinVar-specific MCP and a ChEMBL-only MCP were not found as standalone servers — only as facets of meta-routers.</p>
-<h2 id="what-uniprot-mcp-does-that-no-surveyed-bio-mcp-does">What <code>uniprot-mcp</code> does that no surveyed bio-MCP does<a class="headerlink" href="#what-uniprot-mcp-does-that-no-surveyed-bio-mcp-does" title="Permanent link">&para;</a></h2>
+<h2 id="what-uniprot-mcp-does-that-no-server-in-the-reviewed-set-does-as-of-2026-04-26">What <code>uniprot-mcp</code> does that no server in the reviewed set does (as of 2026-04-26)<a class="headerlink" href="#what-uniprot-mcp-does-that-no-server-in-the-reviewed-set-does-as-of-2026-04-26" title="Permanent link">&para;</a></h2>
 <ol>
-<li><strong>Per-response SHA-256 + canonicalised <code>Provenance</code> footer</strong> on every tool result (release tag, retrieval timestamp, resolved URL, body digest). No other bio-MCP scanned attaches a body digest. BioMCP attaches an installer SHA-256 only.</li>
+<li><strong>Per-response SHA-256 + canonicalised <code>Provenance</code> footer</strong> on every tool result (release tag, retrieval timestamp, resolved URL, body digest). No other bio-MCP in the reviewed set attaches a body digest. BioMCP attaches an installer SHA-256 only.</li>
 <li><strong><code>uniprot_provenance_verify</code> re-fetch primitive</strong> with five enumerated verdicts (<code>verified</code>, <code>release_drift</code>, <code>hash_drift</code>, <code>release_and_hash_drift</code>, <code>url_unreachable</code>) and per-verdict advice. GitHub code search across repos finds zero other implementations of <code>provenance_verify</code> / <code>hash_drift</code> / <code>release_drift</code> semantics.</li>
 <li><strong><code>UNIPROT_PIN_RELEASE</code> / <code>--pin-release=YYYY_MM</code> release pinning</strong> that raises on drift inside the running server. Not present in any competitor README.</li>
 <li><strong><code>uniprot_target_dossier</code> nine-section composition</strong> (identity / function / chemistry / structure / drug-target / disease / variants / functional annotations / cross-refs) in one call.</li>
@@ -1353,7 +1356,7 @@ about, so an adopter can pick the right tool for their workflow.</p>
 <li>PyPI search for <code>*-mcp</code> packages.</li>
 </ul>
 <p>Each candidate's README was read for: per-response digest behaviour, verify-style primitives, release-pinning semantics, supply-chain attestations. Where the README was ambiguous, the source was inspected.</p>
-<p>If you find a server I missed, <strong>please file an issue</strong>. I will update this page and adjust the README's claim accordingly.</p>
+<p>If you find a server I missed, <strong>please file an issue</strong>. I will update this page and adjust the README's claim accordingly. See <a href="../COMPETITIVE_LANDSCAPE_MAINTENANCE/"><code>COMPETITIVE_LANDSCAPE_MAINTENANCE.md</code></a> for the full update procedure.</p>
 
 
 

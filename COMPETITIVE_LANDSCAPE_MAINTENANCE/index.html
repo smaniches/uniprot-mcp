@@ -12,13 +12,9 @@
         <meta name="author" content="Santiago Maniches">
       
       
-        <link rel="canonical" href="https://smaniches.github.io/uniprot-mcp/provenance-guide/">
+        <link rel="canonical" href="https://smaniches.github.io/uniprot-mcp/COMPETITIVE_LANDSCAPE_MAINTENANCE/">
       
       
-        <link rel="prev" href="../recipes/structural-confidence/">
-      
-      
-        <link rel="next" href="../THREAT_MODEL/">
       
       
         
@@ -29,7 +25,7 @@
     
     
       
-        <title>Provenance & verification - uniprot-mcp</title>
+        <title>Competitive landscape — maintenance procedure - uniprot-mcp</title>
       
     
     
@@ -82,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#provenance-verification-deep-dive" class="md-skip">
+        <a href="#competitive-landscape-maintenance-procedure" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Provenance & verification
+              Competitive landscape — maintenance procedure
             
           </span>
         </div>
@@ -304,11 +300,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../provenance-guide/" class="md-tabs__link">
         
   
   
@@ -614,37 +608,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Provenance & verification
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../provenance-guide/" class="md-nav__link">
         
   
   
@@ -660,159 +627,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#the-provenance-record" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Provenance record
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-its-surfaced" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How it's surfaced
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="How it&#39;s surfaced">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#markdown-footer-default" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Markdown footer (default)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#json-envelope-when-response_formatjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON envelope (when response_format="json")
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pir-style-fasta-header-sequence-tool-only" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PIR-style FASTA header (sequence tool only)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#verification-tool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verification tool
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Verification tool">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#five-verdicts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Five verdicts
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#strict-release-pinning" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Strict release pinning
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-cache-layer-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The cache layer (optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compliance-officer-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Compliance-officer model
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See also
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1099,10 +913,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-provenance-record" class="md-nav__link">
+  <a href="#review-cadence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Provenance record
+        Review cadence
       
     </span>
   </a>
@@ -1110,88 +924,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-its-surfaced" class="md-nav__link">
+  <a href="#how-to-identify-comparator-repositories" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How it's surfaced
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="How it&#39;s surfaced">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#markdown-footer-default" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Markdown footer (default)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#json-envelope-when-response_formatjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON envelope (when response_format="json")
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pir-style-fasta-header-sequence-tool-only" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PIR-style FASTA header (sequence tool only)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#verification-tool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verification tool
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Verification tool">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#five-verdicts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Five verdicts
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#strict-release-pinning" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Strict release pinning
+        How to identify comparator repositories
       
     </span>
   </a>
@@ -1199,10 +935,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-cache-layer-optional" class="md-nav__link">
+  <a href="#what-qualifies-as-a-counterexample" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The cache layer (optional)
+        What qualifies as a counterexample
       
     </span>
   </a>
@@ -1210,10 +946,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#compliance-officer-model" class="md-nav__link">
+  <a href="#how-to-file-corrections" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Compliance-officer model
+        How to file corrections
       
     </span>
   </a>
@@ -1221,10 +957,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
+  <a href="#how-to-update-the-survey-table" class="md-nav__link">
     <span class="md-ellipsis">
       
-        See also
+        How to update the survey table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#language-discipline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language discipline
       
     </span>
   </a>
@@ -1248,7 +995,7 @@
 
 
   
-    <a href="https://github.com/smaniches/uniprot-mcp/edit/main/docs/provenance-guide.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/smaniches/uniprot-mcp/edit/main/docs/COMPETITIVE_LANDSCAPE_MAINTENANCE.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1256,208 +1003,91 @@
   
 
 
-<h1 id="provenance-verification-deep-dive">Provenance &amp; verification — deep dive<a class="headerlink" href="#provenance-verification-deep-dive" title="Permanent link">&para;</a></h1>
-<p>Every successful response from <code>uniprot-mcp</code> carries a
-machine-verifiable record of where it came from. This page is the
-deep-dive reference for what's recorded, how it's used, and how a
-third party can re-check any prior answer.</p>
-<h2 id="the-provenance-record">The Provenance record<a class="headerlink" href="#the-provenance-record" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Provenance</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">source</span><span class="p">:</span> <span class="nb">str</span>            <span class="c1"># &quot;UniProt&quot; / &quot;AlphaFoldDB&quot; / &quot;NCBI ClinVar (eutils)&quot;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">release</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>    <span class="c1"># e.g. &quot;2026_01&quot;; None when origin doesn&#39;t version</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">release_date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">retrieved_at</span><span class="p">:</span> <span class="nb">str</span>      <span class="c1"># ISO-8601 UTC, second precision</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span>               <span class="c1"># fully resolved request URL incl. query string</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">response_sha256</span><span class="p">:</span> <span class="nb">str</span>   <span class="c1"># SHA-256 of the canonical body</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">accept_header</span><span class="p">:</span> <span class="nb">str</span>     <span class="c1"># Accept header used (&quot;application/json&quot; or &quot;text/plain;format=fasta&quot;)</span>
-</code></pre></div>
-<p><code>response_sha256</code> is computed on a <strong>canonical</strong> serialization:</p>
-<ul>
-<li>For JSON responses: parsed and re-serialized with <code>sort_keys=True</code></li>
-<li>compact separators. Within-release key reordering does NOT break
-  verification; real content drift DOES.</li>
-<li>For non-JSON (FASTA, plain text): raw response bytes hashed
-  unchanged.</li>
-</ul>
-<p><strong>Limitation:</strong> JSON canonicalization sorts dictionary keys but does
-<strong>not</strong> sort array elements. If UniProt returns list elements (e.g.,
-cross-references, features) in a different order between requests
-within the same release, the canonical hash may differ. This is a
-known edge case; the <code>hash_drift</code> verdict covers it. For byte-level
-reproducibility of a specific answer, use the FTP release snapshot
-rather than the live REST API.</p>
-<h2 id="how-its-surfaced">How it's surfaced<a class="headerlink" href="#how-its-surfaced" title="Permanent link">&para;</a></h2>
-<h3 id="markdown-footer-default">Markdown footer (default)<a class="headerlink" href="#markdown-footer-default" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>---
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>_Source: UniProt release 2026_01 (28-January-2026) • Retrieved 2026-04-25T12:00:00Z_
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>_Query: https://rest.uniprot.org/uniprotkb/P04637_
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>_SHA-256: 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e_
-</code></pre></div>
-<h3 id="json-envelope-when-response_formatjson">JSON envelope (when <code>response_format="json"</code>)<a class="headerlink" href="#json-envelope-when-response_formatjson" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;UniProt&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">&quot;release&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026_01&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">&quot;release_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;28-January-2026&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">&quot;retrieved_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-25T12:00:00Z&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://rest.uniprot.org/uniprotkb/P04637&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="nt">&quot;response_sha256&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e&quot;</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="pir-style-fasta-header-sequence-tool-only">PIR-style FASTA header (sequence tool only)<a class="headerlink" href="#pir-style-fasta-header-sequence-tool-only" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>;Source: UniProt
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>;Release: 2026_01 (28-January-2026)
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>;Retrieved: 2026-04-25T12:00:00Z
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>;URL: https://rest.uniprot.org/uniprotkb/P04637
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>;SHA-256: 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>&gt;sp|P04637|P53_HUMAN ...
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>ATCG...
-</code></pre></div>
-<p>PIR (<code>;</code>-prefix) lines are recognised as comments by every major
-FASTA parser (BLAST+, biopython <code>SeqIO</code>, emboss <code>seqret</code>). The
-sequence remains a valid FASTA record.</p>
-<h2 id="verification-tool">Verification tool<a class="headerlink" href="#verification-tool" title="Permanent link">&para;</a></h2>
-<p><code>uniprot_provenance_verify(url, release="", response_sha256="", accept_header="application/json")</code>
-re-fetches the URL with a fresh HTTP client (bypasses any
-pin-release configuration) using the supplied <code>accept_header</code> for
-content negotiation, and compares:</p>
+<h1 id="competitive-landscape-maintenance-procedure">Competitive landscape — maintenance procedure<a class="headerlink" href="#competitive-landscape-maintenance-procedure" title="Permanent link">&para;</a></h1>
+<p>This document describes how to keep
+<a href="../COMPETITIVE_LANDSCAPE/"><code>docs/COMPETITIVE_LANDSCAPE.md</code></a> accurate.
+The survey is only as strong as its freshness; stale data undermines
+the differentiation claims that depend on it.</p>
+<h2 id="review-cadence">Review cadence<a class="headerlink" href="#review-cadence" title="Permanent link">&para;</a></h2>
+<p>The survey should be reviewed <strong>quarterly</strong> or whenever a new
+<code>uniprot-mcp</code> minor release ships, whichever comes first. The
+"Last full review" date at the top of
+<code>docs/COMPETITIVE_LANDSCAPE.md</code> records when this was last done.</p>
+<h2 id="how-to-identify-comparator-repositories">How to identify comparator repositories<a class="headerlink" href="#how-to-identify-comparator-repositories" title="Permanent link">&para;</a></h2>
+<p>Run the following searches and record the date:</p>
 <ol>
-<li>URL reachability (HTTP success).</li>
-<li>Release tag (the <code>X-UniProt-Release</code> header) — only checked if
-   <code>release</code> is supplied.</li>
-<li>Canonical response SHA-256 — only checked if <code>response_sha256</code> is
-   supplied.</li>
+<li><strong>GitHub code search:</strong>
+   <code>bio mcp</code>, <code>uniprot mcp</code>, <code>bioinformatics mcp</code>,
+   <code>provenance_verify</code>, <code>hash_drift</code>, <code>release_drift</code>,
+   <code>protein mcp</code>, <code>clinical mcp</code>.</li>
+<li><strong>MCP Registry:</strong> browse
+   <code>registry.modelcontextprotocol.io</code> for bio/health categories.</li>
+<li><strong>Smithery:</strong> browse <code>smithery.ai</code> bio category.</li>
+<li><strong>Anthropic Connectors Directory:</strong> check for new bio-tagged
+   connectors.</li>
+<li><strong>PyPI:</strong> search for <code>*-mcp</code> packages in bio/health domains.</li>
 </ol>
-<h3 id="five-verdicts">Five verdicts<a class="headerlink" href="#five-verdicts" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Verdict</th>
-<th>Meaning</th>
-<th>What to do</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>verified</code></td>
-<td>Both checks passed</td>
-<td>The recorded provenance is reproducible against the live API.</td>
-</tr>
-<tr>
-<td><code>release_drift</code></td>
-<td>UniProt has released a new version; body unchanged</td>
-<td>If you need byte-level reproducibility, fetch from the FTP snapshot for the recorded release; otherwise the live answer is current and equivalent.</td>
-</tr>
-<tr>
-<td><code>hash_drift</code></td>
-<td>Same release, different body</td>
-<td>An in-release edit. Investigate: UniProt may have edited the entry within the release, or our canonicalisation differs.</td>
-</tr>
-<tr>
-<td><code>release_and_hash_drift</code></td>
-<td>Both moved on</td>
-<td>Use a release-specific FTP snapshot for the historical answer.</td>
-</tr>
-<tr>
-<td><code>url_unreachable</code></td>
-<td>Endpoint dropped, rate-limited, or 4xx</td>
-<td>Retry, or report to UniProt if the endpoint should still exist.</td>
-</tr>
-</tbody>
-</table>
-<p>Each verdict carries an <strong>advice</strong> string — a one-sentence next-step
-recommendation included in the markdown output.</p>
-<h2 id="strict-release-pinning">Strict release pinning<a class="headerlink" href="#strict-release-pinning" title="Permanent link">&para;</a></h2>
-<p>If you need byte-level reproducibility <em>during</em> querying (not just
-verifying afterwards), opt into pinning:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">UNIPROT_MCP_CACHE_DIR</span><span class="o">=</span>/path/to/cache<span class="w">  </span><span class="c1"># optional, but recommended for offline replay</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">UNIPROT_PIN_RELEASE</span><span class="o">=</span>2026_01
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>uniprot-mcp
-</code></pre></div>
-<p>When <code>UNIPROT_PIN_RELEASE</code> is set, every successful upstream response
-is checked against the pinned release. Any drift raises
-<code>ReleaseMismatchError</code>, which the server surfaces as an
-agent-actionable error envelope:</p>
-<blockquote>
-<p><strong>Release mismatch in <code>uniprot_get_entry</code></strong>: pinned <code>'2026_01'</code>,
-observed <code>'2026_03'</code> at <code>https://rest.uniprot.org/uniprotkb/P04637</code>.
-Re-run against a release-2026_01 snapshot or unset
-<code>UNIPROT_PIN_RELEASE</code>.</p>
-</blockquote>
-<p>UniProt's REST API does <strong>not</strong> honour a release-selector query
-parameter — the upstream always serves the latest release. Pinning
-is therefore <em>assertion-only</em>: we refuse to silently accept drift
-rather than transparently rewrite the request.</p>
-<h2 id="the-cache-layer-optional">The cache layer (optional)<a class="headerlink" href="#the-cache-layer-optional" title="Permanent link">&para;</a></h2>
-<p><code>UNIPROT_MCP_CACHE_DIR=/path/to/cache</code> opts in to local caching.</p>
-<p><strong>Scope in v1.1.x — read primitive only.</strong> The cache is a <em>read</em>
-surface for offline replay. <code>uniprot_replay_from_cache(url)</code> reads
-from <code>&lt;cache_dir&gt;/&lt;sha256(url)&gt;.json</code> and returns the record without
-hitting UniProt. <strong>Automatic write-through is a v1.2.0 roadmap item.</strong>
-Today the cache directory must be populated externally — either by a
-prior export, or by tests that explicitly call <code>ProvenanceCache.write</code>.
-This was clarified in v1.1.3 (see <code>CHANGELOG.md</code> — the v1.1.2 wording
-that promised "every successful response is mirrored to disk" was
-retracted).</p>
-<p>When the cache is populated, each entry is a JSON record with the
-schema:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://rest.uniprot.org/uniprotkb/P04637&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">&quot;body_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;raw response&gt;&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">}</span>
-</code></pre></div>
-<p><code>ProvenanceCache.write</code> (used by the test fixtures and by future
-auto-write code paths) uses atomic file replacement (tempfile +
-<code>os.replace</code>) so a crashed process never leaves a half-written entry
-behind.</p>
-<p>The <code>uniprot_replay_from_cache(url)</code> tool reads from that cache
-without touching the upstream. Use cases once the directory is
-populated:</p>
+<p>For each candidate found, read the README for:
+- Per-response digest or hash behaviour
+- Verify-style primitives (re-fetch + compare)
+- Release-pinning semantics
+- Supply-chain attestations (SLSA, Sigstore, SBOM)
+- <code>.well-known/mcp.json</code> presence</p>
+<p>Where the README is ambiguous, inspect the source.</p>
+<h2 id="what-qualifies-as-a-counterexample">What qualifies as a counterexample<a class="headerlink" href="#what-qualifies-as-a-counterexample" title="Permanent link">&para;</a></h2>
+<p>A counterexample to the "no other surveyed bio-MCP has [feature X]"
+claim is a public repository that:</p>
+<ol>
+<li>Is a Model Context Protocol server (not a REST API, CLI tool, or
+   library).</li>
+<li>Targets a biomedical data source (UniProt, PDB, ClinVar, ChEMBL,
+   KEGG, etc.).</li>
+<li>Implements the specific feature in question (e.g., per-response
+   SHA-256 of canonical body, a verify primitive, release pinning).</li>
+</ol>
+<p>A server that plans to implement a feature but has not shipped it is
+not a counterexample. A server that hashes its installer (not its
+per-query responses) is not a counterexample to "per-response
+SHA-256."</p>
+<h2 id="how-to-file-corrections">How to file corrections<a class="headerlink" href="#how-to-file-corrections" title="Permanent link">&para;</a></h2>
+<p>If you find a counterexample or an error in the survey table:</p>
+<ol>
+<li><strong>Open an issue</strong> at
+   <code>https://github.com/smaniches/uniprot-mcp/issues</code> with:</li>
+<li>The repository URL</li>
+<li>The specific feature it implements</li>
+<li>A link to the relevant code or documentation</li>
+<li>The maintainer will verify the claim, update
+   <code>docs/COMPETITIVE_LANDSCAPE.md</code>, and adjust the README's
+   differentiation language if needed.</li>
+<li>The correction will be recorded in the CHANGELOG under the next
+   release.</li>
+</ol>
+<h2 id="how-to-update-the-survey-table">How to update the survey table<a class="headerlink" href="#how-to-update-the-survey-table" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Run the searches listed above.</li>
+<li>For each new candidate, add a row to the survey table in
+   <code>docs/COMPETITIVE_LANDSCAPE.md</code> with all columns filled.</li>
+<li>For each existing candidate, check for recent pushes and update
+   the "Last push" column if needed. Re-read the README for feature
+   changes.</li>
+<li>Update the "Last full review" date at the top of the document.</li>
+<li>Review the "What <code>uniprot-mcp</code> does that no surveyed bio-MCP
+   does" section. If a counterexample has appeared, soften the claim
+   to "in the reviewed set" or remove it.</li>
+<li>Update <code>docs/CLAIMS.md</code> claim C10 with the new review date.</li>
+<li>Commit with a message like
+   <code>docs: update competitive landscape survey (YYYY-MM-DD)</code>.</li>
+</ol>
+<h2 id="language-discipline">Language discipline<a class="headerlink" href="#language-discipline" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Air-gapped clinical workflows.</strong> Pre-export a sealed snapshot of
-  the UniProt entries a workflow consults; run analyses on a machine
-  with no network access to UniProt.</li>
-<li><strong>Reproducing a year-old answer.</strong> The same Provenance record in
-  your six-month-old report points at the same cache entry (the cache
-  key is <code>sha256(url)</code>), so <code>replay_from_cache</code> returns the exact
-  bytes the report cited.</li>
-<li><strong>Reducing UniProt's load.</strong> When iterating on a notebook or test
-  suite, pre-populate the cache from one round of live calls and
-  replay for subsequent iterations.</li>
-</ul>
-<h2 id="compliance-officer-model">Compliance-officer model<a class="headerlink" href="#compliance-officer-model" title="Permanent link">&para;</a></h2>
-<blockquote>
-<p><em>Would a regulated bio-pharma compliance officer who has never met
-me trust this artifact in 2030?</em></p>
-</blockquote>
-<p>The provenance + verify + pin + cache stack is engineered to answer
-that question with <strong>yes</strong>:</p>
-<ul>
-<li><strong>Reproducible without contacting the author?</strong> Yes —
-  <code>uniprot_provenance_verify</code> is one tool call.</li>
-<li><strong>Audit trail intact?</strong> Yes — append-only Markdown footers, JSON
-  envelopes, FASTA headers; every datum tagged.</li>
-<li><strong>What happens when something breaks?</strong> Yes — release-mismatch
-  raises loudly, the cache lets you replay sealed snapshots, the
-  verify tool distinguishes drift modes.</li>
-<li><strong>Differentiating feature in the reviewed set?</strong> At the time of
-  the most recent survey (2026-04-26, recorded in
-  <a href="../COMPETITIVE_LANDSCAPE/"><code>docs/COMPETITIVE_LANDSCAPE.md</code></a>) no
-  other public bioinformatics MCP in the reviewed set attached
-  per-query verifiable provenance to its responses. That survey is
-  open to corrections; file an issue if you know of one.</li>
-</ul>
-<p>That is the operational value proposition.</p>
-<h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../THREAT_MODEL/">Threat model</a> — the cross-origin allowlist and
-  SSRF posture.</li>
-<li><a href="../INCIDENT_POLICY/">Incident policy</a> — what happens when the
-  nightly integration suite goes red.</li>
-<li><a href="../tools/">Tools reference</a> — the full surface.</li>
+<li>Use "in the reviewed set documented here" rather than absolute
+  novelty claims like "no other bio-MCP" or "the only server."</li>
+<li>Use "as of [date]" to time-bound every comparative statement.</li>
+<li>Use "to the best of our survey" when the search method is
+  described but exhaustive coverage is not guaranteed.</li>
+<li>Invite corrections: every comparative claim should end with a
+  pointer to the issue tracker.</li>
 </ul>
 
 
