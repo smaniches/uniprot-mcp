@@ -1484,7 +1484,7 @@ async def uniprot_search_proteomes(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_citation(citation_id: str, response_format: str = "markdown") -> str:
-    """Fetch a UniProt citation record by ID (typically a PubMed ID, e.g. 7649814).
+    """Fetch a UniProt citation record by ID (typically a PubMed ID, e.g. 9840937).
     Returns title, authors, journal, year, volume, pages, and cross-references."""
     try:
         _check_citation_id(citation_id)

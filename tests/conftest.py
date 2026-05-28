@@ -37,6 +37,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             item.add_marker(skip_live)
 
 
+@pytest.hookimpl(trylast=True)
 def pytest_runtest_setup(item: pytest.Item) -> None:
     """Lift ``pytest-socket``'s block per-test for integration tests.
 
@@ -46,21 +47,33 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
     network). Integration tests *must* hit the network — that is the
     entire point of running them.
 
-    pytest-socket's own ``pytest_runtest_setup`` reapplies the block
-    on every test, so a single ``enable_socket()`` call in
-    ``pytest_configure`` is not enough — it gets overridden before
-    each test runs. Calling ``enable_socket()`` here, *after*
-    pytest-socket's hook has run for this specific item, is the
-    reliable per-test override. We restrict it to items marked
-    ``integration`` so the offline tests still respect the block.
+    Two independent restrictions are in play and *both* must be lifted:
+    ``--disable-socket`` blocks socket *creation*, while ``--allow-hosts``
+    installs a session-global guard on ``socket.socket.connect`` that
+    rejects any host outside the allow-list. ``enable_socket()`` only
+    restores creation, so on its own a connection to ``rest.uniprot.org``
+    still raises ``SocketConnectBlockedError``. ``_remove_restrictions()``
+    restores both, so integration tests reach the live API regardless of
+    how pytest is invoked (``nox -s integration``, a bare
+    ``pytest --integration``, or CI's ``--override-ini``). pytest-socket
+    reapplies its block before every test, so this must run per-item,
+    *after* its own ``pytest_runtest_setup`` hook. We restrict it to
+    items marked ``integration`` so the offline suites still respect the
+    block.
     """
     if "integration" not in item.keywords:
         return
     try:
-        from pytest_socket import enable_socket  # type: ignore[import-untyped]
+        import pytest_socket  # type: ignore[import-untyped]
     except ImportError:  # pragma: no cover - pytest-socket always installed in test extras
         return
-    enable_socket()
+    # Prefer the helper that also restores socket.socket.connect; fall
+    # back to enable_socket() on any pytest-socket build that lacks it.
+    remove = getattr(pytest_socket, "_remove_restrictions", None)
+    if callable(remove):
+        remove()
+    else:  # pragma: no cover - exercised only on pytest-socket without the helper
+        pytest_socket.enable_socket()
 
 
 @pytest.fixture(autouse=True)

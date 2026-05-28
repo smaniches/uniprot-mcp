@@ -17,6 +17,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   request failed". The id now derives from the cross-reference only when
   the list is non-empty, matching the guard `fmt_citation_search`
   already used. Regression tests added in `tests/unit/test_formatters.py`.
+- **Corrected the example identifier in the `uniprot_get_citation`
+  docstring.** The previous example, `7649814`, is absent from UniProt's
+  citations index (`GET /citations/7649814` returns HTTP 404), so the
+  documented example resolved to the tool's error envelope. Replaced with
+  `9840937`, a literature reference recorded on the p53 entry and verified
+  to return HTTP 200.
+
+### Changed
+- **The live integration suite is now executable outside CI.** The offline
+  test configuration pins `--disable-socket --allow-hosts=127.0.0.1,::1`;
+  pytest-socket enforces the host allow-list with a session-global guard on
+  `socket.socket.connect` that `enable_socket()` does not remove, so the
+  suite previously succeeded only under the `--override-ini` invocation in
+  `integration.yml`. The per-item `conftest` hook now executes `trylast`
+  (after pytest-socket's own setup) and calls `_remove_restrictions()`, so
+  `nox -s integration` and a direct `pytest --integration` reach the live
+  API. Offline network isolation is unchanged — the guard is reinstated
+  before every test and lifted only for items marked `integration`.
 
 
 ## [1.1.7] - 2026-05-24
