@@ -1,8 +1,8 @@
 # Contributing to uniprot-mcp
 
-Thanks for your interest in contributing. This project aims to be a
-reference-quality Model Context Protocol server for UniProt — clean,
-tested, and reproducible. Please read this guide before opening a PR.
+Thanks for your interest in contributing. This project is a clean,
+well-tested, reproducible Model Context Protocol server for UniProt.
+Please read this guide before opening a PR.
 
 ## Ground rules
 

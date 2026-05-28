@@ -1,6 +1,6 @@
 # uniprot-mcp
 
-> A reference-quality **Model Context Protocol** server for the
+> A **Model Context Protocol** server for the
 > [UniProt](https://www.uniprot.org) protein knowledgebase.
 > **41 tools.** Every successful response carries a verifiable
 > `Provenance` record (release · timestamp · URL · canonical SHA-256)
@@ -81,7 +81,7 @@ uniprot-mcp --self-test
 | Layer | State |
 |---|---|
 | Tool surface | **41 tools** across 8 families |
-| Tests | **744 offline + 42 live integration** |
+| Tests | **749 offline + 44 live integration** |
 | Static analysis | **mypy strict** + **ruff** + **bandit** + **pip-audit** clean |
 | Provenance verification | **Live round-trip-tested against real UniProt** |
 | Pre-registered benchmark | **30 SHA-256 commitments on `main`** |
@@ -95,7 +95,7 @@ uniprot-mcp --self-test
 ```
 @software{maniches2026uniprotmcp,
   author = {Maniches, Santiago},
-  title = {uniprot-mcp: Reference Model Context Protocol server for the UniProt knowledgebase},
+  title = {uniprot-mcp: A Model Context Protocol server for the UniProt protein knowledgebase},
   year = {2026},
   url = {https://github.com/smaniches/uniprot-mcp},
   orcid = {0009-0005-6480-1987}
