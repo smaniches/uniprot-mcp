@@ -894,7 +894,9 @@ def fmt_citation(
         return _json_envelope(data, provenance)
     citation = data.get("citation") or data
     cid = str(
-        citation.get("id", citation.get("citationCrossReferences", [{}])[0].get("id", "?")) or "?"
+        citation.get("id")
+        or (citation.get("citationCrossReferences") or [{}])[0].get("id", "?")
+        or "?"
     )
     title = str(citation.get("title", "") or "").strip()
     authors = citation.get("authors") or []

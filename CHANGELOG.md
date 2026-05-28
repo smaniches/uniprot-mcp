@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Fixed
+- **`uniprot_get_citation` no longer fails on citations with an empty
+  `citationCrossReferences` list.** `fmt_citation` evaluated
+  `citationCrossReferences[0]` as the eager default of a `.get()` call,
+  raising `IndexError` whenever the list was present but empty — which
+  the tool's error envelope then surfaced as a misleading "upstream
+  request failed". The id now derives from the cross-reference only when
+  the list is non-empty, matching the guard `fmt_citation_search`
+  already used. Regression tests added in `tests/unit/test_formatters.py`.
+
+
 ## [1.1.7] - 2026-05-24
 
 Provenance-verification fix + repo hygiene. No changes to the MCP tool

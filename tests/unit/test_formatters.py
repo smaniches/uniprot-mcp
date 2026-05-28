@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from uniprot_mcp.formatters import (
+    fmt_citation,
+    fmt_citation_search,
     fmt_crossrefs,
     fmt_entry,
     fmt_features,
@@ -112,3 +114,28 @@ def test_formatters_never_raise_on_empty_input() -> None:
     assert isinstance(fmt_go([], "P00000", None), str)
     assert isinstance(fmt_taxonomy({"results": []}), str)
     assert isinstance(fmt_idmapping({"results": [], "failedIds": []}), str)
+
+
+def test_fmt_citation_handles_empty_cross_references() -> None:
+    """A citation whose ``citationCrossReferences`` is an explicit empty
+    list must still render. The id falls back to the cross-ref id only
+    when that list is non-empty; an empty list must not raise IndexError
+    (the bug fmt_citation_search already guarded against)."""
+    data = {"citation": {"id": "12345678", "title": "T", "citationCrossReferences": []}}
+    out = fmt_citation(data, "markdown")
+    assert "## Citation 12345678" in out
+    # Same defensive guard at the search layer.
+    sdata = {"results": [data]}
+    assert "12345678" in fmt_citation_search(sdata, "markdown")
+
+
+def test_fmt_citation_derives_id_from_cross_reference() -> None:
+    """When the citation has no top-level ``id`` the PubMed cross-ref id
+    is used as the heading identifier."""
+    data = {
+        "citation": {
+            "title": "T",
+            "citationCrossReferences": [{"database": "PubMed", "id": "7649814"}],
+        }
+    }
+    assert "## Citation 7649814" in fmt_citation(data, "markdown")
