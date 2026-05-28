@@ -88,7 +88,7 @@ pip install -e ".[test,dev]"
 pytest tests/unit tests/property tests/client tests/contract -v
 ```
 
-This runs the full offline suite (746 tests at v1.1.7). No network
+This runs the full offline suite (749 tests). No network
 access is needed; `pytest-socket` blocks outbound connections.
 
 ## 6. Run lint, type-check, and security scan (~1 min)
@@ -139,7 +139,7 @@ commitments. No plaintext seal file is needed.
 pytest --integration tests/integration -v
 ```
 
-These 42 tests contact the live UniProt, AlphaFold, and ClinVar APIs.
+These 44 tests contact the live UniProt, AlphaFold, and ClinVar APIs.
 They are opt-in and may fail if an upstream is temporarily
 unavailable or has released a new version.
 

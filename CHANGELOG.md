@@ -35,6 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `nox -s integration` and a direct `pytest --integration` reach the live
   API. Offline network isolation is unchanged — the guard is reinstated
   before every test and lifted only for items marked `integration`.
+- **Documentation accuracy pass.** Replaced the self-applied
+  "reference-quality" descriptor with factual phrasing across `README`,
+  the docs site, `server.json`, `.well-known/mcp.json`, `ARCHITECTURE.md`,
+  `CONTRIBUTING.md`, and `SUPPORT.md`; aligned the `docs/index.md` citation
+  title with `CITATION.cff`. Reconciled the test counts in `README.md`,
+  `OVERVIEW.md`, `REVIEWER.md`, `docs/index.md`, `docs/CLAIMS.md`, and
+  `docs/SECURITY-AUDIT.md` to the current `pytest --collect-only` figures
+  (749 offline + 44 live integration).
 
 
 ## [1.1.7] - 2026-05-24

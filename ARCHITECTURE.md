@@ -6,7 +6,7 @@ the way it does, not just *what* it does.
 
 ## Goals
 
-1. **Reference-quality MCP** for bio-data. If someone is building an
+1. **A clean, well-tested MCP** for bio-data. If someone is building an
    MCP for ChEMBL, PDB, or Ensembl, this repo should be what they copy.
 2. **Zero-config usability.** The server should start with `python
    server.py` and require no API key, no database, no setup.

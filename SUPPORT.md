@@ -21,7 +21,7 @@ This document exists because the [Anthropic Connectors Directory](https://suppor
 ## Response expectations
 
 - **Bug reports**: triaged within 7 days. Critical correctness bugs (wrong UniProt data, security implications, broken release artefacts) are prioritised over polish.
-- **Feature requests**: read within 7 days; not all are accepted. Scope is bounded by the [project goals](README.md#design-goals): a reference-quality, narrow-and-deep MCP for UniProt. Cross-database orchestration belongs in `topologica-bio`, not here.
+- **Feature requests**: read within 7 days; not all are accepted. Scope is bounded by the [project goals](README.md#design-goals): a narrow-and-deep MCP for UniProt. Cross-database orchestration belongs in `topologica-bio`, not here.
 - **Pull requests**: reviewed within 14 days. Squash-merge to keep `main` history readable.
 - **Security reports**: see `SECURITY.md` for the dedicated SLA.
 
