@@ -1,4 +1,4 @@
-# uniprot-mcp
+# UniProt MCP Server
 
 [![CI](https://github.com/smaniches/uniprot-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/smaniches/uniprot-mcp/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
@@ -10,7 +10,7 @@
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.19817710-3C5A99?logo=zenodo&logoColor=white)](https://doi.org/10.5281/zenodo.19817710)
 
-A **Model Context Protocol** server for the
+UniProt MCP server — a **Model Context Protocol** server for the
 [UniProt](https://www.uniprot.org) protein knowledgebase with
 **per-query provenance verification**. **41 tools** across 8
 families. Apache-2.0. Every successful response carries a verifiable
