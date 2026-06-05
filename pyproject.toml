@@ -11,8 +11,9 @@ requires-python = ">=3.11"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 keywords = [
-    "mcp", "model-context-protocol", "uniprot", "bioinformatics",
-    "proteins", "swiss-prot", "biology", "llm-tools", "anthropic", "claude",
+    "mcp", "model-context-protocol", "mcp-server", "uniprot", "protein-database",
+    "bioinformatics", "proteins", "swiss-prot", "biology", "llm-tools",
+    "anthropic", "claude",
 ]
 authors = [
     { name = "Santiago Maniches", email = "santiago.maniches@gmail.com" },
@@ -63,7 +64,7 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/smaniches/uniprot-mcp"
+Homepage = "https://topologica.ai"
 Repository = "https://github.com/smaniches/uniprot-mcp"
 Issues = "https://github.com/smaniches/uniprot-mcp/issues"
 Changelog = "https://github.com/smaniches/uniprot-mcp/blob/main/CHANGELOG.md"
