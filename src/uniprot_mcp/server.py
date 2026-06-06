@@ -1907,16 +1907,26 @@ def _self_test() -> int:
         print(f"[WARN] unexpected tools: {sorted(extra)}", file=sys.stderr)
 
     async def _live() -> int:
+        client = _client()
         try:
-            data = await _client().get_entry("P04637")
+            data = await client.get_entry("P04637")
             gene = data.get("genes", [{}])[0].get("geneName", {}).get("value")
             if gene != "TP53":
                 print(f"[FAIL] P04637 gene is {gene!r}, expected TP53", file=sys.stderr)
                 return 2
             print("[live] P04637 -> TP53 OK", file=sys.stderr)
+            # Emit the real per-response output (claim C2) so a reviewer
+            # running ``--self-test`` can observe the provenance footer —
+            # the trailing ``---``-delimited Source / Query / SHA-256
+            # block — not just smoke-check status. This is the exact
+            # markdown an MCP tool returns, rendered through the same
+            # public ``client.last_provenance`` accessor every tool uses.
+            rendered = fmt_entry(data, "markdown", provenance=client.last_provenance)
+            print("[provenance] per-response footer:", file=sys.stderr)
+            print(rendered, file=sys.stderr)
             return 0
         finally:
-            await _client().close()
+            await client.close()
 
     rc = asyncio.run(_live())
     print("[PASS]" if rc == 0 else "[FAIL]", file=sys.stderr)
