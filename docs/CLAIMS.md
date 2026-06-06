@@ -58,7 +58,9 @@ canonical response body.
 **Verify.**
 ```bash
 uniprot-mcp --self-test
-# observe the provenance footer in the output
+# after the live TP53 fetch, the self-test prints a real provenance
+# footer to stderr: a `[provenance]` marker followed by the
+# `_Source: … • Retrieved …_`, `_Query: …_`, and `_SHA-256: …_` block.
 pytest tests/unit/test_provenance.py -v
 ```
 
