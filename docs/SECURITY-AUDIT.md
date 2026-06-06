@@ -206,7 +206,7 @@ Full privacy notice: [`PRIVACY.md`](https://github.com/smaniches/uniprot-mcp/blo
 
 | Severity | Finding | Tracking | Mitigation while open |
 |---|---|---|---|
-| P3 | Explicit `redirectURL` allowlist in `id_mapping_results` (currently relies on httpx's same-origin redirect default) | `THREAT_MODEL.md` §T3 — "Deferred hardening" | httpx's redirect policy already refuses cross-origin paths under a `base_url`-pinned client |
+| P3 | Explicit `redirectURL` allowlist in `id_mapping_results` (currently no client-side redirect allowlist — an absolute cross-origin `redirectURL` would be followed) | `THREAT_MODEL.md` §T3 — "Deferred hardening" | `base_url` is not an allowlist; mitigation is UniProt's trustworthiness as the upstream plus the fact that no `Authorization` header or API key is ever sent — see §T3 |
 | P3 | NFKC Unicode normalisation on free-text inputs (`query`, `organism`) | `THREAT_MODEL.md` §T12 | All identifier validation uses ASCII subsets with `\A...\Z` anchors; impact limited to free-text query construction |
 
 Both are documented for v1.1.
