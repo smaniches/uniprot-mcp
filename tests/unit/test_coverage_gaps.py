@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import sys
 from datetime import UTC, datetime, timedelta
-from typing import ClassVar
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -480,9 +480,9 @@ async def test_get_features_with_filter_happy_path() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_self_test_no_tool_manager(monkeypatch, capsys) -> None:
-    """Branch: _tool_manager absent -> registered stays empty."""
-    monkeypatch.setattr(server.mcp, "_tool_manager", None, raising=False)
+def test_self_test_no_tools_registered(monkeypatch, capsys) -> None:
+    """Branch: list_tools() returns nothing -> registered stays empty."""
+    monkeypatch.setattr(server.mcp, "list_tools", AsyncMock(return_value=[]))
     rc = server._self_test()
     # Missing tools -> rc == 1
     assert rc == 1
@@ -492,54 +492,14 @@ def test_self_test_no_tool_manager(monkeypatch, capsys) -> None:
 
 def test_self_test_extra_tool_warning(monkeypatch, capsys) -> None:
     """Branch: extra tools registered -> WARN logged but still PASS."""
+    real_list_tools = server.mcp.list_tools
 
-    class _FakeMgr:
-        _tools: ClassVar[dict[str, None]] = {
-            "uniprot_get_entry": None,
-            "uniprot_search": None,
-            "uniprot_get_sequence": None,
-            "uniprot_get_features": None,
-            "uniprot_get_variants": None,
-            "uniprot_get_go_terms": None,
-            "uniprot_get_cross_refs": None,
-            "uniprot_id_mapping": None,
-            "uniprot_batch_entries": None,
-            "uniprot_taxonomy_search": None,
-            "uniprot_get_keyword": None,
-            "uniprot_search_keywords": None,
-            "uniprot_get_subcellular_location": None,
-            "uniprot_search_subcellular_locations": None,
-            "uniprot_get_uniref": None,
-            "uniprot_search_uniref": None,
-            "uniprot_get_uniparc": None,
-            "uniprot_search_uniparc": None,
-            "uniprot_get_proteome": None,
-            "uniprot_search_proteomes": None,
-            "uniprot_get_citation": None,
-            "uniprot_search_citations": None,
-            "uniprot_resolve_pdb": None,
-            "uniprot_resolve_alphafold": None,
-            "uniprot_resolve_interpro": None,
-            "uniprot_resolve_chembl": None,
-            "uniprot_get_evidence_summary": None,
-            "uniprot_compute_properties": None,
-            "uniprot_features_at_position": None,
-            "uniprot_lookup_variant": None,
-            "uniprot_get_disease_associations": None,
-            "uniprot_get_alphafold_confidence": None,
-            "uniprot_get_publications": None,
-            "uniprot_resolve_orthology": None,
-            "uniprot_resolve_clinvar": None,
-            "uniprot_target_dossier": None,
-            "uniprot_replay_from_cache": None,
-            "uniprot_provenance_verify": None,
-            "uniprot_get_active_sites": None,
-            "uniprot_get_processing_features": None,
-            "uniprot_get_ptms": None,
-            "unexpected_extra_tool": None,
-        }
+    async def _list_with_extra() -> list[object]:
+        tools = list(await real_list_tools())
+        tools.append(SimpleNamespace(name="unexpected_extra_tool"))
+        return tools
 
-    monkeypatch.setattr(server.mcp, "_tool_manager", _FakeMgr(), raising=False)
+    monkeypatch.setattr(server.mcp, "list_tools", _list_with_extra)
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.get("/uniprotkb/P04637").mock(
             return_value=httpx.Response(

@@ -10,7 +10,7 @@ recompute from the FASTA. References:
   Extinction coefficient 280nm — Pace et al. (1995): ε = 1490·Trp + 5500·Tyr
                                   (assumes reduced cysteines; +125 per cystine
                                   if disulfide count is supplied)
-  Monoisotopic residue masses  — IUPAC, water-loss form (M_residue = M_aa - H2O)
+  Average residue masses       — IUPAC, water-loss form (M_residue = M_aa - H2O)
 
 The functions are deliberately small and standalone so they can be
 audited line-by-line. None of them depends on `httpx` or any non-stdlib
@@ -28,7 +28,7 @@ from typing import Final, TypedDict
 # explicitly counted under ``other``).
 STANDARD_AA: Final[str] = "ACDEFGHIKLMNPQRSTVWY"
 
-# Average residue masses (monoisotopic of the residue, i.e. the amino
+# Average residue masses (average mass of the residue, i.e. the amino
 # acid minus one water). Source: IUPAC / Unimod.
 _RESIDUE_MASS: Final[dict[str, float]] = {
     "A": 71.0788,

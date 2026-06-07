@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Changed
+- **`_self_test()` now counts tools via the public MCP API.** The
+  self-test previously reached into FastMCP internals
+  (`mcp._tool_manager._tools`) to enumerate registered tools. It now uses
+  the public, async `mcp.list_tools()` (driven through the `asyncio.run`
+  already present in the function), so the check no longer depends on a
+  private attribute that can change between SDK releases. Behaviour is
+  unchanged: the self-test returns 0 on a healthy server and 1 when an
+  expected tool is missing. The two coverage tests that monkeypatched the
+  former internals were updated to drive the public accessor.
+
+### Fixed
+- **Corrected the `proteinchem` module header.** The header listed
+  "Monoisotopic residue masses", but the `_RESIDUE_MASS` table holds
+  *average* residue masses (e.g. G = 57.0519 average vs 57.02146
+  monoisotopic; `_WATER` = 18.01528 average), consistent with
+  `molecular_weight()`'s "Average molecular weight" docstring. The header
+  and the table comment now read "Average residue masses". No values
+  changed — only their description.
+
+
 ## [1.1.8] - 2026-06-04
 
 ### Fixed
