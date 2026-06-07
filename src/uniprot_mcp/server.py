@@ -1892,10 +1892,9 @@ def _self_test() -> int:
         "uniprot_get_ptms",
     }
 
-    tools = getattr(mcp, "_tool_manager", None)
-    registered: set[str] = set()
-    if tools is not None and hasattr(tools, "_tools"):
-        registered = set(tools._tools.keys())
+    # Count via the public MCP API (``list_tools`` is async) rather than
+    # reaching into FastMCP internals like ``mcp._tool_manager._tools``.
+    registered: set[str] = {tool.name for tool in asyncio.run(mcp.list_tools())}
 
     missing = expected - registered
     extra = registered - expected
