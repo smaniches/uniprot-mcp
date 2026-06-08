@@ -16,19 +16,7 @@
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
-      },
-      "runtimeArguments": [
-        {
-          "type": "named",
-          "name": "--from",
-          "value": "uniprot-mcp-server"
-        },
-        {
-          "type": "positional",
-          "value": "uniprot-mcp",
-          "valueHint": "entrypoint"
-        }
-      ]
+      }
     }
   ]
 }
