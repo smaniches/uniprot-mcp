@@ -979,10 +979,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#c7-9220-line-branch-coverage-measured-on-current-main" class="md-nav__link">
+  <a href="#c7-100-line-branch-coverage-gate-enforced" class="md-nav__link">
     <span class="md-ellipsis">
       
-        C7. 92.20% line + branch coverage (measured on current main)
+        C7. 100% line + branch coverage (gate-enforced)
       
     </span>
   </a>
@@ -1203,29 +1203,33 @@ patch release. The authoritative count is always
 <code>pytest --collect-only</code>.</p>
 <p><strong>Last reviewed:</strong> 2026-05-26.</p>
 <hr />
-<h2 id="c7-9220-line-branch-coverage-measured-on-current-main">C7. 92.20% line + branch coverage (measured on current <code>main</code>)<a class="headerlink" href="#c7-9220-line-branch-coverage-measured-on-current-main" title="Permanent link">&para;</a></h2>
-<p><strong>Claim (README, OVERVIEW.md).</strong> Measured coverage is 92.20%, up from
-the v1.1.0 baseline of 91.85%.</p>
+<h2 id="c7-100-line-branch-coverage-gate-enforced">C7. 100% line + branch coverage (gate-enforced)<a class="headerlink" href="#c7-100-line-branch-coverage-gate-enforced" title="Permanent link">&para;</a></h2>
+<p><strong>Claim (README, OVERVIEW.md).</strong> Measured coverage is 100.00% line +
+branch across all six source files, with the gate set to enforce it.</p>
 <p><strong>Evidence.</strong>
-- <code>pyproject.toml</code> <code>[tool.coverage.report]</code> — <code>fail_under = 91</code> (the
-  enforced floor; the measured figure is above it).
-- README testing section documents the regression from 100% at
-  v1.0.0, the recovery to 92.20%, and the v1.2.0 uplift commitment to
-  99%.
-- <code>.github/workflows/ci.yml</code> — every matrix cell prints
-  <code>Total coverage: 92.20%</code>; coverage report uploaded to Codecov on the
-  Ubuntu / Python 3.12 cell.</p>
+- <code>pyproject.toml</code> <code>[tool.coverage.report]</code> — <code>fail_under = 100</code> (the
+  enforced floor; the measured figure equals it).
+- The suite reports <code>Total coverage: 100.00%</code>; the per-file table
+  shows 100% for <code>__init__</code>, <code>cache</code>, <code>client</code>, <code>formatters</code>,
+  <code>proteinchem</code>, and <code>server</code>.
+- Three branches carry a justified <code># pragma: no cover</code> for
+  genuinely-unreachable code: the client.py import-time version-lookup
+  fallback (exercising it needs a module reload that breaks
+  exception-class identity), the client.py <code>_extract_provenance</code>
+  is-None arc on <code>response.request</code> (httpx's property RAISES when
+  unset, so the arc is unreachable), and the server.py target-dossier
+  FASTA-fetch fallback (non-fatal). Each is annotated inline with its
+  justification.</p>
 <p><strong>Verify.</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pytest<span class="w"> </span>tests/unit<span class="w"> </span>tests/property<span class="w"> </span>tests/client<span class="w"> </span>tests/contract<span class="w"> </span>--cov<span class="w"> </span>--cov-branch<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 </code></pre></div></p>
-<p><strong>Limitation.</strong> The figure rose from the v1.1.0 baseline of 91.85% as
-the v1.1.4–v1.1.8 source fixes (self-test, formatters, provenance
-Accept-header replay) landed with accompanying tests. It is still
-short of the 100% v1.0.0 high-water mark and the 99% v1.2.0 target;
-the CI gate enforces a floor of 91%. The 92.20% figure is identical
-across all nine CI matrix cells (Ubuntu / macOS / Windows × Python
-3.11 / 3.12 / 3.13).</p>
-<p><strong>Last reviewed:</strong> 2026-06-07.</p>
+<p><strong>Limitation.</strong> Coverage had dipped from the v1.0.0 100% high-water
+mark to 92.20% across the v1.1.x clinical/biomedical work; it has been
+restored to 100% with assertion-bearing tests for every previously
+-uncovered arc, and the gate now enforces 100% so a future regression
+fails CI. The three <code># pragma: no cover</code> branches are unreachable in
+normal operation, not untested behaviour.</p>
+<p><strong>Last reviewed:</strong> 2026-06-08.</p>
 <hr />
 <h2 id="c8-3030-sealed-prompt-benchmark-verified-against-live-uniprot">C8. 30/30 sealed-prompt benchmark verified against live UniProt<a class="headerlink" href="#c8-3030-sealed-prompt-benchmark-verified-against-live-uniprot" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, OVERVIEW.md).</strong> A 30-prompt benchmark with
