@@ -267,7 +267,10 @@ def test_write_then_read_preserves_body_byte_for_byte(tmp_path) -> None:
     plus newlines plus non-ASCII characters must preserve every byte.
     Catches any mutation that dropped, replaced, or re-encoded the body."""
     cache = ProvenanceCache(tmp_path)
-    body = "".join(chr(c) for c in range(32, 127)) + "\n" + "héllo wörld 🧬"
+    # Mix of ASCII, 2-byte (accented Latin), and a 4-byte/astral-plane
+    # UTF-8 character (U+2000B, CJK Ext-B) so the round-trip exercises
+    # multibyte preservation and catches any re-encoding mutation.
+    body = "".join(chr(c) for c in range(32, 127)) + "\n" + "héllo wörld \U0002000b"
     prov = {
         "source": "UniProt",
         "release": "2026_01",

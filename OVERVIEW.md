@@ -50,11 +50,10 @@ no other bio-MCP server has all of:
 5. Pre-registered SHA-256-committed benchmark on `main`
 6. SLSA + Sigstore + CycloneDX SBOM on every release artefact
 
-This is the regulated-bio-pharma wedge — auditable + reproducible —
-which is the one the rest of the bio-MCP space currently does not
-fill. Other servers (BioMCP at 497 stars; Augmented-Nature on
-Smithery) have broader scope or more atomic tools; this one is
-narrower but stronger on the provenance dimension.
+This is the auditable-and-reproducible niche that the rest of the
+bio-MCP space currently does not fill. Other servers (BioMCP at 497
+stars; Augmented-Nature on Smithery) have broader scope or more atomic
+tools; this one is narrower but stronger on the provenance dimension.
 
 ## How to verify everything in one command
 

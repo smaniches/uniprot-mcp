@@ -8,7 +8,7 @@
 > the tool surface, benchmark, provenance, and supply-chain artefacts
 > were all green). v1.0.1 shipped 2026-04-25; v1.1.0 followed on
 > 2026-04-26; v1.1.1 + v1.1.2 (Zenodo DOI mint) on 2026-04-27. Items
-> marked `⏳ flip day` are now done; items marked `⏳ May 1+` either
+> marked `Pending: flip day` are now done; items marked `Pending: May 1+` either
 > shipped on or before that date, or are tracked under `v1.2.0` in
 > `docs/MUTATION_SCORES.md`. The `§6 Completed log` at the end is
 > the canonical historical timeline.
@@ -50,13 +50,13 @@ the per-area tables.
 
 | # | Ref | Action | Unblocked? |
 |---|---|---|---|
-| 1.1 | AUDIT §C4 | SHA-pin every `uses:` in `.github/workflows/*.yml`; keep human-readable tag in trailing comment | ✅ today |
-| 1.2 | AUDIT §C5 | Wire `actions/attest-build-provenance` with predicate type `sbom` for the CycloneDX output in `release.yml` | ✅ today |
-| 1.3 | AUDIT §C6 | Restore `codeql.yml` workflow — enabled on flip day when repo is public | ⏳ flip day |
-| 1.4 | AUDIT §C6 | Restore `scorecard.yml` workflow — enabled on flip day when repo is public | ⏳ flip day |
-| 1.5 | AUDIT follow-up #3 | Configure PyPI Trusted Publisher in "pending-publisher" mode for `uniprot-mcp` under the `smaniches` account | ✅ today |
-| 1.6 | AUDIT follow-up #4 | Hypothesis property-based fuzz test for `uniprot_search` query construction (organism quoting, reserved chars) | ✅ today |
-| 1.7 | AUDIT follow-up #5 | `respx`-based test that asserts `Retry-After: <http-date>` actually delays the client by the expected interval (measure, don't just parse) | ✅ today |
+| 1.1 | AUDIT §C4 | SHA-pin every `uses:` in `.github/workflows/*.yml`; keep human-readable tag in trailing comment | Done — today |
+| 1.2 | AUDIT §C5 | Wire `actions/attest-build-provenance` with predicate type `sbom` for the CycloneDX output in `release.yml` | Done — today |
+| 1.3 | AUDIT §C6 | Restore `codeql.yml` workflow — enabled on flip day when repo is public | Pending — flip day |
+| 1.4 | AUDIT §C6 | Restore `scorecard.yml` workflow — enabled on flip day when repo is public | Pending — flip day |
+| 1.5 | AUDIT follow-up #3 | Configure PyPI Trusted Publisher in "pending-publisher" mode for `uniprot-mcp` under the `smaniches` account | Done — today |
+| 1.6 | AUDIT follow-up #4 | Hypothesis property-based fuzz test for `uniprot_search` query construction (organism quoting, reserved chars) | Done — today |
+| 1.7 | AUDIT follow-up #5 | `respx`-based test that asserts `Retry-After: <http-date>` actually delays the client by the expected interval (measure, don't just parse) | Done — today |
 
 ---
 
@@ -67,14 +67,14 @@ list: `topologica-bio/docs/LAUNCH_PLAN.md` gates 1–11.
 
 | # | Gate | Action | Runs after billing reset |
 |---|---|---|---|
-| 2.1 | LP §1 | Add `mutation.yml` workflow; run `mutmut` on `src/uniprot_mcp/`; fail under 95 % kill | ⏳ May 1 |
-| 2.2 | LP §2 | Populate `MUTATION_SCORES.md` with real per-module numbers and run metadata | ⏳ May 1 |
-| 2.3 | LP §3 | Verify 3×3 matrix green across a full push on `main` | ⏳ May 1 |
-| 2.4 | LP §4 | Add `docs.yml` workflow building the `mkdocs` site on every push to `main`; publish to `gh-pages` on tags | ⏳ May 1 |
-| 2.5 | LP §5 | Nightly `integration.yml` green on two consecutive runs before flip | ⏳ May 2+ |
-| 2.6 | LP §11 | Branch protection on `main`: required checks = {lint, tests[3.12/ubuntu], integration}, linear history, signed commits, no force-push | ⏳ pre-flip |
-| 2.7 | — | gitleaks clean sweep against full history, including all branches | ⏳ pre-flip |
-| 2.8 | — | `Dependabot` + `secret scanning` both enabled (already in `.github/dependabot.yml`; flip once repo is public) | ⏳ flip day |
+| 2.1 | LP §1 | Add `mutation.yml` workflow; run `mutmut` on `src/uniprot_mcp/`; fail under 95 % kill | Pending — May 1 |
+| 2.2 | LP §2 | Populate `MUTATION_SCORES.md` with real per-module numbers and run metadata | Pending — May 1 |
+| 2.3 | LP §3 | Verify 3×3 matrix green across a full push on `main` | Pending — May 1 |
+| 2.4 | LP §4 | Add `docs.yml` workflow building the `mkdocs` site on every push to `main`; publish to `gh-pages` on tags | Pending — May 1 |
+| 2.5 | LP §5 | Nightly `integration.yml` green on two consecutive runs before flip | Pending — May 2+ |
+| 2.6 | LP §11 | Branch protection on `main`: required checks = {lint, tests[3.12/ubuntu], integration}, linear history, signed commits, no force-push | Pending — pre-flip |
+| 2.7 | — | gitleaks clean sweep against full history, including all branches | Pending — pre-flip |
+| 2.8 | — | `Dependabot` + `secret scanning` both enabled (already in `.github/dependabot.yml`; flip once repo is public) | Pending — flip day |
 
 ---
 
