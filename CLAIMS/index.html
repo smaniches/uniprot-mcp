@@ -968,10 +968,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#c6-749-offline-44-live-integration-tests" class="md-nav__link">
+  <a href="#c6-874-offline-44-live-integration-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        C6. 749 offline + 44 live integration tests
+        C6. 874 offline + 44 live integration tests
       
     </span>
   </a>
@@ -1184,9 +1184,9 @@ successful tool call is a v1.2.0 roadmap item. This was explicitly
 retracted in v1.1.3 (see CHANGELOG.md).</p>
 <p><strong>Last reviewed:</strong> 2026-05-26.</p>
 <hr />
-<h2 id="c6-749-offline-44-live-integration-tests">C6. 749 offline + 44 live integration tests<a class="headerlink" href="#c6-749-offline-44-live-integration-tests" title="Permanent link">&para;</a></h2>
+<h2 id="c6-874-offline-44-live-integration-tests">C6. 874 offline + 44 live integration tests<a class="headerlink" href="#c6-874-offline-44-live-integration-tests" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README badge, testing section).</strong> The offline test suite
-contains 749 tests; the live integration suite contains 44 tests.</p>
+contains 874 tests; the live integration suite contains 44 tests.</p>
 <p><strong>Evidence.</strong>
 - <code>pytest --collect-only --ignore=tests/integration -q</code> — offline
   count.
@@ -1201,7 +1201,7 @@ contains 749 tests; the live integration suite contains 44 tests.</p>
 badge is a static shield; it is manually updated and may lag by one
 patch release. The authoritative count is always
 <code>pytest --collect-only</code>.</p>
-<p><strong>Last reviewed:</strong> 2026-05-26.</p>
+<p><strong>Last reviewed:</strong> 2026-06-08.</p>
 <hr />
 <h2 id="c7-100-line-branch-coverage-gate-enforced">C7. 100% line + branch coverage (gate-enforced)<a class="headerlink" href="#c7-100-line-branch-coverage-gate-enforced" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, OVERVIEW.md).</strong> Measured coverage is 100.00% line +
@@ -1212,14 +1212,14 @@ branch across all six source files, with the gate set to enforce it.</p>
 - The suite reports <code>Total coverage: 100.00%</code>; the per-file table
   shows 100% for <code>__init__</code>, <code>cache</code>, <code>client</code>, <code>formatters</code>,
   <code>proteinchem</code>, and <code>server</code>.
-- Three branches carry a justified <code># pragma: no cover</code> for
+- Two branches carry a justified <code># pragma: no cover</code> for
   genuinely-unreachable code: the client.py import-time version-lookup
   fallback (exercising it needs a module reload that breaks
-  exception-class identity), the client.py <code>_extract_provenance</code>
-  is-None arc on <code>response.request</code> (httpx's property RAISES when
-  unset, so the arc is unreachable), and the server.py target-dossier
+  exception-class identity) and the server.py target-dossier
   FASTA-fetch fallback (non-fatal). Each is annotated inline with its
-  justification.</p>
+  justification. (<code>_extract_provenance</code> reads the accept header directly
+  from <code>response.request</code>, which is always present because the function
+  also reads <code>response.url</code>; no guard or pragma is needed.)</p>
 <p><strong>Verify.</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pytest<span class="w"> </span>tests/unit<span class="w"> </span>tests/property<span class="w"> </span>tests/client<span class="w"> </span>tests/contract<span class="w"> </span>--cov<span class="w"> </span>--cov-branch<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 </code></pre></div></p>
