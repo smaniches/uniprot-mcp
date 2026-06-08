@@ -64,7 +64,9 @@ def test_server_json_matches_well_known_version() -> None:
     if not server_json_path.exists():
         pytest.skip("server.json absent; pre-1.0.1 repos may lack the registry manifest.")
     server_json = json.loads(server_json_path.read_text(encoding="utf-8"))
-    assert server_json["version_detail"]["version"] == well_known["version"], (
+    # MCP server.schema.json (2025-12-11) carries the version at the top
+    # level; earlier drafts nested it under ``version_detail``.
+    assert server_json["version"] == well_known["version"], (
         "server.json and .well-known/mcp.json must declare the same version"
     )
     # Names follow different conventions (registry uses reverse-DNS,
@@ -119,13 +121,16 @@ def test_server_json_pypi_distribution_name() -> None:
     if not server_json_path.exists():
         pytest.skip("server.json absent")
     server_json = json.loads(server_json_path.read_text(encoding="utf-8"))
+    # MCP server.schema.json (2025-12-11) names the registry field
+    # ``registryType`` and the distribution field ``identifier``; earlier
+    # drafts used ``registry_name``/``name``.
     pypi_pkg = next(
-        (p for p in server_json.get("packages", []) if p.get("registry_name") == "pypi"),
+        (p for p in server_json.get("packages", []) if p.get("registryType") == "pypi"),
         None,
     )
     assert pypi_pkg is not None, "server.json declares no pypi package"
-    assert pypi_pkg["name"] == pyproject_name, (
-        f"server.json packages[pypi].name ({pypi_pkg['name']!r}) and "
+    assert pypi_pkg["identifier"] == pyproject_name, (
+        f"server.json packages[pypi].identifier ({pypi_pkg['identifier']!r}) and "
         f"pyproject.toml project.name ({pyproject_name!r}) disagree. "
         f"Clients following the MCP Registry would install the wrong package."
     )

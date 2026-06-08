@@ -75,6 +75,11 @@ Organization = "https://topologica.ai"
 
 [project.scripts]
 uniprot-mcp = "uniprot_mcp.server:main"
+# Alias matching the PyPI distribution name, so the MCP Registry launch
+# command `uvx uniprot-mcp-server` resolves to a console script. Both
+# entry points target the same callable; the bare `uniprot-mcp` is kept
+# for back-compat.
+uniprot-mcp-server = "uniprot_mcp.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/uniprot_mcp"]

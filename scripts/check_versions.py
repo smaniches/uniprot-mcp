@@ -73,18 +73,22 @@ def _sites() -> list[Site]:
         ),
         Site(
             path=ROOT / "server.json",
-            label="server.json (version_detail.version)",
-            pattern=re.compile(r'"version":\s*"([^"]+)",\s*\n\s*"release_date"'),
-            rewrite=lambda v: f'"version": "{v}",\n    "release_date"',
+            label="server.json (top-level version)",
+            # MCP server.schema.json (2025-12-11) carries the version at
+            # the top level, immediately before the "packages" array.
+            pattern=re.compile(r'"version":\s*"([^"]+)",\s*\n\s*"packages"'),
+            rewrite=lambda v: f'"version": "{v}",\n  "packages"',
         ),
         Site(
             path=ROOT / "server.json",
             label="server.json (packages[0].version)",
             # The packages block has its own "version": "..." line; we
-            # match the second occurrence by anchoring on the
-            # surrounding "name": "uniprot-mcp-server" key.
-            pattern=re.compile(r'"name":\s*"uniprot-mcp-server",\s*\n\s*"version":\s*"([^"]+)"'),
-            rewrite=lambda v: f'"name": "uniprot-mcp-server",\n      "version": "{v}"',
+            # match it by anchoring on the surrounding "identifier":
+            # "uniprot-mcp-server" key.
+            pattern=re.compile(
+                r'"identifier":\s*"uniprot-mcp-server",\s*\n\s*"version":\s*"([^"]+)"'
+            ),
+            rewrite=lambda v: f'"identifier": "uniprot-mcp-server",\n      "version": "{v}"',
         ),
         Site(
             path=ROOT / ".well-known" / "mcp.json",
