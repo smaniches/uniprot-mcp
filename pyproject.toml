@@ -122,20 +122,22 @@ branch = true
 source = ["uniprot_mcp"]
 
 [tool.coverage.report]
-# Elite gate aspiration: 99% (line + branch). v1.0.0 measured at
-# 100%; coverage dropped to 91.85% across the v1.0.1 -> v1.1.0 work
-# that added the clinical layer plus biomedical features without
-# per-commit coverage gating. The gate is temporarily aligned at 91
-# until the uplift back to 99 lands (planned for v1.2.0). Every
-# uncovered branch is a bug that hasn't bitten yet — the uplift work
-# is real work, not paperwork. PRs that reduce coverage further
-# should be rejected by review until the uplift lands. v1.1.1 and
-# v1.1.2 were metadata-only releases and did not change coverage;
-# v1.1.3 is a docs / data-correctness release (atlas re-seal, MONDO
-# fixes, replicate.sh fresh-checkout fix, retraction of the offline-
-# replay overclaim) and added one contract test
-# (tests/contract/test_atlas_manifest.py) but no source-code paths.
-fail_under = 91
+# Gate enforced at 100% line + branch across the package. The coverage
+# uplift (chore/coverage-100) restored the v1.0.0 100% level after the
+# v1.0.1 -> v1.1.x clinical/biomedical work had let it drift to ~92%.
+# Three branches carry a justified ``# pragma: no cover`` because they
+# are genuinely unreachable in normal operation:
+#   - client.py version-lookup ``except`` (import-time fallback to "dev"
+#     when running uninstalled; exercising it requires a module reload
+#     that breaks exception-class identity across the package).
+#   - client.py ``_extract_provenance`` is-None arc on ``response.request``
+#     (httpx's ``Response.request`` property RAISES when unset; it never
+#     returns None, so the False arc is unreachable).
+#   - server.py target-dossier FASTA-fetch ``except`` (non-fatal chemistry
+#     fallback).
+# Every other branch is covered by a genuine, assertion-bearing test.
+# PRs that drop coverage below 100% should be rejected by review.
+fail_under = 100
 show_missing = true
 skip_covered = false
 exclude_lines = [

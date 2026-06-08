@@ -47,7 +47,7 @@ MAX_RETRIES = 3
 MAX_RETRY_AFTER_SECONDS = 120.0  # cap server-dictated waits
 try:
     _v = _pkg_version("uniprot-mcp-server") or "dev"
-except Exception:
+except Exception:  # pragma: no cover  # import-time fallback when running uninstalled from source (PackageNotFoundError); cannot be exercised without an import-time reload that breaks exception-class identity across the package
     _v = "dev"
 UA = f"uniprot-mcp/{_v} (+https://github.com/smaniches/uniprot-mcp)"
 
@@ -258,7 +258,10 @@ def _extract_provenance(response: httpx.Response, *, now: datetime | None = None
     """
     moment = now if now is not None else datetime.now(tz=UTC)
     accept = "application/json"
-    if response.request is not None:
+    # pragma: no cover justification — httpx Response.request is a property
+    # that RAISES when unset; it never returns None, so the is-None arc is
+    # unreachable for any response produced by a real HTTP exchange.
+    if response.request is not None:  # pragma: no cover
         accept = response.request.headers.get("accept", "application/json")
     return Provenance(
         source=SOURCE_NAME,

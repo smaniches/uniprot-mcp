@@ -20,18 +20,18 @@ Source: [github.com/smaniches/uniprot-mcp](https://github.com/smaniches/uniprot-
 | 41 tools across 8 families. | `src/uniprot_mcp/server.py` (each `@mcp.tool` decorator); `.well-known/mcp.json` lists them; contract test `tests/contract/test_manifest_consistency.py` enforces equality between code and manifest. |
 | Per-response provenance with SHA-256. | `src/uniprot_mcp/client.py` `_extract_provenance` + `canonical_response_hash`; sample footer at `tests/benchmark/run-2026-04-25-roundtrip/transcript.md`. |
 | A `uniprot_provenance_verify` tool with five enumerated verdicts. | `src/uniprot_mcp/server.py` (the tool registration); unit tests in `tests/unit/test_provenance_verify.py`. |
-| 749 offline + 44 live integration tests (real counts via `pytest --collect-only`). | `pytest --collect-only --ignore=tests/integration -q` for the offline 749; `pytest --collect-only tests/integration -q` for the 44. |
+| 874 offline + 44 live integration tests (real counts via `pytest --collect-only`). | `pytest --collect-only --ignore=tests/integration -q` for the offline 874; `pytest --collect-only tests/integration -q` for the 44. |
 | 30/30 sealed-prompt benchmark verified against live UniProt 2026-04-26 (maintainer cryptographic path: `verify.py` + `verify_answers.py` with the local `expected.jsonl`). | `tests/benchmark/run-2026-04-26-v1.1.0/` (transcript) + the cryptographic seals at `tests/benchmark/expected.hashes.jsonl`. Third-party reproducibility tool (re-derives + prints answers live; does not recompute the seal): `tests/benchmark/verify_against_hashes.py`. |
 | The PyPI wheel was built from this exact repo. | SLSA build provenance attestation on every [GitHub Release](https://github.com/smaniches/uniprot-mcp/releases) (v1.1.8 = latest); `gh attestation verify` confirms. End-to-end script: `scripts/replicate.sh`. |
 | **11,590 disease + pathogen rows** in the comprehensive index, sourced verbatim from UniProt. | `examples/atlas/comprehensive_index.tsv` (7,250 human disease rows from 5,296 entries, UniProt disease ID + OMIM cross-references where present) + `examples/atlas/comprehensive_index_pathogens.tsv` (4,340 entries across 16 pathogens). Reproducibility manifest at `examples/atlas/manifest.json` re-sealed in v1.1.3 with SHA-256 of every committed file + the script's git commit; contract test `tests/contract/test_atlas_manifest.py` fails any future drift. **Note:** MONDO / PharmGKB / ARO cross-ontology mappings live only in the 25-entry curated atlas (`examples/atlas/atlas.json`), not in the 11,590-row index. |
-| Coverage gate currently 91, measured 92.20% (CI, all matrix cells). Aspirational 99. | `pyproject.toml` `[tool.coverage.report]` block documents both the regression and the uplift commitment; CI enforces 91 today and the latest `main` run measures 92.20% on Ubuntu / macOS / Windows × Python 3.11 / 3.12 / 3.13. |
+| Coverage gate enforced at 100% line + branch. | `pyproject.toml` `[tool.coverage.report]` block sets `fail_under = 100`; the suite measures 100.00% line + branch across all six source files (three branches carry justified `# pragma: no cover` for genuinely-unreachable import-time / defensive fallbacks). Reproduce: `pytest tests/unit tests/property tests/client tests/contract --cov=uniprot_mcp --cov-branch --cov-report=term-missing`. |
 | Mutation testing infrastructure ships; per-module raw kill rates measured for `cache` 82 % (≈100 % behavioural, the 5 survivors are docstring), `proteinchem` 92 % (228/249), `client` 70 % (259/370 after the two-phase sync + async killer uplift); `formatters` and `server` partial pending bisection. | `.github/workflows/mutation.yml` (matrix per src/ file); `docs/MUTATION_SCORES.md` carries the full per-module table + survivor breakdown + v1.2.0 uplift action items. The ≥ 95 % gate is the v1.2.0 target, not the current state. |
 
 ## What is honest about this project
 
 | Limitation | Disclosure |
 |---|---|
-| Coverage regression v1.0.0 100% → v1.1.0 91.85% (now recovered to 92.20% on current `main`; still short of the 99% v1.2.0 target). | `CHANGELOG.md` Known-issues section names this explicitly + commits to v1.2.0 uplift. |
+| Coverage dipped from the v1.0.0 100% across the v1.1.x clinical/biomedical work (down to 92.20% on `main`); it is now restored to 100% line + branch with the gate enforcing it. | `pyproject.toml` `[tool.coverage.report]` (`fail_under = 100`) + the coverage-gap test files under `tests/unit/`. |
 | Mutation testing gate is 0.0 today, not 95%. Per-module raw rates as of `0403c0e` are `cache` 82 %, `proteinchem` 92 %, `client` 70 %; `formatters` + `server` partial. | `docs/MUTATION_SCORES.md` carries the full table + the v1.2.0 path to ≥ 95 %. |
 | The atlas is a research-demonstration corpus, not an authoritative ontology. Some MONDO IDs are approximate matches. | `examples/atlas/METHODOLOGY.md` enumerates what is machine-verified vs community-reviewable; invites issue reports. |
 | Mature-chain numbering offsets (HBB E6V vs E7V; GBA N370S vs N409S) are surfaced explicitly per atlas entry. | `examples/atlas/hbb.md`, `examples/atlas/gba.md`. |
@@ -101,10 +101,9 @@ The natural next pieces for the same author:
    release ID + per-record digest. Currently only as a sub-route
    inside meta-routers.
 2. **`pdb-mcp`** — direct RCSB with mmCIF / structure-factor digest.
-3. **Coverage uplift back to 99 %** before v1.2.0.
-4. **Mutation testing measurement complete** across all six modules
+3. **Mutation testing measurement complete** across all six modules
    (per-test-file scoping replaces full-suite-per-mutant).
-5. **Atlas expansion** — extend the curated 25 entries; the
+4. **Atlas expansion** — extend the curated 25 entries; the
    comprehensive index already covers 11,590 rows automatically,
    but additional hand-curated entries demonstrate specific
    research workflows.
