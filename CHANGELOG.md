@@ -15,10 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tests (`tests/unit/test_coverage_gaps_client_chem.py`,
   `test_coverage_gaps_formatters.py`, `test_coverage_gaps_server.py`)
   exercise every previously-uncovered arc, and `[tool.coverage.report]`
-  `fail_under` is raised from 91 to 100. Three branches carry a
-  justified `# pragma: no cover` for genuinely-unreachable import-time /
-  defensive fallbacks (two in `client.py`, one pre-existing in
-  `server.py`), each annotated inline. No source behaviour changed.
+  `fail_under` is raised from 91 to 100. The new coverage tests bring the
+  offline suite from 749 to **874 tests** (`pytest --collect-only`); the
+  live integration suite is unchanged at 44. A small number of
+  genuinely-unreachable arcs carry a justified `# pragma` for
+  import-time / defensive fallbacks (two in `client.py`, one pre-existing
+  in `server.py`), each annotated inline. No source behaviour changed.
 - **`_self_test()` now counts tools via the public MCP API.** The
   self-test previously reached into FastMCP internals
   (`mcp._tool_manager._tools`) to enumerate registered tools. It now uses
@@ -30,6 +32,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   former internals were updated to drive the public accessor.
 
 ### Fixed
+- **Tightened the `_extract_provenance` coverage exemption so the
+  reachable accept-header line stays gated.** The `if response.request
+  is not None:` guard previously carried `# pragma: no cover`, which
+  excluded both the unreachable is-None (False) arc *and* the reachable
+  body that reads the `accept` header from the request. It is now
+  `# pragma: no branch`, exempting only the unreachable arc; the
+  accept-header line is back under the 100% line-coverage gate. No
+  runtime behaviour changed.
+- **Added `tests/unit/test_coverage_gaps_formatters.py` to the
+  `formatters` mutation-testing runner.** The formatter coverage tests
+  added above were not in the formatters matrix entry of
+  `.github/workflows/mutation.yml`, so formatter mutants they cover were
+  not exercised during mutation analysis. The file is now included.
+- **Added the `Documentation` project URL.** `[project.urls]` now points
+  to the published docs site (`https://smaniches.github.io/uniprot-mcp/`),
+  so PyPI surfaces a Documentation link.
+- **Reconciled the live test count across `main`-facing docs.** The
+  README test badge, `docs/index.md`, `REVIEWER.md`, `docs/CLAIMS.md`
+  (C6), and the `docs/SECURITY-AUDIT.md` "on `main`" aside still read
+  749 offline; the current `pytest --collect-only` figure is 874. The
+  historical `[1.1.8]` changelog entry below is left at 749 — the count
+  that release actually shipped.
 - **Corrected the `proteinchem` module header.** The header listed
   "Monoisotopic residue masses", but the `_RESIDUE_MASS` table holds
   *average* residue masses (e.g. G = 57.0519 average vs 57.02146

@@ -258,10 +258,12 @@ def _extract_provenance(response: httpx.Response, *, now: datetime | None = None
     """
     moment = now if now is not None else datetime.now(tz=UTC)
     accept = "application/json"
-    # pragma: no cover justification — httpx Response.request is a property
-    # that RAISES when unset; it never returns None, so the is-None arc is
-    # unreachable for any response produced by a real HTTP exchange.
-    if response.request is not None:  # pragma: no cover
+    # pragma: no branch justification — httpx Response.request is a property
+    # that RAISES when unset; it never returns None, so the is-None (False)
+    # arc is unreachable for any response produced by a real HTTP exchange.
+    # ``no branch`` exempts only that unreachable arc; the reachable body
+    # below remains under the line-coverage gate.
+    if response.request is not None:  # pragma: no branch
         accept = response.request.headers.get("accept", "application/json")
     return Provenance(
         source=SOURCE_NAME,

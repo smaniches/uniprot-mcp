@@ -77,7 +77,7 @@ jobs:
             timeout: 240
           - path: src/uniprot_mcp/formatters.py
             module: formatters
-            tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py
+            tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py tests/unit/test_coverage_gaps_formatters.py
             timeout: 180
           - path: src/uniprot_mcp/server.py
             module: server
