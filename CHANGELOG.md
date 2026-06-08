@@ -27,6 +27,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `molecular_weight()`'s "Average molecular weight" docstring. The header
   and the table comment now read "Average residue masses". No values
   changed — only their description.
+- **Corrected the third-party benchmark verification overclaim.** The
+  v1.1.3 entry below (and the docs/scripts it shipped) described
+  `tests/benchmark/verify_against_hashes.py` as re-deriving each Tier A /
+  Tier B answer and hash-matching it against the committed
+  `expected.hashes.jsonl`. That comparison could never match: the
+  committed digest is sealed over `{prompt_id, answer, rationale}` (see
+  `seal.py`) while the tool hashed `{prompt_id, answer}` only, so it
+  failed all 28 Tier A/B prompts by construction. The tool is now an
+  informational live answer-reproducibility check (re-derives and prints
+  every answer; exit 0, exit 1 only on drift between
+  `expected.hashes.jsonl` and the derivation pipeline) and no longer
+  claims a cryptographic match. `README.md`, `OVERVIEW.md`, `REVIEWER.md`,
+  `docs/CLAIMS.md`, `tests/benchmark/README.md`, `tests/benchmark/AUDIT.md`,
+  and both `scripts/replicate.*` were corrected to state that the full
+  cryptographic check is the maintainer path (`verify.py` +
+  `verify_answers.py` with the local `expected.jsonl`). The genuine 30/30
+  maintainer-path result of 2026-04-26 is unaffected and retained. No
+  package runtime behaviour changed.
 
 
 ## [1.1.8] - 2026-06-04
