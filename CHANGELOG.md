@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Test coverage restored to 100% line + branch and the gate set to
+  enforce it.** Coverage had drifted from the v1.0.0 100% to 92.20%
+  across the v1.1.x clinical/biomedical work. New assertion-bearing
+  tests (`tests/unit/test_coverage_gaps_client_chem.py`,
+  `test_coverage_gaps_formatters.py`, `test_coverage_gaps_server.py`)
+  exercise every previously-uncovered arc, and `[tool.coverage.report]`
+  `fail_under` is raised from 91 to 100. Three branches carry a
+  justified `# pragma: no cover` for genuinely-unreachable import-time /
+  defensive fallbacks (two in `client.py`, one pre-existing in
+  `server.py`), each annotated inline. No source behaviour changed.
 - **`_self_test()` now counts tools via the public MCP API.** The
   self-test previously reached into FastMCP internals
   (`mcp._tool_manager._tools`) to enumerate registered tools. It now uses

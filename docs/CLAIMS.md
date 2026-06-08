@@ -184,35 +184,39 @@ patch release. The authoritative count is always
 
 ---
 
-## C7. 92.20% line + branch coverage (measured on current `main`)
+## C7. 100% line + branch coverage (gate-enforced)
 
-**Claim (README, OVERVIEW.md).** Measured coverage is 92.20%, up from
-the v1.1.0 baseline of 91.85%.
+**Claim (README, OVERVIEW.md).** Measured coverage is 100.00% line +
+branch across all six source files, with the gate set to enforce it.
 
 **Evidence.**
-- `pyproject.toml` `[tool.coverage.report]` — `fail_under = 91` (the
-  enforced floor; the measured figure is above it).
-- README testing section documents the regression from 100% at
-  v1.0.0, the recovery to 92.20%, and the v1.2.0 uplift commitment to
-  99%.
-- `.github/workflows/ci.yml` — every matrix cell prints
-  `Total coverage: 92.20%`; coverage report uploaded to Codecov on the
-  Ubuntu / Python 3.12 cell.
+- `pyproject.toml` `[tool.coverage.report]` — `fail_under = 100` (the
+  enforced floor; the measured figure equals it).
+- The suite reports `Total coverage: 100.00%`; the per-file table
+  shows 100% for `__init__`, `cache`, `client`, `formatters`,
+  `proteinchem`, and `server`.
+- Three branches carry a justified `# pragma: no cover` for
+  genuinely-unreachable code: the client.py import-time version-lookup
+  fallback (exercising it needs a module reload that breaks
+  exception-class identity), the client.py `_extract_provenance`
+  is-None arc on `response.request` (httpx's property RAISES when
+  unset, so the arc is unreachable), and the server.py target-dossier
+  FASTA-fetch fallback (non-fatal). Each is annotated inline with its
+  justification.
 
 **Verify.**
 ```bash
 pytest tests/unit tests/property tests/client tests/contract --cov --cov-branch --cov-report=term-missing
 ```
 
-**Limitation.** The figure rose from the v1.1.0 baseline of 91.85% as
-the v1.1.4–v1.1.8 source fixes (self-test, formatters, provenance
-Accept-header replay) landed with accompanying tests. It is still
-short of the 100% v1.0.0 high-water mark and the 99% v1.2.0 target;
-the CI gate enforces a floor of 91%. The 92.20% figure is identical
-across all nine CI matrix cells (Ubuntu / macOS / Windows × Python
-3.11 / 3.12 / 3.13).
+**Limitation.** Coverage had dipped from the v1.0.0 100% high-water
+mark to 92.20% across the v1.1.x clinical/biomedical work; it has been
+restored to 100% with assertion-bearing tests for every previously
+-uncovered arc, and the gate now enforces 100% so a future regression
+fails CI. The three `# pragma: no cover` branches are unreachable in
+normal operation, not untested behaviour.
 
-**Last reviewed:** 2026-06-07.
+**Last reviewed:** 2026-06-08.
 
 ---
 
