@@ -5,7 +5,8 @@ Each test is pinned to a specific uncovered line/branch reported by
 ``pytest --cov --cov-branch``:
 
   - client.py 50-51   : version-lookup ``except`` fallback to "dev"
-  - client.py 261->263: ``_extract_provenance`` when ``response.request`` is None
+  - client.py ``_extract_provenance``: reads the accept header from the
+    response's request
   - client.py 546->544: ClinVar esummary loop skips non-dict records
   - proteinchem.py 118->115: ``_count_amino_acids`` skips non-alpha chars
 """
@@ -37,10 +38,11 @@ from uniprot_mcp.proteinchem import _count_amino_acids
 
 
 # ---------------------------------------------------------------------------
-# client.py 261->263 — _extract_provenance accept header from the request
-# (the is-None arc is unreachable: httpx Response.request raises when unset,
-#  so it is marked ``# pragma: no cover`` in the source. Here we assert the
-#  reachable True arc reads the request's accept header.)
+# client.py — _extract_provenance reads the accept header from the request.
+# ``response.request`` is always set when this function runs: the Provenance
+# also reads ``response.url``, which httpx derives from ``Response.request``
+# (the property RAISES if unset), so a request-less response can never reach
+# the accept-header line. The header is therefore read directly, no guard.
 # ---------------------------------------------------------------------------
 
 

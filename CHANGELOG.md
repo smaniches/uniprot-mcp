@@ -15,10 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tests (`tests/unit/test_coverage_gaps_client_chem.py`,
   `test_coverage_gaps_formatters.py`, `test_coverage_gaps_server.py`)
   exercise every previously-uncovered arc, and `[tool.coverage.report]`
-  `fail_under` is raised from 91 to 100. Three branches carry a
-  justified `# pragma: no cover` for genuinely-unreachable import-time /
-  defensive fallbacks (two in `client.py`, one pre-existing in
-  `server.py`), each annotated inline. No source behaviour changed.
+  `fail_under` is raised from 91 to 100. The new coverage tests bring the
+  offline suite from 749 to **874 tests** (`pytest --collect-only`); the
+  live integration suite is unchanged at 44. A small number of
+  genuinely-unreachable arcs carry a justified `# pragma` for
+  import-time / defensive fallbacks (two in `client.py`, one pre-existing
+  in `server.py`), each annotated inline. No source behaviour changed.
 - **`_self_test()` now counts tools via the public MCP API.** The
   self-test previously reached into FastMCP internals
   (`mcp._tool_manager._tools`) to enumerate registered tools. It now uses
@@ -30,6 +32,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   former internals were updated to drive the public accessor.
 
 ### Fixed
+- **`_extract_provenance` now reads the response's accept header
+  directly, dropping a misleading None-guard and its coverage pragma.**
+  The previous `if response.request is not None:` check implied the
+  request could be `None`, but `httpx.Response.request` is a property
+  that *raises* `RuntimeError` when unset and never returns `None`. The
+  guard's False arc was therefore unreachable, and the surrounding
+  `# pragma` excluded the reachable accept-header read from the coverage
+  gate. Because the same function also builds the `url` field from
+  `response.url` — which httpx derives from `response.request` — the
+  request is guaranteed present whenever the function runs, so the accept
+  header is now read directly with no guard and no pragma. Covered by the
+  existing `test_extract_provenance_reads_request_accept_header`.
+  Behaviour is unchanged. Resolves automated-review comments on PR
+  #57/#58.
+- **Added `tests/unit/test_coverage_gaps_formatters.py` to the
+  `formatters` mutation-testing runner.** The formatter coverage tests
+  added above were not in the formatters matrix entry of
+  `.github/workflows/mutation.yml`, so formatter mutants they cover were
+  not exercised during mutation analysis. The file is now included.
+- **Added the `Documentation` project URL.** `[project.urls]` now points
+  to the published docs site (`https://smaniches.github.io/uniprot-mcp/`),
+  so PyPI surfaces a Documentation link.
+- **Added the differentiating capabilities to the PyPI keywords.**
+  `provenance`, `reproducibility`, `alphafold`, `clinvar`, and
+  `drug-discovery` were already in `.zenodo.json` but absent from the
+  `[project]` keywords, so PyPI search did not surface the package for
+  those terms. They are now in both, keeping the two metadata files
+  aligned.
+- **Reconciled the live test count across `main`-facing docs.** The
+  README test badge, `docs/index.md`, `REVIEWER.md`, `docs/CLAIMS.md`
+  (C6), and the `docs/SECURITY-AUDIT.md` "on `main`" aside still read
+  749 offline; the current `pytest --collect-only` figure is 874. The
+  historical `[1.1.8]` changelog entry below is left at 749 — the count
+  that release actually shipped.
 - **Corrected the `proteinchem` module header.** The header listed
   "Monoisotopic residue masses", but the `_RESIDUE_MASS` table holds
   *average* residue masses (e.g. G = 57.0519 average vs 57.02146

@@ -257,12 +257,12 @@ def _extract_provenance(response: httpx.Response, *, now: datetime | None = None
     it at ``None`` so retrieval time is captured at extraction moment.
     """
     moment = now if now is not None else datetime.now(tz=UTC)
-    accept = "application/json"
-    # pragma: no cover justification — httpx Response.request is a property
-    # that RAISES when unset; it never returns None, so the is-None arc is
-    # unreachable for any response produced by a real HTTP exchange.
-    if response.request is not None:  # pragma: no cover
-        accept = response.request.headers.get("accept", "application/json")
+    # ``response.request`` is guaranteed set here: the Provenance below also
+    # reads ``response.url``, which httpx derives from ``Response.request``
+    # (the property RAISES if the request is unset). So the accept header can
+    # be read directly — no None-guard (the property never returns None) and
+    # no pragma.
+    accept = response.request.headers.get("accept", "application/json")
     return Provenance(
         source=SOURCE_NAME,
         release=response.headers.get(_RELEASE_HEADER),
