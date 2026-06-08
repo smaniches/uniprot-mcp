@@ -106,12 +106,21 @@ def main(argv: list[str]) -> int:
         file=sys.stderr,
     )
     if missing:
-        # A genuinely unreachable prompt is an operational signal, not a
-        # cryptographic verdict; surface it but stay informational.
+        # Invariant: every committed prompt_id must be produced by derive_all().
+        # Each derivation helper calls raise_for_status()/raise RuntimeError on a
+        # miss and derive_all() assigns out[1..30] unconditionally, so a partial
+        # dict cannot reach here under normal operation (an upstream failure raises
+        # before this loop). This guard therefore fails fast ONLY on drift between
+        # expected.hashes.jsonl and the derivation pipeline. Printing the
+        # reproducibility note and returning success while a committed prompt was
+        # not re-derived would itself be an overclaim, so exit non-zero.
         print(
-            f"NOTE: {missing} prompt(s) could not be re-derived (network / upstream change?).",
+            f"FAILED: {missing} committed prompt(s) not re-derived — "
+            "expected.hashes.jsonl and the live derivation pipeline have diverged; "
+            "reproduction is incomplete.",
             file=sys.stderr,
         )
+        return 1
     return 0
 
 
