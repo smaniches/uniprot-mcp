@@ -184,30 +184,35 @@ patch release. The authoritative count is always
 
 ---
 
-## C7. 91.85% line + branch coverage (measured at v1.1.0)
+## C7. 92.20% line + branch coverage (measured on current `main`)
 
-**Claim (README, OVERVIEW.md, pyproject.toml).** Measured coverage is
-91.85%.
+**Claim (README, OVERVIEW.md).** Measured coverage is 92.20%, up from
+the v1.1.0 baseline of 91.85%.
 
 **Evidence.**
-- `pyproject.toml` `[tool.coverage.report]` — `fail_under = 91`.
+- `pyproject.toml` `[tool.coverage.report]` — `fail_under = 91` (the
+  enforced floor; the measured figure is above it).
 - README testing section documents the regression from 100% at
-  v1.0.0 and the v1.2.0 uplift commitment.
-- `.github/workflows/ci.yml` — coverage report uploaded on each CI
-  run.
+  v1.0.0, the recovery to 92.20%, and the v1.2.0 uplift commitment to
+  99%.
+- `.github/workflows/ci.yml` — every matrix cell prints
+  `Total coverage: 92.20%`; coverage report uploaded to Codecov on the
+  Ubuntu / Python 3.12 cell.
 
 **Verify.**
 ```bash
-pytest tests/unit tests/property tests/client tests/contract --cov --cov-report=term-missing
+pytest tests/unit tests/property tests/client tests/contract --cov --cov-branch --cov-report=term-missing
 ```
 
-**Limitation.** The 91.85% figure was measured at v1.1.0. Releases
-v1.1.1 through v1.1.7 are metadata-and-correctness releases that did
-not change source-code paths, so the measurement remains operative
-but has not been independently re-measured at a later tag. The CI
-gate enforces a floor of 91%.
+**Limitation.** The figure rose from the v1.1.0 baseline of 91.85% as
+the v1.1.4–v1.1.8 source fixes (self-test, formatters, provenance
+Accept-header replay) landed with accompanying tests. It is still
+short of the 100% v1.0.0 high-water mark and the 99% v1.2.0 target;
+the CI gate enforces a floor of 91%. The 92.20% figure is identical
+across all nine CI matrix cells (Ubuntu / macOS / Windows × Python
+3.11 / 3.12 / 3.13).
 
-**Last reviewed:** 2026-05-26.
+**Last reviewed:** 2026-06-07.
 
 ---
 
