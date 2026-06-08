@@ -1231,22 +1231,45 @@ UniProt on 2026-04-26 at v1.1.0.</p>
   commitments.
 - <code>tests/benchmark/run-2026-04-26-v1.1.0/</code> — transcript of the
   verification run.
+- <code>tests/benchmark/verify_answers.py</code> + <code>tests/benchmark/verify.py</code> —
+  the maintainer cryptographic verification path (run with the local
+  <code>expected.jsonl</code>; this is what produced the 30/30 result above).
 - <code>tests/benchmark/verify_against_hashes.py</code> — third-party
-  verification script (no plaintext seal needed).
+  live answer-reproduction tool (no local <code>expected.jsonl</code> required).
+  It re-derives and prints every answer from live UniProt; it does
+  <strong>not</strong> recompute the seal, because the committed digest binds a
+  withheld rationale.
 - <code>tests/benchmark/AUDIT.md</code> — per-prompt source attribution and
   independence statement.</p>
-<p><strong>Verify.</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python<span class="w"> </span>tests/benchmark/verify_against_hashes.py<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>tests/benchmark/expected.hashes.jsonl
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># expected: 28 hash commitments verified live (2 set-inclusion skipped)</span>
+<p><strong>Verify (maintainer cryptographic path — requires local <code>expected.jsonl</code>).</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python<span class="w"> </span>tests/benchmark/verify.py<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>tests/benchmark/expected.jsonl<span class="w"> </span>tests/benchmark/expected.hashes.jsonl
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># OK: 30 commitments verified</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>python<span class="w"> </span>tests/benchmark/verify_answers.py<span class="w"> </span>tests/benchmark/expected.jsonl
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1"># OK: all 30 prompts verified against https://rest.uniprot.org</span>
 </code></pre></div></p>
-<p><strong>Limitation.</strong> The benchmark was verified at UniProt release
-<code>2026_01</code>. If UniProt has since released a new version, some hashes
-may legitimately differ (<code>release_drift</code>). Tier C set-inclusion
-prompts (28, 29) are skipped by the hash verifier because the live
-answer may be a legitimate superset. <code>run.py</code> and <code>score.py</code> are
-scaffolded (argparse-wired, stubbed bodies); the full comparative
-scoring driver is a v2 benchmark item.</p>
+<p><strong>Reproduce (third party — no seal needed).</strong> Re-derive every answer
+live from the primary source. This confirms answer reproducibility, not
+a cryptographic match (the committed digest is sealed over
+<code>{prompt_id, answer, rationale}</code> with the rationale withheld):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python<span class="w"> </span>tests/benchmark/verify_against_hashes.py<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>tests/benchmark/expected.hashes.jsonl
+</code></pre></div></p>
+<p><strong>Limitation.</strong> The 30/30 result was obtained by the maintainer
+cryptographic path at UniProt release <code>2026_01</code>. If UniProt has since
+released a new version, the maintainer re-derivation
+(<code>verify_answers.py</code>) may legitimately report drift for some prompts;
+Tier C set-inclusion prompts (28, 29) tolerate a live superset of the
+seal by design. The third-party tool (<code>verify_against_hashes.py</code>)
+re-derives and prints answers but does not recompute the seal — the
+committed digest binds the withheld rationale, so a third party
+confirms answer-reproducibility, not a cryptographic match (a true
+third-party crypto path would require sealing <code>{prompt_id, answer}</code>
+only — an owner methodology decision, not implemented; see
+<code>tests/benchmark/AUDIT.md</code>). <code>run.py</code> and <code>score.py</code> are scaffolded
+(argparse-wired, stubbed bodies); the full comparative scoring driver
+is a v2 benchmark item.</p>
 <p><strong>Last reviewed:</strong> 2026-05-26.</p>
 <hr />
 <h2 id="c9-slsa-sigstore-cyclonedx-sbom-on-every-release">C9. SLSA + Sigstore + CycloneDX SBOM on every release<a class="headerlink" href="#c9-slsa-sigstore-cyclonedx-sbom-on-every-release" title="Permanent link">&para;</a></h2>
@@ -1261,8 +1284,8 @@ signatures, and a CycloneDX SBOM.</p>
 - GitHub Releases page — each release has attached <code>.sigstore</code> and
   SBOM files.</p>
 <p><strong>Verify.</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>bash<span class="w"> </span>scripts/replicate.sh
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1"># step 3 runs: gh attestation verify</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>bash<span class="w"> </span>scripts/replicate.sh
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="c1"># step 3 runs: gh attestation verify</span>
 </code></pre></div></p>
 <p><strong>Limitation.</strong> Requires <code>gh</code> CLI with attestation support. The
 <code>replicate.sh</code> script defaults to a specific version (update the
@@ -1305,9 +1328,9 @@ mutation kill rates measured via mutmut.</p>
 - CI run links in MUTATION_SCORES.md point to specific GitHub Actions
   runs with downloadable artifacts.</p>
 <p><strong>Verify.</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>pip<span class="w"> </span>install<span class="w"> </span>mutmut
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>mutmut<span class="w"> </span>run<span class="w"> </span>--paths-to-mutate<span class="o">=</span>src/uniprot_mcp/cache.py
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>mutmut<span class="w"> </span>results
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>pip<span class="w"> </span>install<span class="w"> </span>mutmut
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>mutmut<span class="w"> </span>run<span class="w"> </span>--paths-to-mutate<span class="o">=</span>src/uniprot_mcp/cache.py
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>mutmut<span class="w"> </span>results
 </code></pre></div></p>
 <p><strong>Limitation.</strong> The gate threshold is currently 0.0
 (measurement-first). The &gt;=95% gate is the v1.2.0 target, not the
@@ -1327,9 +1350,9 @@ repository.</p>
 - <code>.github/workflows/release.yml</code> — PyPI Trusted Publishing (OIDC),
   SLSA attestation, Sigstore signing.</p>
 <p><strong>Verify.</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>bash<span class="w"> </span>scripts/replicate.sh
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># cross-checks SHA-256 across PyPI / GitHub Release / SLSA attestation</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># exit 0 iff every step passes</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>bash<span class="w"> </span>scripts/replicate.sh
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1"># cross-checks SHA-256 across PyPI / GitHub Release / SLSA attestation</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="c1"># exit 0 iff every step passes</span>
 </code></pre></div></p>
 <p><strong>Limitation.</strong> Requires <code>gh</code> CLI, <code>curl</code>, <code>jq</code>, Python &gt;= 3.11, and
 network access to PyPI and GitHub. The script verifies a single
