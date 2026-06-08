@@ -12,13 +12,15 @@ Marketing-grade benchmarks select for the system author's preferences. This benc
 
 ### Two reproducibility paths
 
-**Third-party (fresh checkout — no plaintext seal needed).** Re-derive every Tier A / Tier B answer live and compare its canonical SHA-256 to the committed `expected.hashes.jsonl`:
+**Third-party (fresh checkout — no seal file required).** Re-derive every Tier A / Tier B answer live from UniProt and print it:
 
 ```bash
 python tests/benchmark/verify_against_hashes.py tests/benchmark/expected.hashes.jsonl
 ```
 
-This path needs only the committed repository, network access to `rest.uniprot.org`, and Python ≥ 3.11. It does **not** need `expected.jsonl` (gitignored — see below). Tier C set-inclusion prompts (28, 29) are surfaced and skipped: the live answer may legitimately be a superset of the seal, so the hash bytes legitimately differ. Maintainers verify those via the second path.
+This path needs only the committed repository, network access to `rest.uniprot.org`, and Python ≥ 3.11. It does **not** need `expected.jsonl` (gitignored — see below). It confirms that every answer is independently reproducible from the primary source today. It does **not** recompute the committed SHA-256 digests: those are sealed over `{prompt_id, answer, rationale}` (see `seal.py`), and the `rationale` is deliberately withheld as part of the sealed pre-registration, so the digest is not derivable from the live answer alone. The full cryptographic check is the maintainer path below. It is an informational reproducibility tool (exit 0), not a pass/fail gate.
+
+> A *true* third-party cryptographic path would require sealing `{prompt_id, answer}` only, with the rationale held as separate metadata — so a third party could recompute the digest from the live answer alone. That is an owner methodology decision: it requires the local `expected.jsonl` and a fresh commitment, and is **not** implemented here (re-sealing the existing benchmark post-hoc would break the pre-registration covenant). See `AUDIT.md`.
 
 **Maintainer (local plaintext seal in hand).** Once `expected.jsonl` exists in your working tree:
 

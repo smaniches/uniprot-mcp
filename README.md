@@ -277,14 +277,14 @@ with **SHA-256-committed expected answers** on `main`. The plaintext
 published; the cryptographic commitments mean the author cannot
 rewrite "correct" answers post-hoc.
 
-**Third-party verification path (no plaintext seal needed).** Re-derive every Tier A / B answer live and compare its canonical SHA-256 to the committed `expected.hashes.jsonl` — no `expected.jsonl` required:
+**Third-party reproducibility path (no seal file required).** Re-derive every Tier A / B answer live from UniProt and print it — no `expected.jsonl` required. This confirms the answers are independently reproducible from the primary source today; it does **not** recompute the seal (the committed SHA-256 binds a withheld rationale — see below):
 
 ```bash
 python tests/benchmark/verify_against_hashes.py tests/benchmark/expected.hashes.jsonl
-# OK: 28 hash commitment(s) verified live (2 set-inclusion prompt(s) skipped)
+# Re-derives all 30 answers live and prints them (informational; exit 0).
 ```
 
-**Maintainer verification path (with the local plaintext seal).**
+**Maintainer cryptographic verification path (with the local plaintext seal).** The committed digests in `expected.hashes.jsonl` are sealed over `{prompt_id, answer, rationale}`; the rationale is deliberately withheld as part of the sealed pre-registration, so the full cryptographic check requires the local `expected.jsonl`:
 
 ```bash
 python tests/benchmark/verify_answers.py tests/benchmark/expected.jsonl

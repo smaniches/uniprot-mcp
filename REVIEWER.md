@@ -116,22 +116,29 @@ This script:
    asset, and the SLSA build-provenance attestation.
 3. Runs `gh attestation verify` to confirm the cryptographic chain.
 4. Installs in an isolated venv and runs `--self-test`.
-5. Re-derives benchmark answers from live UniProt and compares to the
-   committed SHA-256 seal.
+5. Re-derives benchmark answers from live UniProt and prints them,
+   confirming they are reproducible from the primary source (this step
+   does not recompute the committed seal — see step 8).
 
 Exit code 0 means every step passed.
 
-## 8. Verify benchmark hash commitments (~2 min)
+## 8. Reproduce benchmark answers from live UniProt (~2 min)
 
 ```bash
 python tests/benchmark/verify_against_hashes.py \
   tests/benchmark/expected.hashes.jsonl
 ```
 
-Expected: `OK: 28 hash commitment(s) verified live (2 set-inclusion
-prompt(s) skipped)`. This re-derives every Tier A / Tier B answer
-from live UniProt and compares its canonical SHA-256 to the committed
-commitments. No plaintext seal file is needed.
+This re-derives every Tier A / Tier B answer from live UniProt and
+prints it (exit 0; informational). It confirms the answers are
+independently reproducible from the primary source. It does **not**
+recompute the committed SHA-256 digests: those are sealed over
+`{prompt_id, answer, rationale}` and the rationale is deliberately
+withheld, so the digest is not derivable from the answer alone. No
+plaintext seal file is needed for this reproduction step. The full
+cryptographic check is the maintainer path (`verify.py` +
+`verify_answers.py` with the local `expected.jsonl` — see
+`tests/benchmark/AUDIT.md`).
 
 ## 9. Run live integration tests (optional, ~5 min)
 

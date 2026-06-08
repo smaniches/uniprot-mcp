@@ -58,14 +58,15 @@ try {
     & "$WORK\venv\Scripts\uniprot-mcp.exe" --self-test
     OK "self-test passed"
 
-    Step "6. Re-derive benchmark answers from live UniProt + check SHA-256 seal"
-    # Hash-only path: re-derives every Tier A / Tier B answer live and
-    # compares its canonical SHA-256 to the committed
-    # tests\benchmark\expected.hashes.jsonl. Does NOT require the
-    # gitignored tests\benchmark\expected.jsonl. Tier C set-inclusion
-    # prompts (28, 29) are reported and skipped — maintainers verify
-    # those with the local plaintext via tests\benchmark\verify.py +
-    # verify_answers.py.
+    Step "6. Re-derive benchmark answers from live UniProt (reproducibility)"
+    # Re-derives every benchmark answer live and prints it (informational,
+    # exit 0). Confirms the answers are reproducible from the primary
+    # source; does NOT recompute the committed seal in
+    # tests\benchmark\expected.hashes.jsonl (sealed over {prompt_id,
+    # answer, rationale}; rationale withheld). Does NOT require the
+    # gitignored tests\benchmark\expected.jsonl. The full cryptographic
+    # seal check is the maintainer path: tests\benchmark\verify.py +
+    # verify_answers.py with the local plaintext.
     & "$WORK\venv\Scripts\python.exe" tests\benchmark\verify_against_hashes.py tests\benchmark\expected.hashes.jsonl
     OK "benchmark replication complete"
 
