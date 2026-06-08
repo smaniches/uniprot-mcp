@@ -102,8 +102,6 @@ flips the repository visibility on the same day this PR merges.
 - [x] `--self-test` green against live UniProt
 - [x] Independent reviewer ran the suite locally
 - [x] Beta cohort ≥ 3 successful replications (RESULTS.md)
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
 **Merge strategy:** preserve commit history. Use a **merge commit** (not squash) so each closure is independently `git blame`-able. Public scientific software benefits from a granular history; reviewers and citers should be able to point at the exact commit a feature landed.
