@@ -90,14 +90,16 @@ step "5. uniprot-mcp --self-test (live UniProt)"
 ok "self-test passed"
 
 step "6. Re-derive benchmark answers from live UniProt (reproducibility)"
-# Re-derives every benchmark answer live and prints it (informational,
-# exit 0). Confirms the answers are reproducible from the primary
-# source; does NOT recompute the committed seal in
-# tests/benchmark/expected.hashes.jsonl (sealed over {prompt_id,
-# answer, rationale}; rationale withheld). Does NOT require the
-# gitignored tests/benchmark/expected.jsonl. The full cryptographic
-# seal check is the maintainer path: tests/benchmark/verify.py +
-# verify_answers.py with the local plaintext.
+# Re-derives every benchmark answer live and prints it. Confirms the
+# answers are reproducible from the primary source; does NOT recompute
+# the committed seal in tests/benchmark/expected.hashes.jsonl (sealed
+# over {prompt_id, answer, rationale}; rationale withheld). Does NOT
+# require the gitignored tests/benchmark/expected.jsonl. The full
+# cryptographic seal check is the maintainer path: tests/benchmark/verify.py +
+# verify_answers.py with the local plaintext. Exit 0 iff every committed
+# prompt was re-derived; the tool exits 1 on drift between
+# expected.hashes.jsonl and the derivation pipeline, and `set -e` above
+# aborts the script before "replication complete" prints.
 "$WORK/venv/bin/python" tests/benchmark/verify_against_hashes.py \
   tests/benchmark/expected.hashes.jsonl
 ok "benchmark replication complete"
