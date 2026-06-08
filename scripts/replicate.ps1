@@ -58,15 +58,21 @@ try {
     & "$WORK\venv\Scripts\uniprot-mcp.exe" --self-test
     OK "self-test passed"
 
-    Step "6. Re-derive benchmark answers from live UniProt + check SHA-256 seal"
-    # Hash-only path: re-derives every Tier A / Tier B answer live and
-    # compares its canonical SHA-256 to the committed
-    # tests\benchmark\expected.hashes.jsonl. Does NOT require the
-    # gitignored tests\benchmark\expected.jsonl. Tier C set-inclusion
-    # prompts (28, 29) are reported and skipped — maintainers verify
-    # those with the local plaintext via tests\benchmark\verify.py +
-    # verify_answers.py.
+    Step "6. Re-derive benchmark answers from live UniProt (reproducibility)"
+    # Re-derives every benchmark answer live and prints it. Confirms the
+    # answers are reproducible from the primary source; does NOT recompute
+    # the committed seal in tests\benchmark\expected.hashes.jsonl (sealed
+    # over {prompt_id, answer, rationale}; rationale withheld). Does NOT
+    # require the gitignored tests\benchmark\expected.jsonl. The full
+    # cryptographic seal check is the maintainer path:
+    # tests\benchmark\verify.py + verify_answers.py with the local plaintext.
+    # Exit 0 iff every committed prompt was re-derived; the tool exits 1 on
+    # drift between expected.hashes.jsonl and the derivation pipeline.
+    # $ErrorActionPreference="Stop" does NOT trap a native exe's non-zero
+    # exit on Windows PowerShell, so check $LASTEXITCODE explicitly — else
+    # "replication complete" would print over an incomplete reproduction.
     & "$WORK\venv\Scripts\python.exe" tests\benchmark\verify_against_hashes.py tests\benchmark\expected.hashes.jsonl
+    if ($LASTEXITCODE -ne 0) { Fail "benchmark re-derivation did not reproduce every committed prompt" }
     OK "benchmark replication complete"
 
     Write-Host "`n==== REPLICATION SUCCESS ====" -ForegroundColor Green

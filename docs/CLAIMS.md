@@ -222,25 +222,50 @@ UniProt on 2026-04-26 at v1.1.0.
   commitments.
 - `tests/benchmark/run-2026-04-26-v1.1.0/` — transcript of the
   verification run.
+- `tests/benchmark/verify_answers.py` + `tests/benchmark/verify.py` —
+  the maintainer cryptographic verification path (run with the local
+  `expected.jsonl`; this is what produced the 30/30 result above).
 - `tests/benchmark/verify_against_hashes.py` — third-party
-  verification script (no plaintext seal needed).
+  live answer-reproduction tool (no local `expected.jsonl` required).
+  It re-derives and prints every answer from live UniProt; it does
+  **not** recompute the seal, because the committed digest binds a
+  withheld rationale.
 - `tests/benchmark/AUDIT.md` — per-prompt source attribution and
   independence statement.
 
-**Verify.**
+**Verify (maintainer cryptographic path — requires local `expected.jsonl`).**
+```bash
+python tests/benchmark/verify.py \
+  tests/benchmark/expected.jsonl tests/benchmark/expected.hashes.jsonl
+# OK: 30 commitments verified
+
+python tests/benchmark/verify_answers.py tests/benchmark/expected.jsonl
+# OK: all 30 prompts verified against https://rest.uniprot.org
+```
+
+**Reproduce (third party — no seal needed).** Re-derive every answer
+live from the primary source. This confirms answer reproducibility, not
+a cryptographic match (the committed digest is sealed over
+`{prompt_id, answer, rationale}` with the rationale withheld):
 ```bash
 python tests/benchmark/verify_against_hashes.py \
   tests/benchmark/expected.hashes.jsonl
-# expected: 28 hash commitments verified live (2 set-inclusion skipped)
 ```
 
-**Limitation.** The benchmark was verified at UniProt release
-`2026_01`. If UniProt has since released a new version, some hashes
-may legitimately differ (`release_drift`). Tier C set-inclusion
-prompts (28, 29) are skipped by the hash verifier because the live
-answer may be a legitimate superset. `run.py` and `score.py` are
-scaffolded (argparse-wired, stubbed bodies); the full comparative
-scoring driver is a v2 benchmark item.
+**Limitation.** The 30/30 result was obtained by the maintainer
+cryptographic path at UniProt release `2026_01`. If UniProt has since
+released a new version, the maintainer re-derivation
+(`verify_answers.py`) may legitimately report drift for some prompts;
+Tier C set-inclusion prompts (28, 29) tolerate a live superset of the
+seal by design. The third-party tool (`verify_against_hashes.py`)
+re-derives and prints answers but does not recompute the seal — the
+committed digest binds the withheld rationale, so a third party
+confirms answer-reproducibility, not a cryptographic match (a true
+third-party crypto path would require sealing `{prompt_id, answer}`
+only — an owner methodology decision, not implemented; see
+`tests/benchmark/AUDIT.md`). `run.py` and `score.py` are scaffolded
+(argparse-wired, stubbed bodies); the full comparative scoring driver
+is a v2 benchmark item.
 
 **Last reviewed:** 2026-05-26.
 

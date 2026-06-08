@@ -21,7 +21,7 @@ Source: [github.com/smaniches/uniprot-mcp](https://github.com/smaniches/uniprot-
 | Per-response provenance with SHA-256. | `src/uniprot_mcp/client.py` `_extract_provenance` + `canonical_response_hash`; sample footer at `tests/benchmark/run-2026-04-25-roundtrip/transcript.md`. |
 | A `uniprot_provenance_verify` tool with five enumerated verdicts. | `src/uniprot_mcp/server.py` (the tool registration); unit tests in `tests/unit/test_provenance_verify.py`. |
 | 749 offline + 44 live integration tests (real counts via `pytest --collect-only`). | `pytest --collect-only --ignore=tests/integration -q` for the offline 749; `pytest --collect-only tests/integration -q` for the 44. |
-| 30/30 sealed-prompt benchmark verified against live UniProt 2026-04-26. | `tests/benchmark/run-2026-04-26-v1.1.0/` (transcript) + the cryptographic seals at `tests/benchmark/expected.hashes.jsonl`. Third-party verification path: `tests/benchmark/verify_against_hashes.py` (no plaintext seal needed). |
+| 30/30 sealed-prompt benchmark verified against live UniProt 2026-04-26 (maintainer cryptographic path: `verify.py` + `verify_answers.py` with the local `expected.jsonl`). | `tests/benchmark/run-2026-04-26-v1.1.0/` (transcript) + the cryptographic seals at `tests/benchmark/expected.hashes.jsonl`. Third-party reproducibility tool (re-derives + prints answers live; does not recompute the seal): `tests/benchmark/verify_against_hashes.py`. |
 | The PyPI wheel was built from this exact repo. | SLSA build provenance attestation on every [GitHub Release](https://github.com/smaniches/uniprot-mcp/releases) (v1.1.8 = latest); `gh attestation verify` confirms. End-to-end script: `scripts/replicate.sh`. |
 | **11,590 disease + pathogen rows** in the comprehensive index, sourced verbatim from UniProt. | `examples/atlas/comprehensive_index.tsv` (7,250 human disease rows from 5,296 entries, UniProt disease ID + OMIM cross-references where present) + `examples/atlas/comprehensive_index_pathogens.tsv` (4,340 entries across 16 pathogens). Reproducibility manifest at `examples/atlas/manifest.json` re-sealed in v1.1.3 with SHA-256 of every committed file + the script's git commit; contract test `tests/contract/test_atlas_manifest.py` fails any future drift. **Note:** MONDO / PharmGKB / ARO cross-ontology mappings live only in the 25-entry curated atlas (`examples/atlas/atlas.json`), not in the 11,590-row index. |
 | Coverage gate currently 91, measured 91.85%. Aspirational 99. | `pyproject.toml` `[tool.coverage.report]` block documents both the regression and the uplift commitment; CI enforces 91 today. |
@@ -74,8 +74,10 @@ The script:
    cryptographically valid.
 4. Installs in an isolated venv, runs `uniprot-mcp --self-test`
    (live UniProt fetch).
-5. Re-derives all 30 benchmark prompts from live UniProt and
-   compares to the SHA-256-committed seal.
+5. Re-derives all 30 benchmark prompts from live UniProt and prints
+   them, confirming they are reproducible from the primary source (this
+   step does not recompute the committed seal; the full cryptographic
+   check is the maintainer path with the local `expected.jsonl`).
 
 Exit code 0 ⇔ every step passed ⇔ the wheel you'd get from PyPI is
 provably the one this repo built.

@@ -1,42 +1,53 @@
-"""Fresh-checkout-friendly benchmark verifier.
+"""Fresh-checkout live answer-reproducibility tool (informational).
 
-Re-derives every benchmark answer from live UniProt REST and compares
-the canonical SHA-256 of the derived ``{"prompt_id": pid, "answer":
-<live>}`` line against the committed ``expected.hashes.jsonl``.
+Re-derives every benchmark answer from live UniProt REST and prints the
+derived answer for each prompt. This lets a third party with only a
+fresh checkout (no ``expected.jsonl``, which is gitignored) confirm that
+every Tier A / Tier B answer is independently reproducible from the
+primary source today.
 
-Unlike ``verify_answers.py`` this script does **not** require
-``expected.jsonl`` (which is gitignored). A third party with a fresh
-checkout, network access to ``rest.uniprot.org``, and Python ≥ 3.11
-can run it directly.
+What this tool does **not** do
+------------------------------
+It does not — and cannot — recompute the committed SHA-256 digests in
+``expected.hashes.jsonl``. Those digests are sealed over the canonical
+JSON of ``{"prompt_id", "answer", "rationale"}`` (see ``seal.py``). The
+``rationale`` is deliberately withheld as part of the sealed
+pre-registration, so the digest is not derivable from the live answer
+alone. A live re-derivation therefore confirms **answer
+reproducibility**, not a cryptographic match.
+
+The full cryptographic check is the maintainer path, which requires the
+local ``expected.jsonl``::
+
+    python tests/benchmark/verify.py \\
+        tests/benchmark/expected.jsonl tests/benchmark/expected.hashes.jsonl
+    python tests/benchmark/verify_answers.py tests/benchmark/expected.jsonl
+
+``verify.py`` confirms the plaintext seal matches the published
+commitments; ``verify_answers.py`` confirms each sealed answer matches
+the live primary source (exact for Tier A/B, set-inclusion for Tier C
+28/29). See ``tests/benchmark/AUDIT.md`` for the protocol and the
+verification log.
 
 Usage::
 
     python tests/benchmark/verify_against_hashes.py \\
            [tests/benchmark/expected.hashes.jsonl]
 
-Exit codes:
-  0 — every Tier A / Tier B prompt's derived hash matches the
-       commitment; Tier C set-inclusion prompts (28, 29) are reported
-       and skipped for manual / maintainer verification.
-  1 — at least one prompt did not verify.
-  2 — usage / IO error.
+The optional argument is read only to enumerate the committed prompt
+IDs; its digests are not compared (see above).
 
-Tier C set-inclusion semantics: prompts 28 and 29 commit a *sealed*
-answer that may be a strict subset of the live answer (UniProt
-adds new feature types or cross-DB references over time). The hash
-of the live answer therefore does **not** match the committed hash
-in those two cases. We surface them with a ``SKIP — set-inclusion
-prompt`` marker rather than failing — the sealed hash check is left
-to maintainers running with the local ``expected.jsonl`` via
-``verify.py`` + ``verify_answers.py``. The other 28 prompts must
-hash-match exactly.
+Exit codes:
+  0 — every committed prompt was re-derived from live UniProt and
+       printed. This is an informational reproducibility tool, not a
+       pass/fail gate; it does not assert a cryptographic match.
+  2 — usage / IO error (hashes file missing).
 
 SPDX-License-Identifier: Apache-2.0
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 import pathlib
 import sys
@@ -45,7 +56,6 @@ import sys
 # encodes the per-prompt source attribution and Tier C structured logic).
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from verify import canonical
 from verify_answers import _SNAPSHOT_SET_INCLUSION_PROMPTS, _client, derive_all
 
 DEFAULT_HASHES = pathlib.Path(__file__).resolve().parent / "expected.hashes.jsonl"
@@ -64,45 +74,53 @@ def main(argv: list[str]) -> int:
         obj = json.loads(line)
         committed[int(obj["prompt_id"])] = obj["sha256"]
 
-    print(f"Re-deriving {len(committed)} answers from live UniProt …", file=sys.stderr)
+    print(f"Re-deriving {len(committed)} answers from live UniProt ...", file=sys.stderr)
     with _client() as client:
         derived = derive_all(client)
 
-    failures = 0
-    set_inclusion_skipped = 0
+    missing = 0
     for pid in sorted(committed):
         if pid not in derived:
             print(f"  prompt {pid:>2}: NO DERIVED ANSWER")
-            failures += 1
+            missing += 1
             continue
-        if pid in _SNAPSHOT_SET_INCLUSION_PROMPTS:
-            # Set-inclusion prompts: the live answer may be a superset
-            # of the sealed answer, so the hashes legitimately differ.
-            # Report-and-skip; maintainers verify these with the local
-            # expected.jsonl via verify.py + verify_answers.py.
-            print(
-                f"  prompt {pid:>2}: SKIP — set-inclusion prompt; "
-                f"hash check is maintainer-only (run verify.py with local expected.jsonl)"
-            )
-            set_inclusion_skipped += 1
-            continue
-        record = {"prompt_id": pid, "answer": derived[pid]}
-        actual = hashlib.sha256(canonical(record)).hexdigest()
-        if actual == committed[pid]:
-            print(f"  prompt {pid:>2}: OK — hash matches commitment")
-        else:
-            print(f"  prompt {pid:>2}: FAIL — committed {committed[pid]}, derived {actual}")
-            failures += 1
+        tag = " (Tier C set-inclusion)" if pid in _SNAPSHOT_SET_INCLUSION_PROMPTS else ""
+        print(f"  prompt {pid:>2}: {json.dumps(derived[pid], sort_keys=True)}{tag}")
 
-    if failures:
-        print(f"\nFAILED: {failures} prompt(s) did not verify", file=sys.stderr)
-        return 1
-
-    n_checked = len(committed) - set_inclusion_skipped
     print(
-        f"\nOK: {n_checked} hash commitment(s) verified live "
-        f"({set_inclusion_skipped} set-inclusion prompt(s) skipped — see header)"
+        f"\nRe-derived {len(derived)} answer(s) live from https://rest.uniprot.org.",
+        file=sys.stderr,
     )
+    print(
+        "These answers are independently reproducible from the primary source. "
+        "The committed SHA-256 digests in expected.hashes.jsonl are sealed over "
+        "{prompt_id, answer, rationale}; the rationale is deliberately withheld, "
+        "so the digest cannot be recomputed from the answer alone. This tool "
+        "confirms live answer-reproducibility, NOT a cryptographic match.",
+        file=sys.stderr,
+    )
+    print(
+        "Full cryptographic verification is the maintainer path: "
+        "verify.py + verify_answers.py with the local expected.jsonl "
+        "(see tests/benchmark/AUDIT.md).",
+        file=sys.stderr,
+    )
+    if missing:
+        # Invariant: every committed prompt_id must be produced by derive_all().
+        # Each derivation helper calls raise_for_status()/raise RuntimeError on a
+        # miss and derive_all() assigns out[1..30] unconditionally, so a partial
+        # dict cannot reach here under normal operation (an upstream failure raises
+        # before this loop). This guard therefore fails fast ONLY on drift between
+        # expected.hashes.jsonl and the derivation pipeline. Printing the
+        # reproducibility note and returning success while a committed prompt was
+        # not re-derived would itself be an overclaim, so exit non-zero.
+        print(
+            f"FAILED: {missing} committed prompt(s) not re-derived — "
+            "expected.hashes.jsonl and the live derivation pipeline have diverged; "
+            "reproduction is incomplete.",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 

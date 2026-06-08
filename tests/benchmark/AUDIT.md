@@ -78,6 +78,18 @@ This rule exists because UniProt is a living database. A prompt that asks "list 
 
 ---
 
+## Verification paths and what each one proves
+
+The committed digests in `expected.hashes.jsonl` are sealed by `seal.py` over the canonical JSON of `{prompt_id, answer, rationale}`. The `rationale` is deliberately withheld (committed only at scoring time, alongside the plaintext `expected.jsonl`) — this binds the methodology, not just the answer, into the pre-registration. Two consequences follow:
+
+1. **Maintainer cryptographic path (full check).** `verify.py` recomputes the digest from the local `expected.jsonl` and confirms it equals the committed value (proving the seal plaintext was not edited since commitment); `verify_answers.py` confirms each sealed answer matches the live primary source (exact for Tier A/B, set-inclusion for Tier C 28/29). This is the authoritative check and requires the local `expected.jsonl`.
+
+2. **Third-party reproducibility path (no seal needed).** `verify_against_hashes.py` re-derives every answer live from UniProt and prints it. A third party can confirm the answers are independently reproducible from the primary source, but **cannot** recompute the committed digest — the digest binds the withheld rationale, so it is not derivable from the answer alone. This tool is informational (exit 0), not a cryptographic gate.
+
+**A true third-party cryptographic path** — one where a third party recomputes the committed digest from the live answer alone — would require sealing `{prompt_id, answer}` only, with the rationale held as separate (still-committed) metadata outside the hashed payload. That is an owner methodology decision: it requires the local `expected.jsonl` and a **fresh** commitment over the new payload shape. It is intentionally **not** implemented here. Re-sealing the existing benchmark to that shape after the fact would be a post-hoc rewrite of a pre-registration and is forbidden; if adopted, it must be a clearly dated v2 methodology with its own independence statement.
+
+---
+
 ## Sealing checklist (executed 2026-04-25)
 
 - [x] `expected.jsonl` written with one `{"prompt_id": int, "answer": <typed>, "rationale": str}` per prompt. The `answer` field is a string for Tier A / single-fact Tier B, a JSON object/array for the structured Tier B and Tier C prompts. The `rationale` field for every Tier A/B prompt names the exact REST query used to verify the fact.

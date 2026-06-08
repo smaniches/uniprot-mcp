@@ -15,17 +15,22 @@
 #      commit on `smaniches/uniprot-mcp` (requires `gh attestation verify`).
 #   4. Installs the wheel in an isolated venv.
 #   5. Runs `uniprot-mcp --self-test` to confirm the binary works.
-#   6. Re-derives every benchmark answer from live UniProt and
-#      hash-compares the derived bytes against the committed
-#      tests/benchmark/expected.hashes.jsonl. The plaintext
-#      tests/benchmark/expected.jsonl is gitignored (it is the seal
-#      itself; only its SHA-256 is committed) and is therefore not
-#      required by this script.
+#   6. Re-derives every benchmark answer from live UniProt and prints
+#      it (informational). This confirms the answers are independently
+#      reproducible from the primary source; it does NOT recompute the
+#      committed tests/benchmark/expected.hashes.jsonl digests, which
+#      are sealed over {prompt_id, answer, rationale} with the rationale
+#      withheld. The plaintext tests/benchmark/expected.jsonl is
+#      gitignored (it is the seal plaintext; only its SHA-256 is
+#      committed) and is therefore not required by this script. The full
+#      cryptographic seal check is the maintainer path (verify.py +
+#      verify_answers.py with the local expected.jsonl).
 #
 # Exit code 0 iff every step passes. The point: a third party with a
 # fresh checkout of this repo and network access can prove, without
 # trusting the author, that the published wheel was built from a
-# specific git commit and produces the sealed benchmark answers.
+# specific git commit and that every benchmark answer is reproducible
+# from the live primary source.
 #
 # Usage:
 #   bash scripts/replicate.sh
@@ -84,14 +89,17 @@ step "5. uniprot-mcp --self-test (live UniProt)"
 "$WORK/venv/bin/uniprot-mcp" --self-test 2>&1 | tail -5
 ok "self-test passed"
 
-step "6. Re-derive benchmark answers from live UniProt + check SHA-256 seal"
-# Hash-only path: re-derives every Tier A / Tier B answer live and
-# compares its canonical SHA-256 to the committed
-# tests/benchmark/expected.hashes.jsonl. Does NOT require the
-# gitignored tests/benchmark/expected.jsonl (which is the local-only
-# seal plaintext). Tier C set-inclusion prompts (28, 29) are reported
-# and skipped — maintainers verify those with the local plaintext via
-# tests/benchmark/verify.py + verify_answers.py.
+step "6. Re-derive benchmark answers from live UniProt (reproducibility)"
+# Re-derives every benchmark answer live and prints it. Confirms the
+# answers are reproducible from the primary source; does NOT recompute
+# the committed seal in tests/benchmark/expected.hashes.jsonl (sealed
+# over {prompt_id, answer, rationale}; rationale withheld). Does NOT
+# require the gitignored tests/benchmark/expected.jsonl. The full
+# cryptographic seal check is the maintainer path: tests/benchmark/verify.py +
+# verify_answers.py with the local plaintext. Exit 0 iff every committed
+# prompt was re-derived; the tool exits 1 on drift between
+# expected.hashes.jsonl and the derivation pipeline, and `set -e` above
+# aborts the script before "replication complete" prints.
 "$WORK/venv/bin/python" tests/benchmark/verify_against_hashes.py \
   tests/benchmark/expected.hashes.jsonl
 ok "benchmark replication complete"
