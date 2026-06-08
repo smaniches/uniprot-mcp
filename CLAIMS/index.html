@@ -979,10 +979,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#c7-9185-line-branch-coverage-measured-at-v110" class="md-nav__link">
+  <a href="#c7-9220-line-branch-coverage-measured-on-current-main" class="md-nav__link">
     <span class="md-ellipsis">
       
-        C7. 91.85% line + branch coverage (measured at v1.1.0)
+        C7. 92.20% line + branch coverage (measured on current main)
       
     </span>
   </a>
@@ -1203,24 +1203,29 @@ patch release. The authoritative count is always
 <code>pytest --collect-only</code>.</p>
 <p><strong>Last reviewed:</strong> 2026-05-26.</p>
 <hr />
-<h2 id="c7-9185-line-branch-coverage-measured-at-v110">C7. 91.85% line + branch coverage (measured at v1.1.0)<a class="headerlink" href="#c7-9185-line-branch-coverage-measured-at-v110" title="Permanent link">&para;</a></h2>
-<p><strong>Claim (README, OVERVIEW.md, pyproject.toml).</strong> Measured coverage is
-91.85%.</p>
+<h2 id="c7-9220-line-branch-coverage-measured-on-current-main">C7. 92.20% line + branch coverage (measured on current <code>main</code>)<a class="headerlink" href="#c7-9220-line-branch-coverage-measured-on-current-main" title="Permanent link">&para;</a></h2>
+<p><strong>Claim (README, OVERVIEW.md).</strong> Measured coverage is 92.20%, up from
+the v1.1.0 baseline of 91.85%.</p>
 <p><strong>Evidence.</strong>
-- <code>pyproject.toml</code> <code>[tool.coverage.report]</code> — <code>fail_under = 91</code>.
+- <code>pyproject.toml</code> <code>[tool.coverage.report]</code> — <code>fail_under = 91</code> (the
+  enforced floor; the measured figure is above it).
 - README testing section documents the regression from 100% at
-  v1.0.0 and the v1.2.0 uplift commitment.
-- <code>.github/workflows/ci.yml</code> — coverage report uploaded on each CI
-  run.</p>
+  v1.0.0, the recovery to 92.20%, and the v1.2.0 uplift commitment to
+  99%.
+- <code>.github/workflows/ci.yml</code> — every matrix cell prints
+  <code>Total coverage: 92.20%</code>; coverage report uploaded to Codecov on the
+  Ubuntu / Python 3.12 cell.</p>
 <p><strong>Verify.</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pytest<span class="w"> </span>tests/unit<span class="w"> </span>tests/property<span class="w"> </span>tests/client<span class="w"> </span>tests/contract<span class="w"> </span>--cov<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pytest<span class="w"> </span>tests/unit<span class="w"> </span>tests/property<span class="w"> </span>tests/client<span class="w"> </span>tests/contract<span class="w"> </span>--cov<span class="w"> </span>--cov-branch<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 </code></pre></div></p>
-<p><strong>Limitation.</strong> The 91.85% figure was measured at v1.1.0. Releases
-v1.1.1 through v1.1.7 are metadata-and-correctness releases that did
-not change source-code paths, so the measurement remains operative
-but has not been independently re-measured at a later tag. The CI
-gate enforces a floor of 91%.</p>
-<p><strong>Last reviewed:</strong> 2026-05-26.</p>
+<p><strong>Limitation.</strong> The figure rose from the v1.1.0 baseline of 91.85% as
+the v1.1.4–v1.1.8 source fixes (self-test, formatters, provenance
+Accept-header replay) landed with accompanying tests. It is still
+short of the 100% v1.0.0 high-water mark and the 99% v1.2.0 target;
+the CI gate enforces a floor of 91%. The 92.20% figure is identical
+across all nine CI matrix cells (Ubuntu / macOS / Windows × Python
+3.11 / 3.12 / 3.13).</p>
+<p><strong>Last reviewed:</strong> 2026-06-07.</p>
 <hr />
 <h2 id="c8-3030-sealed-prompt-benchmark-verified-against-live-uniprot">C8. 30/30 sealed-prompt benchmark verified against live UniProt<a class="headerlink" href="#c8-3030-sealed-prompt-benchmark-verified-against-live-uniprot" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, OVERVIEW.md).</strong> A 30-prompt benchmark with
