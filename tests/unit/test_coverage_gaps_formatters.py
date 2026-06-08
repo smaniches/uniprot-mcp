@@ -463,9 +463,7 @@ def test_fmt_alphafold_json_and_markdown_provenance() -> None:
 
 
 def test_fmt_interpro_json_and_truncation() -> None:
-    entry = _entry_with_xrefs(
-        "InterPro", 55, props=[{"key": "EntryName", "value": "p53 domain"}]
-    )
+    entry = _entry_with_xrefs("InterPro", 55, props=[{"key": "EntryName", "value": "p53 domain"}])
     md = fmt_interpro(entry, "P04637", provenance=_PROV)
     assert "p53 domain" in md
     assert "(+5 more)" in md
