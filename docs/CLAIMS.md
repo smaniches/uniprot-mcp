@@ -195,14 +195,14 @@ branch across all six source files, with the gate set to enforce it.
 - The suite reports `Total coverage: 100.00%`; the per-file table
   shows 100% for `__init__`, `cache`, `client`, `formatters`,
   `proteinchem`, and `server`.
-- Three branches carry a justified `# pragma: no cover` for
+- Two branches carry a justified `# pragma: no cover` for
   genuinely-unreachable code: the client.py import-time version-lookup
   fallback (exercising it needs a module reload that breaks
-  exception-class identity), the client.py `_extract_provenance`
-  is-None arc on `response.request` (httpx's property RAISES when
-  unset, so the arc is unreachable), and the server.py target-dossier
+  exception-class identity) and the server.py target-dossier
   FASTA-fetch fallback (non-fatal). Each is annotated inline with its
-  justification.
+  justification. (`_extract_provenance` reads the accept header directly
+  from `response.request`, which is always present because the function
+  also reads `response.url`; no guard or pragma is needed.)
 
 **Verify.**
 ```bash

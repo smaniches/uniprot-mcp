@@ -13,7 +13,8 @@ license-files = ["LICENSE", "NOTICE"]
 keywords = [
     "mcp", "model-context-protocol", "mcp-server", "uniprot", "protein-database",
     "bioinformatics", "proteins", "swiss-prot", "biology", "llm-tools",
-    "anthropic", "claude",
+    "anthropic", "claude", "provenance", "reproducibility", "alphafold",
+    "clinvar", "drug-discovery",
 ]
 authors = [
     { name = "Santiago Maniches", email = "santiago.maniches@gmail.com" },
@@ -126,19 +127,17 @@ source = ["uniprot_mcp"]
 # Gate enforced at 100% line + branch across the package. The coverage
 # uplift (chore/coverage-100) restored the v1.0.0 100% level after the
 # v1.0.1 -> v1.1.x clinical/biomedical work had let it drift to ~92%.
-# A small number of genuinely-unreachable arcs carry a justified
-# ``# pragma`` so they do not block the gate:
-#   - client.py version-lookup ``except`` (``# pragma: no cover``):
-#     import-time fallback to "dev" when running uninstalled; exercising
-#     it requires a module reload that breaks exception-class identity
-#     across the package.
-#   - client.py ``_extract_provenance`` is-None arc on ``response.request``
-#     (``# pragma: no branch``): httpx's ``Response.request`` property
-#     RAISES when unset; it never returns None, so only the False arc is
-#     unreachable. ``no branch`` exempts that arc while keeping the
-#     reachable accept-header line under the line-coverage gate.
-#   - server.py target-dossier FASTA-fetch ``except`` (``# pragma: no
-#     cover``): non-fatal chemistry fallback.
+# Two genuinely-unreachable arcs carry a justified ``# pragma: no cover``
+# so they do not block the gate:
+#   - client.py version-lookup ``except``: import-time fallback to "dev"
+#     when running uninstalled; exercising it requires a module reload
+#     that breaks exception-class identity across the package.
+#   - server.py target-dossier FASTA-fetch ``except``: non-fatal
+#     chemistry fallback.
+# ``_extract_provenance`` reads the accept header directly from
+# ``response.request``: the function also reads ``response.url`` (which
+# httpx derives from the request), so the request is always present and
+# the read needs no guard or pragma.
 # Every other branch is covered by a genuine, assertion-bearing test.
 # PRs that drop coverage below 100% should be rejected by review.
 fail_under = 100
