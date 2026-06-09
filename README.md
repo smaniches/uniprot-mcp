@@ -453,7 +453,8 @@ pip install -e .
 {
   "mcpServers": {
     "uniprot": {
-      "command": "uniprot-mcp"
+      "command": "uvx",
+      "args": ["uniprot-mcp-server"]
     }
   }
 }
