@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [1.1.9] - 2026-06-08
+
+### Added
+- **MCP Registry `server.json` (2025-12-11 schema).** The registry
+  manifest now validates against
+  `https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json`:
+  the version is carried at the top level and in `packages[0].version`,
+  the PyPI distribution is named via `identifier` /`registryType`, and
+  the launch is `runtimeHint: "uvx"` (the registry auto-appends
+  `--from <identifier>@<version>`).
+- **`mcp-name` ownership marker.** `README.md` — the PyPI long
+  description — carries the hidden
+  `<!-- mcp-name: io.github.smaniches/uniprot-mcp -->` marker so the MCP
+  Registry can verify ownership of the published wheel against the
+  declared server name.
+- **`uniprot-mcp-server` console-script alias.** `[project.scripts]` now
+  exposes `uniprot-mcp-server` alongside the existing `uniprot-mcp`
+  entry point (both target `uniprot_mcp.server:main`), so a registry
+  launch that derives the executable from the PyPI distribution name
+  resolves.
+- **Contract-test and version-checker alignment for the new schema.**
+  `tests/contract/test_manifest_consistency.py` reads the top-level
+  `version` and the `packages[pypi].identifier`, and
+  `scripts/check_versions.py` (with its `tests/contract/test_version_consistency.py`
+  driver) matches the camelCase fields — both updated for the
+  2025-12-11 shape.
+
 ### Changed
 - **Test coverage restored to 100% line + branch and the gate set to
   enforce it.** Coverage had drifted from the v1.0.0 100% to 92.20%
