@@ -85,9 +85,7 @@ def main() -> int:
     if shard_count < 1:
         raise SystemExit("MUTMUT_SHARD_COUNT must be >= 1")
     if not (0 <= shard_index < shard_count):
-        raise SystemExit(
-            f"MUTMUT_SHARD_INDEX must be in [0, {shard_count}); got {shard_index}"
-        )
+        raise SystemExit(f"MUTMUT_SHARD_INDEX must be in [0, {shard_count}); got {shard_index}")
 
     import mutmut.__main__ as mm
 
