@@ -7,5 +7,6 @@ startCommand:
     properties: {}
   commandFunction: |-
     (_config) => ({
-      command: "uniprot-mcp"
+      command: "uvx",
+      args: ["uniprot-mcp-server"]
     })
