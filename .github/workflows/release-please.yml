@@ -41,19 +41,7 @@ jobs:
             --ref "${{ steps.release.outputs.tag_name }}" \
             --field tag="${{ steps.release.outputs.tag_name }}"
 
-      # release-verify.yml normally fires on `release: published`. Because
-      # release-please creates the release under GITHUB_TOKEN, that native
-      # event is suppressed and would never reach release-verify — silently
-      # bypassing the PyPI / asset / SLSA-provenance / Zenodo verification
-      # chain. Dispatch it explicitly so every release-please release is still
-      # verified. release-verify has its own ~5-minute retry loops, so it
-      # tolerates being started in parallel with release.yml's publish.
-      - name: Dispatch release verification
-        if: ${{ steps.release.outputs.release_created }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run release-verify.yml \
-            --repo "$GITHUB_REPOSITORY" \
-            --ref "${{ steps.release.outputs.tag_name }}" \
-            --field tag="${{ steps.release.outputs.tag_name }}"
+      # release-verify.yml is no longer dispatched here. It is now chained
+      # from the END of release.yml (the `dispatch-verify` job), after
+      # publish + signing complete, so it never races the build and reads
+      # PyPI / Release assets / Sigstore bundles that actually exist.

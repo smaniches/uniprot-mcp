@@ -72,7 +72,7 @@ def _sites() -> list[Site]:
             # lets release-please's generic updater bump this line, so the
             # pattern must tolerate (and the rewrite must preserve) it. The
             # capturing group is still the bare version literal only.
-            pattern=re.compile(r"^version:\s*(\S+)[ \t]*(#.*)?$", re.MULTILINE),
+            pattern=re.compile(r"^version:\s*([^#\s]+)[ \t]*(#.*)?$", re.MULTILINE),
             rewrite=lambda v: f"version: {v} # x-release-please-version",
         ),
         Site(

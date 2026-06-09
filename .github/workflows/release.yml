@@ -28,6 +28,19 @@ jobs:
     outputs:
       sbom: ${{ steps.sbom.outputs.path }}
     steps:
+      # Guard against an accidental manual dispatch with a blank tag. The
+      # release-please dispatch ALWAYS passes --field tag, so this only
+      # fires on manual misuse. Without it, a blank tag would fall back to
+      # building github.ref (the branch) and then call action-gh-release
+      # with an empty tag_name. Fail fast before anything is built or
+      # published. The push:tags fallback (event_name == 'push') is
+      # unaffected — it never reads inputs.tag.
+      - name: Require a tag on manual dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.tag == '' }}
+        run: |
+          echo "::error::workflow_dispatch requires a non-empty 'tag' input (e.g. v1.2.0)."
+          echo "Push a tag (refs/tags/v*) for the fallback path, or supply the tag input."
+          exit 1
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
         with:
           fetch-depth: 0
@@ -134,3 +147,33 @@ jobs:
             dist/*
             sbom.cdx.json
             *.sigstore.json
+
+  # Chain release verification AFTER publish + signing have completed, so
+  # release-verify reads PyPI / GitHub Release assets / Sigstore bundles
+  # that actually exist. This replaces the previous parallel dispatch from
+  # release-please.yml, which could race the build and open false
+  # `release-drift` failures before the assets were attached.
+  #
+  # This also covers the push-tag fallback path: a release created by
+  # release.yml under GITHUB_TOKEN does not fan out to release-verify's
+  # native `release: published` trigger, so without this explicit dispatch
+  # the fallback path would never be verified.
+  dispatch-verify:
+    needs: [publish-pypi, sign-and-release]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write        # gh workflow run (workflow_dispatch)
+    steps:
+      - name: Dispatch release verification
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # On the dispatch path inputs.tag is the released tag; on the
+          # push-tag fallback inputs.tag is empty and github.ref_name is
+          # the tag. release-verify's `tag` input is required, so this must
+          # always resolve to a non-empty value.
+          VERIFY_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          gh workflow run release-verify.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$VERIFY_TAG" \
+            --field tag="$VERIFY_TAG"
