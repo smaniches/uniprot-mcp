@@ -32,10 +32,126 @@ mechanism. Comparison and citations: [docs/COMPETITIVE_LANDSCAPE.md](docs/COMPET
 
 > Author: **Santiago Maniches** · ORCID [0009-0005-6480-1987](https://orcid.org/0009-0005-6480-1987) · TOPOLOGICA LLC
 
+**Run it in one line:**
+
+```bash
+uvx uniprot-mcp-server
+```
+
+---
+
+## Verifiable provenance (the receipts)
+
+Every answer this server returns is traceable to a primary-source URL **and**
+a content hash you can re-compute yourself. The walkthrough below is a real
+run against the live server (UniProt release `2026_01`), independently
+confirmed against the UniProt REST API.
+
+**Question.** What is the function of human p53 (UniProt `P04637`), what
+heritable cancer syndrome is it associated with, and is the `R175H` mutation
+a documented disease variant?
+
+**Answer, with its provenance footer (verbatim from the server):**
+
+- **Function.** *Cellular tumor antigen p53* (gene `TP53`, *Homo sapiens*,
+  393 aa). "Multifunctional transcription factor that induces cell cycle
+  arrest, DNA repair or apoptosis... Acts as a tumor suppressor in many tumor
+  types."
+- **Disease.** *Li-Fraumeni syndrome* (acronym `LFS`, UniProt disease id
+  `DI-01904`, OMIM `151623`) — "an autosomal dominant familial cancer
+  syndrome... Four types of cancers account for 80% of tumors occurring in
+  TP53 germline mutation carriers."
+- **Variant.** `R175H` — "in LFS; germline mutation and in sporadic cancers;
+  somatic mutation; does not induce SNAI1 degradation; reduces interaction
+  with ZNF385A; dbSNP:`rs28934578`."
+
+```
+Source: UniProt release 2026_01 (28-January-2026) • Retrieved 2026-06-09T11:47:51Z
+Query: https://rest.uniprot.org/uniprotkb/P04637
+SHA-256: 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e
+Accept: application/json
+```
+
+### Reproduce it
+
+**1. Run the server and ask the same question** (any MCP client; tool calls shown):
+
+```bash
+uvx uniprot-mcp-server
+# uniprot_get_entry(accession="P04637")               -> function + gene + diseases
+# uniprot_get_disease_associations(accession="P04637") -> LFS, OMIM 151623
+# uniprot_lookup_variant(accession="P04637", change="R175H") -> the LFS variant record
+```
+
+**2. Confirm the hash re-verifies** (re-fetches the URL and re-checks the
+release + canonical hash with the server's own code):
+
+```bash
+# uniprot_provenance_verify(
+#   url="https://rest.uniprot.org/uniprotkb/P04637",
+#   release="2026_01",
+#   response_sha256="0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e")
+# -> Status: verified  (release match + SHA-256 match)
+```
+
+**3. Confirm the values against the primary source — no server in the loop:**
+
+```bash
+curl -s -H "Accept: application/json" https://rest.uniprot.org/uniprotkb/P04637 -o p53.json
+
+# UniProt release served (matches the footer):
+curl -sI -H "Accept: application/json" https://rest.uniprot.org/uniprotkb/P04637 | grep -i x-uniprot-release
+# -> X-UniProt-Release: 2026_01
+
+python - <<'PY'
+import json, hashlib
+d = json.load(open("p53.json"))
+print("gene        :", d["genes"][0]["geneName"]["value"])                       # TP53
+print("protein     :", d["proteinDescription"]["recommendedName"]["fullName"]["value"])  # Cellular tumor antigen p53
+print("organism    :", d["organism"]["scientificName"], "| length", d["sequence"]["length"])  # Homo sapiens | 393
+for c in d["comments"]:
+    if c.get("commentType") == "DISEASE" and c["disease"].get("acronym") == "LFS":
+        x = c["disease"]
+        print("disease     :", x["diseaseId"], "| OMIM", x["diseaseCrossReference"]["id"])  # Li-Fraumeni syndrome | 151623
+for f in d["features"]:
+    if f.get("type") == "Natural variant" and f["location"]["start"]["value"] == 175:
+        a = f.get("alternativeSequence", {})
+        if a.get("originalSequence") == "R" and a.get("alternativeSequences") == ["H"]:
+            print("variant     : R175H |", f["description"])  # in LFS; germline mutation ...
+
+# The footer SHA-256 is reproducible from these exact bytes (no server):
+# the server hashes the JSON re-serialized with sorted keys + compact separators.
+canonical = json.dumps(d, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+print("sha-256     :", hashlib.sha256(canonical).hexdigest())
+# -> 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e
+PY
+```
+
+**What this proves:** every returned claim is traceable to a primary-source
+URL and a content hash. The gene, protein name, disease (with OMIM id), and
+variant the server reports all match the live UniProt entry; the footer
+SHA-256 is reproducible byte-for-byte from the primary source using a
+documented, server-independent recipe. A third party can re-run all three
+checks today, or a year from now, without trusting this server.
+
+> Note on the hash: the footer SHA-256 is of the *canonical* UniProt response
+> body — the JSON re-serialized with sorted keys and compact separators
+> (`json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`),
+> so harmless key-order changes within a release do not break verification. A raw
+> `curl | sha256sum` of the bytes will therefore differ; apply the same
+> canonicalization (step 3 above) or use `uniprot_provenance_verify`.
+
 ---
 
 ## Installation
 
+Run without installing (recommended):
+
+```bash
+uvx uniprot-mcp-server
+```
+
+Or install into an environment:
 
 ```bash
 pip install uniprot-mcp-server
