@@ -68,8 +68,14 @@ def _sites() -> list[Site]:
         Site(
             path=ROOT / "CITATION.cff",
             label="CITATION.cff (version:)",
-            pattern=re.compile(r"^version:\s*(\S+)\s*$", re.MULTILINE),
-            rewrite=lambda v: f"version: {v}",
+            # The trailing ``# x-release-please-version`` annotation is what
+            # lets release-please's generic updater bump this line, so the
+            # pattern must tolerate (and the rewrite must preserve) it. The
+            # capturing group is still the bare version literal only.
+            pattern=re.compile(
+                r"^version:\s*(\S+)[ \t]*(#.*)?$", re.MULTILINE
+            ),
+            rewrite=lambda v: f"version: {v} # x-release-please-version",
         ),
         Site(
             path=ROOT / "server.json",

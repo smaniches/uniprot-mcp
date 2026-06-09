@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "python",
+  "include-component-in-tag": false,
+  "tag-separator": "-",
+  "packages": {
+    ".": {
+      "package-name": "uniprot-mcp-server",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        "CITATION.cff",
+        "tests/unit/test_client_mutation_killers.py",
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$.packages[0].version"
+        },
+        {
+          "type": "json",
+          "path": ".well-known/mcp.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": ".zenodo.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  },
+  "changelog-sections": [
+    { "type": "feat", "section": "Features", "hidden": false },
+    { "type": "fix", "section": "Bug Fixes", "hidden": false },
+    { "type": "perf", "section": "Performance", "hidden": false },
+    { "type": "deps", "section": "Dependencies", "hidden": false },
+    { "type": "docs", "section": "Documentation", "hidden": false },
+    { "type": "ci", "section": "CI/CD", "hidden": false },
+    { "type": "test", "section": "Testing", "hidden": false },
+    { "type": "refactor", "section": "Refactoring", "hidden": false }
+  ]
+}

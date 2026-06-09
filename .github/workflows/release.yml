@@ -4,7 +4,16 @@ on:
   push:
     tags:
       - "v[0-9]*"
+  # Programmatic / manual trigger. release-please.yml dispatches this after it
+  # creates a release, because a GITHUB_TOKEN-authored release event does not
+  # fan out to other workflows. The old `push: tags: v[0-9]*` path above stays
+  # as a working fallback for a manually pushed tag.
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git tag to build and publish (e.g. v1.2.0)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -22,6 +31,11 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
         with:
           fetch-depth: 0
+          # Build the exact released tag when dispatched by release-please, so
+          # the wheel reflects the released commit rather than main HEAD. On
+          # the push-tag fallback, inputs.tag is empty and github.ref is the
+          # tag ref, so the same checkout is correct either way.
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.12"
@@ -82,6 +96,8 @@ jobs:
       id-token: write       # Sigstore signing OIDC
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: release-artifacts
@@ -92,7 +108,25 @@ jobs:
           inputs: |
             dist/*.tar.gz
             dist/*.whl
-      - name: Create GitHub Release
+      # On the release-please dispatch path (workflow_dispatch with a tag),
+      # release-please has ALREADY created the GitHub Release and owns its
+      # curated, conventional-commit changelog body. We therefore target that
+      # existing release by tag and DO NOT regenerate notes — we only attach
+      # the build artifacts, SBOM, and Sigstore bundles to it. On the
+      # push-tag fallback (no inputs.tag), no release exists yet, so we create
+      # one with auto-generated notes as before.
+      - name: Attach artifacts to release-please release (dispatch path)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda  # v3.0.0
+        with:
+          tag_name: ${{ inputs.tag }}
+          generate_release_notes: false
+          files: |
+            dist/*
+            sbom.cdx.json
+            *.sigstore.json
+      - name: Create GitHub Release (push-tag fallback path)
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda  # v3.0.0
         with:
           generate_release_notes: true
