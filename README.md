@@ -105,7 +105,7 @@ curl -sI -H "Accept: application/json" https://rest.uniprot.org/uniprotkb/P04637
 
 python - <<'PY'
 import json, hashlib
-d = json.load(open("p53.json"))
+d = json.load(open("p53.json", encoding="utf-8"))
 print("gene        :", d["genes"][0]["geneName"]["value"])                       # TP53
 print("protein     :", d["proteinDescription"]["recommendedName"]["fullName"]["value"])  # Cellular tumor antigen p53
 print("organism    :", d["organism"]["scientificName"], "| length", d["sequence"]["length"])  # Homo sapiens | 393
