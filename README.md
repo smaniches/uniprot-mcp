@@ -1,3 +1,5 @@
+<!-- mcp-name: io.github.smaniches/uniprot-mcp -->
+
 # UniProt MCP Server
 
 [![CI](https://github.com/smaniches/uniprot-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/smaniches/uniprot-mcp/actions/workflows/ci.yml)
