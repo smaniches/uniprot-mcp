@@ -136,8 +136,8 @@ checks today, or a year from now, without trusting this server.
 
 > Note on the hash: the footer SHA-256 is of the *canonical* UniProt response
 > body — the JSON re-serialized with sorted keys and compact separators
-> (`json.dumps(obj, sort_keys=True, separators=(",", ":"))`), so harmless
-> key-order changes within a release do not break verification. A raw
+> (`json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`),
+> so harmless key-order changes within a release do not break verification. A raw
 > `curl | sha256sum` of the bytes will therefore differ; apply the same
 > canonicalization (step 3 above) or use `uniprot_provenance_verify`.
 
