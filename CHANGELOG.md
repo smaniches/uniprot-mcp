@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.10](https://github.com/smaniches/uniprot-mcp/compare/v1.1.9...v1.1.10) (2026-06-09)
+
+
+### Bug Fixes
+
+* explicit utf-8 read in README receipts snippet (Windows-safe) ([#62](https://github.com/smaniches/uniprot-mcp/issues/62)) ([147a549](https://github.com/smaniches/uniprot-mcp/commit/147a54999f911bc775e9090335b0d07f4fa59597))
+
+
+### Documentation
+
+* verifiable-provenance receipts demo, front and center ([#61](https://github.com/smaniches/uniprot-mcp/issues/61)) ([ed77002](https://github.com/smaniches/uniprot-mcp/commit/ed77002c1873c5933ef6e1a41066fcc0f7c44260))
+
+
+### CI/CD
+
+* shard mutation testing + weekly schedule ([#68](https://github.com/smaniches/uniprot-mcp/issues/68)) ([fb93d8b](https://github.com/smaniches/uniprot-mcp/commit/fb93d8bc0bedd9d3bc4c147e583559faea2df2ce))
+
 ## [Unreleased]
 
 
