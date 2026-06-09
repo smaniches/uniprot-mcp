@@ -5,31 +5,44 @@ name: Mutation testing
 # the suite (i.e. the suite caught the bug); a "survived" mutant
 # slipped through, indicating an under-tested code path.
 #
-# Strategy: matrix per src/ file with **per-test-file scoping**.
-# Each job mutates exactly one module and runs only the test files
-# that import that module. Combined with `--use-coverage` (skip
-# mutants in lines no test exercises), this drops per-mutant cost
-# by ~10-20× vs running the full unit suite per mutant, and brings
-# even the largest modules (formatters.py, server.py) inside the
-# Actions wall-time budget.
+# Strategy: matrix per src/ file with **per-test-file scoping**, plus
+# **mutant sharding** for the two large files.
 #
-# Coverage is generated once from the FULL offline suite so we
-# identify every covered mutant; the per-mutant runner is then
-# scoped per-module. This gives an accurate kill-rate measurement
-# (a mutant that no scoped test can kill is a real survivor that
-# motivates more targeted tests) without the 90-min timeout that
-# blocked the v1.1.0 baseline run on larger modules.
+# Each job mutates exactly one module and runs only the test files that
+# import that module. Combined with `--use-coverage` (skip mutants in
+# lines no test exercises), this drops per-mutant cost by ~10-20x vs
+# running the full unit suite per mutant.
 #
-# Linux-only: mutmut 3.x does not support Windows; we pin to mutmut
-# 2.x which has a stable CLI but is also Linux-only in CI. Local
-# development on Windows uses WSL.
+# Coverage is generated once per job from the FULL offline suite so we
+# identify every covered mutant; the per-mutant runner is then scoped
+# per-module. This gives an accurate kill-rate measurement (a mutant
+# that no scoped test can kill is a real survivor that motivates more
+# targeted tests).
+#
+# Sharding: server.py (~1000 min) and formatters.py (~490 min) are each
+# a single file and individually exceed the 360-min hosted-runner cap,
+# so their jobs were chronically cancelled. mutmut 2.5.1 has no native
+# sharding (`--paths-to-mutate` is file-granular; the run argument is a
+# single mutation id or one file path). scripts/mutmut_shard.py
+# partitions a file's mutant set into N disjoint, exhaustive strided
+# slices WITHOUT changing what is measured: the per-mutant test command
+# (`--runner`) and `--use-coverage` filtering are identical in every
+# shard, only the SET of mutants is partitioned. The sum over shards of
+# KILLED/TIMEOUT/SUSPICIOUS/SURVIVED therefore equals the unsharded run
+# exactly. server -> 5 shards, formatters -> 3 shards; small modules
+# run as a single shard (nshards=1, a transparent pass-through).
+#
+# Linux-only: mutmut 3.x does not support Windows; we pin to
+# mutmut==2.5.1 (the shard wrapper couples to its internal
+# parse_run_argument seam). Local development on Windows uses WSL.
 #
 # Public repo: GitHub-hosted runners are free, so the matrix is
-# unconstrained. Schedule: weekly + on-demand.
+# unconstrained. Schedule: weekly + on-demand only (this is a deep
+# periodic probe, not a per-push gate).
 
 on:
   schedule:
-    - cron: "0 6 * * 1"
+    - cron: "0 6 * * 0"
   workflow_dispatch:
 
 permissions:
@@ -37,33 +50,42 @@ permissions:
 
 jobs:
   mutmut:
-    name: mutmut · ${{ matrix.module }}
+    name: mutmut · ${{ matrix.module }} ${{ matrix.shard }}/${{ matrix.nshards }}
     runs-on: ubuntu-latest
     timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
       matrix:
-        # One job per src/ file. The `tests` field lists the test
-        # files (or directories) that import this module — these are
-        # the files mutmut will run per mutant. Discovered by grepping
-        # `from uniprot_mcp.<module> import` across tests/unit/ and
-        # tests/property/.
+        # One job per src/ file, except the two large files which are
+        # split into N mutant shards (same file, disjoint strided slices
+        # of its mutant set). The `tests` field lists the test files (or
+        # directories) that import this module -- these are the files
+        # mutmut runs per mutant. `shard` is the 0-based shard index and
+        # `nshards` the shard count; small modules use nshards=1 (the
+        # whole mutant list, wrapper is a pass-through).
         #
-        # Timeout per matrix entry: small modules need ~10-15 min;
-        # the two large modules (formatters, server) get 180 min as
-        # cushion. GitHub-hosted runners on a public repo are free.
+        # Timeout per matrix entry: small modules need ~10-15 min; the
+        # large modules are sized so each shard finishes well under
+        # ~300 min (server ~1000/5 ~= 200 min, formatters ~490/3 ~= 165
+        # min). GitHub-hosted runners on a public repo are free.
         include:
           - path: src/uniprot_mcp/__init__.py
             module: __init__
             tests: tests/unit/test_self_test.py
+            shard: 0
+            nshards: 1
             timeout: 30
           - path: src/uniprot_mcp/proteinchem.py
             module: proteinchem
             tests: tests/unit/test_round_one_clinical.py tests/unit/test_proteinchem_mutation_killers.py
+            shard: 0
+            nshards: 1
             timeout: 60
           - path: src/uniprot_mcp/cache.py
             module: cache
             tests: tests/unit/test_cache.py tests/unit/test_cache_mutation_killers.py
+            shard: 0
+            nshards: 1
             timeout: 60
           - path: src/uniprot_mcp/client.py
             module: client
@@ -74,15 +96,59 @@ jobs:
             # captured. The killer file (test_client_mutation_killers.py)
             # lives inside tests/unit so the directory pickup includes it.
             tests: tests/unit tests/property
+            shard: 0
+            nshards: 1
+            timeout: 240
+          # formatters.py (~490 min unsharded) -> 3 mutant shards.
+          - path: src/uniprot_mcp/formatters.py
+            module: formatters
+            tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py tests/unit/test_coverage_gaps_formatters.py
+            shard: 0
+            nshards: 3
             timeout: 240
           - path: src/uniprot_mcp/formatters.py
             module: formatters
             tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py tests/unit/test_coverage_gaps_formatters.py
-            timeout: 180
+            shard: 1
+            nshards: 3
+            timeout: 240
+          - path: src/uniprot_mcp/formatters.py
+            module: formatters
+            tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py tests/unit/test_coverage_gaps_formatters.py
+            shard: 2
+            nshards: 3
+            timeout: 240
+          # server.py (~1000 min unsharded) -> 5 mutant shards.
           - path: src/uniprot_mcp/server.py
             module: server
             tests: tests/unit
-            timeout: 180
+            shard: 0
+            nshards: 5
+            timeout: 300
+          - path: src/uniprot_mcp/server.py
+            module: server
+            tests: tests/unit
+            shard: 1
+            nshards: 5
+            timeout: 300
+          - path: src/uniprot_mcp/server.py
+            module: server
+            tests: tests/unit
+            shard: 2
+            nshards: 5
+            timeout: 300
+          - path: src/uniprot_mcp/server.py
+            module: server
+            tests: tests/unit
+            shard: 3
+            nshards: 5
+            timeout: 300
+          - path: src/uniprot_mcp/server.py
+            module: server
+            tests: tests/unit
+            shard: 4
+            nshards: 5
+            timeout: 300
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
@@ -92,41 +158,48 @@ jobs:
       - name: Install
         # Editable install: mutmut needs the source paths in sys.path
         # for coverage filtering (`--use-coverage`) to map mutated
-        # files back to recorded test executions.
+        # files back to recorded test executions. mutmut is pinned to
+        # 2.5.1 exactly because scripts/mutmut_shard.py couples to its
+        # internal parse_run_argument seam.
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[test,dev]"
-          pip install "mutmut>=2.5,<3.0"
+          pip install "mutmut==2.5.1"
       - name: Generate coverage data
         # mutmut --use-coverage reads .coverage to skip mutants in
         # lines that no test executes. We use --cov=src/uniprot_mcp so
         # the recorded paths match what mutmut sees in --paths-to-mutate.
+        # The offline suite is deterministic (--disable-socket), so the
+        # covered-line set is identical across shards of the same module.
         run: |
           pytest tests/unit tests/property tests/client tests/contract \
             --cov=src/uniprot_mcp --cov-report= -q
-      - name: Run mutmut on ${{ matrix.module }}
-        # Per-test-file scoping: the `--runner` value is the exact
-        # pytest invocation mutmut runs per mutant. By limiting the
-        # test paths to ${{ matrix.tests }} (the test files that
-        # import this module), per-mutant cost drops by ~10-20× vs
-        # running the full tests/unit/. pytest still picks up the
-        # `addopts` from pyproject.toml automatically (--strict-markers,
-        # --disable-socket, etc.).
+      - name: Run mutmut on ${{ matrix.module }} (shard ${{ matrix.shard }}/${{ matrix.nshards }})
+        # Per-test-file scoping: the `--runner` value is the exact pytest
+        # invocation mutmut runs per mutant. scripts/mutmut_shard.py wraps
+        # `mutmut run`, keeping only this shard's disjoint strided slice
+        # of the file's mutant list (MUTMUT_SHARD_INDEX/COUNT). The runner
+        # and --use-coverage are identical across shards, so only the SET
+        # of mutants is partitioned -- the kill-rate measurement is
+        # unchanged, just parallelized. With nshards=1 the wrapper is a
+        # transparent pass-through to mutmut.
         #
-        # We capture combined stdout+stderr to mutmut-run.log and
-        # parse it in the next step. mutmut 2.x's `mutmut results`
-        # command only emits a "Survived (N)" section (it omits the
-        # "Killed" count from its summary), so parsing `results`
-        # under-reports kill rate as 0. The progress log emitted
-        # during the run carries the full counts.
-        # mutmut exits non-zero on any survivor; the GitHub Actions bash
-        # invocation runs with `bash -e` so we explicitly mask that with
-        # `|| true` on the pipeline (set -o pipefail propagates mutmut's
-        # exit through tee). All subsequent steps use `if: always()` so
-        # they harvest the run log even when mutmut's exit code is non-zero.
+        # We capture combined stdout+stderr to mutmut-run.log and parse
+        # it in the next step. mutmut 2.x's `mutmut results` command only
+        # emits a "Survived (N)" section (it omits the "Killed" count from
+        # its summary), so parsing `results` under-reports kill rate as 0.
+        # The progress log emitted during the run carries the full counts.
+        # mutmut exits non-zero on any survivor; the bash invocation runs
+        # with `bash -e` so we explicitly mask that with `|| true` on the
+        # pipeline (set -o pipefail propagates mutmut's exit through tee).
+        # All subsequent steps use `if: always()` so they harvest the run
+        # log even when mutmut's exit code is non-zero.
+        env:
+          MUTMUT_SHARD_INDEX: ${{ matrix.shard }}
+          MUTMUT_SHARD_COUNT: ${{ matrix.nshards }}
         run: |
           set -o pipefail
-          mutmut run \
+          python scripts/mutmut_shard.py run \
             --paths-to-mutate=${{ matrix.path }} \
             --use-coverage \
             --tests-dir=tests/unit \
@@ -194,12 +267,14 @@ jobs:
                   fh.write(f"total={attempted}\n")
                   fh.write(f"rate={rate:.4f}\n")
           PY
-      - name: Save per-module summary
+      - name: Save per-shard summary
         if: always()
         run: |
           mkdir -p mutation-summary
           {
             echo "module: ${{ matrix.module }}"
+            echo "shard: ${{ matrix.shard }}"
+            echo "nshards: ${{ matrix.nshards }}"
             echo "path: ${{ matrix.path }}"
             echo "killed: ${{ steps.score.outputs.killed }}"
             echo "survived: ${{ steps.score.outputs.survived }}"
@@ -208,22 +283,24 @@ jobs:
             echo "skipped: ${{ steps.score.outputs.skipped }}"
             echo "total: ${{ steps.score.outputs.total }}"
             echo "rate: ${{ steps.score.outputs.rate }}"
-          } > "mutation-summary/${{ matrix.module }}.yaml"
-      - name: Upload module results
+          } > "mutation-summary/${{ matrix.module }}-shard${{ matrix.shard }}-of${{ matrix.nshards }}.yaml"
+      - name: Upload shard results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
-          name: mutmut-${{ matrix.module }}
+          name: mutmut-${{ matrix.module }}-shard${{ matrix.shard }}-of${{ matrix.nshards }}
           path: |
             mutmut-results.txt
             mutmut-run.log
-            mutation-summary/${{ matrix.module }}.yaml
+            mutation-summary/${{ matrix.module }}-shard${{ matrix.shard }}-of${{ matrix.nshards }}.yaml
           if-no-files-found: warn
 
   aggregate:
-    # Consolidate per-module summaries into a single table that lands
-    # as a workflow artefact. The user can copy the table into
-    # docs/MUTATION_SCORES.md after each run.
+    # Consolidate per-shard summaries into a single table that lands as a
+    # workflow artefact. Per-module rows are summed across that module's
+    # shards (disjoint + exhaustive slices), so the module and overall
+    # kill rates are identical to an unsharded run. The user can copy the
+    # table into docs/MUTATION_SCORES.md after each run.
     name: aggregate per-module scores
     needs: mutmut
     if: always()
@@ -236,60 +313,88 @@ jobs:
       - name: Aggregate
         run: |
           python - <<'PY'
+          import collections
           import pathlib
-          rows = []
+
+          shards = []
           for summary in sorted(pathlib.Path("artifacts").rglob("*.yaml")):
               parsed = {}
               for line in summary.read_text(encoding="utf-8").splitlines():
                   if ":" in line:
                       k, v = line.split(":", 1)
                       parsed[k.strip()] = v.strip()
-              rows.append(parsed)
+              shards.append(parsed)
 
-          if not rows:
-              print("No per-module summaries collected.")
+          if not shards:
+              print("No per-shard summaries collected.")
               raise SystemExit(0)
 
-          total_k = sum(int(r.get("killed", 0)) for r in rows)
-          total_s = sum(int(r.get("survived", 0)) for r in rows)
-          total_t = sum(int(r.get("timeout", 0)) for r in rows)
-          total_x = sum(int(r.get("suspicious", 0)) for r in rows)
-          total_skip = sum(int(r.get("skipped", 0)) for r in rows)
-          total_relevant = total_k + total_s + total_t + total_x
-          overall = (total_k / total_relevant) if total_relevant else 0.0
-
-          print("\n## Mutation testing summary\n")
-          print("| module | killed | survived | timeout | suspicious | skipped | kill rate |")
-          print("|---|---|---|---|---|---|---|")
-          for r in rows:
+          # Fold each module's shards back into one per-module row. Strided
+          # shard slices are disjoint and exhaustive, so summing the raw
+          # bucket counts reconstructs the unsharded per-module totals
+          # exactly.
+          def as_int(value):
               try:
-                  rate = float(r.get("rate", "0"))
-              except ValueError:
-                  rate = 0.0
-              print(
-                  f"| `{r.get('module','?')}` | "
-                  f"{r.get('killed','?')} | {r.get('survived','?')} | "
-                  f"{r.get('timeout','?')} | {r.get('suspicious','?')} | "
-                  f"{r.get('skipped','?')} | {rate:.2%} |"
+                  return int(value)
+              except (TypeError, ValueError):
+                  return 0
+
+          modules = collections.OrderedDict()
+          for s in shards:
+              mod = s.get("module", "?")
+              acc = modules.setdefault(
+                  mod,
+                  {"killed": 0, "survived": 0, "timeout": 0,
+                   "suspicious": 0, "skipped": 0, "nshards": 0},
               )
-          print(f"| **TOTAL** | **{total_k}** | **{total_s}** | **{total_t}** | "
-                f"**{total_x}** | **{total_skip}** | **{overall:.2%}** |")
+              for bucket in ("killed", "survived", "timeout", "suspicious", "skipped"):
+                  acc[bucket] += as_int(s.get(bucket))
+              acc["nshards"] += 1
+
+          rows = []
+          for mod, acc in modules.items():
+              relevant = acc["killed"] + acc["survived"] + acc["timeout"] + acc["suspicious"]
+              rate = (acc["killed"] + acc["timeout"] + acc["suspicious"]) / relevant if relevant else 0.0
+              rows.append({"module": mod, "rate": rate, **acc})
+
+          total_k = sum(r["killed"] for r in rows)
+          total_s = sum(r["survived"] for r in rows)
+          total_t = sum(r["timeout"] for r in rows)
+          total_x = sum(r["suspicious"] for r in rows)
+          total_skip = sum(r["skipped"] for r in rows)
+          total_relevant = total_k + total_s + total_t + total_x
+          overall = ((total_k + total_t + total_x) / total_relevant) if total_relevant else 0.0
+
+          header = (
+              "| module | shards | killed | survived | timeout | "
+              "suspicious | skipped | kill rate |"
+          )
+          sep = "|---|---|---|---|---|---|---|---|"
+          print("\n## Mutation testing summary\n")
+          print(header)
+          print(sep)
+          body_lines = []
+          for r in rows:
+              line = (
+                  f"| `{r['module']}` | {r['nshards']} | "
+                  f"{r['killed']} | {r['survived']} | {r['timeout']} | "
+                  f"{r['suspicious']} | {r['skipped']} | {r['rate']:.2%} |"
+              )
+              print(line)
+              body_lines.append(line)
+          total_line = (
+              f"| **TOTAL** | | **{total_k}** | **{total_s}** | **{total_t}** | "
+              f"**{total_x}** | **{total_skip}** | **{overall:.2%}** |"
+          )
+          print(total_line)
           print(f"\nGate threshold currently 0.0 (measurement-first run).")
-          print(f"Aspirational threshold: 0.95 — to be enforced once baseline + uplift land.")
-          # Persist for the artefact.
+          print(f"Aspirational threshold: 0.95 -- to be enforced once baseline + uplift land.")
+
           pathlib.Path("MUTATION_SUMMARY.md").write_text(
               "## Mutation testing summary\n\n"
-              "| module | killed | survived | timeout | suspicious | skipped | kill rate |\n"
-              "|---|---|---|---|---|---|---|\n"
-              + "\n".join(
-                  f"| `{r.get('module','?')}` | "
-                  f"{r.get('killed','?')} | {r.get('survived','?')} | "
-                  f"{r.get('timeout','?')} | {r.get('suspicious','?')} | "
-                  f"{r.get('skipped','?')} | {float(r.get('rate','0')):.2%} |"
-                  for r in rows
-              )
-              + f"\n| **TOTAL** | **{total_k}** | **{total_s}** | **{total_t}** | "
-              f"**{total_x}** | **{total_skip}** | **{overall:.2%}** |\n",
+              + header + "\n" + sep + "\n"
+              + "\n".join(body_lines) + "\n"
+              + total_line + "\n",
               encoding="utf-8",
           )
           PY
