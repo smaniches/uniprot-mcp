@@ -16,7 +16,6 @@ import json
 
 import pytest
 
-import uniprot_mcp.cache as cache_mod
 from uniprot_mcp.cache import (
     CACHE_DIR_ENV,
     ProvenanceCache,
@@ -238,7 +237,7 @@ def test_cache_write_unlinks_tmp_when_replace_fails(
     def _boom(*_args: object, **_kwargs: object) -> None:
         raise OSError("simulated ENOSPC during os.replace")
 
-    monkeypatch.setattr(cache_mod.os, "replace", _boom)
+    monkeypatch.setattr("uniprot_mcp.cache.os.replace", _boom)
 
     with pytest.raises(OSError, match="simulated ENOSPC"):
         cache.write(url, '{"primaryAccession": "P04637"}', prov)  # type: ignore[arg-type]
