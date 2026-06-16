@@ -58,6 +58,7 @@ dev = [
     "bandit>=1.7",
     "pip-audit>=2.7",
     "pre-commit>=3.7",
+    "interrogate>=1.7",
 ]
 docs = [
     "mkdocs>=1.6",
@@ -197,6 +198,20 @@ ignore_missing_imports = true
 [tool.bandit]
 exclude_dirs = ["tests", "_scratch"]
 skips = ["B101"]  # asserts in non-test code only, but we don't use them anyway
+
+[tool.interrogate]
+# Docstring-coverage gate over the package public + internal surface.
+# `fail-under` is pinned at the current measured level and is intended to
+# ratchet upward only: a PR that lowers coverage fails CI; raising it is
+# welcome. Run locally with: interrogate -c pyproject.toml src/uniprot_mcp
+fail-under = 67
+ignore-init-method = true
+ignore-magic = true
+ignore-nested-functions = true
+ignore-module = false
+ignore-private = false
+ignore-semiprivate = false
+exclude = ["tests", "_scratch"]
 
 
 
