@@ -15,7 +15,7 @@
     "chembl": "https://www.ebi.ac.uk/chembl/target_report_card/CHEMBL"
   },
   "@type": "schema:Dataset",
-  "schema:identifier": "uniprot-mcp/atlas/v1.1.3",
+  "schema:identifier": "uniprot-mcp/atlas",
   "schema:name": "uniprot-mcp disease & target atlas",
   "schema:description": "Curated worked examples spanning the major axes of biomedical research, each demonstrating the uniprot-mcp tool surface end-to-end on a real disease/protein pair. Each entry is one Markdown file plus a structured record in this manifest. The atlas pins the shape of the answer (which tools to call, what provenance fields to expect) rather than the content (which UniProt drifts between releases). Adopters can run the per-entry tool sequence against any UniProt release and verify drift via uniprot_provenance_verify. v1.1.3 corrected four MONDO ontology ID assignments that conflicted across entries (TP53/ERBB2 sharing mondo:0007254; HBB/FBN1 sharing mondo:0011382; GBA/SNCA sharing mondo:0008199; MYH7/LMNA sharing mondo:0011712); the new IDs were verified against the canonical MONDO ontology (purl.obolibrary.org/obo/MONDO_*) via OLS4.",
   "schema:license": "https://www.apache.org/licenses/LICENSE-2.0",
@@ -496,7 +496,7 @@
   ],
   "fairPrinciples": {
     "findable": {
-      "persistentIdentifier": "PyPI uniprot-mcp-server v1.1.3; GitHub commit cited via SLSA attestation; Zenodo concept DOI 10.5281/zenodo.19817710 (always-latest version)",
+      "persistentIdentifier": "PyPI uniprot-mcp-server; GitHub commit cited via SLSA attestation; Zenodo concept DOI 10.5281/zenodo.19817710 (always-latest version)",
       "metadata": "this JSON-LD record + per-entry Markdown",
       "searchable": "GitHub repo + PyPI + Zenodo (concept DOI 10.5281/zenodo.19817710)"
     },
