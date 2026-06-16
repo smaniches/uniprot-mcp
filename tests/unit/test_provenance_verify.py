@@ -23,7 +23,7 @@ import pytest
 import respx
 from mcp.server.fastmcp.exceptions import ToolError
 
-from uniprot_mcp.client import canonical_response_hash
+from uniprot_mcp.client import BASE_URL, canonical_response_hash
 from uniprot_mcp.server import uniprot_provenance_verify
 
 _TP53_URL = "https://rest.uniprot.org/uniprotkb/P04637"
@@ -75,7 +75,9 @@ async def test_verify_rejects_non_uniprot_url() -> None:
         await uniprot_provenance_verify("https://example.com/foo", "")
     msg = str(exc_info.value)
     assert "Input error" in msg
-    assert "https://rest.uniprot.org/" in msg
+    # The hint names the canonical UniProt REST prefix (derived from the
+    # source-of-truth BASE_URL constant, not a duplicated literal).
+    assert f"{BASE_URL}/" in msg
 
 
 async def test_verify_rejects_oversize_url() -> None:
