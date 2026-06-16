@@ -356,9 +356,8 @@ def _go_aspect_of(ref: Xref) -> str:
         str(p["key"]): str(p["value"]) for p in ref.get("properties", []) or []
     }
     term = props.get("GoTerm", "")
-    for prefix in ("F:", "P:", "C:"):
-        if term.startswith(prefix):
-            return prefix[0]
+    if term.startswith(("F:", "P:", "C:")):
+        return term[0]
     return ""
 
 
