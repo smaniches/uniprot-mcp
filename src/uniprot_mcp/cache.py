@@ -90,17 +90,26 @@ class ProvenanceCache:
         }
         encoded = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         # Use a NamedTemporaryFile in the same directory so os.replace
-        # is guaranteed atomic on the same filesystem.
-        with tempfile.NamedTemporaryFile(
-            mode="wb",
-            dir=self.base_dir,
-            prefix=f"{key_for(url)}.",
-            suffix=".tmp",
-            delete=False,
-        ) as tf:
-            tf.write(encoded)
-            tmp_path = Path(tf.name)
-        os.replace(tmp_path, target)
+        # is guaranteed atomic on the same filesystem. If the write or the
+        # replace raises (e.g. ENOSPC), unlink the partial temp file before
+        # re-raising so a failed write never orphans a ``.tmp`` on disk.
+        tmp_path: Path | None = None
+        replaced = False
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                dir=self.base_dir,
+                prefix=f"{key_for(url)}.",
+                suffix=".tmp",
+                delete=False,
+            ) as tf:
+                tmp_path = Path(tf.name)
+                tf.write(encoded)
+            os.replace(tmp_path, target)
+            replaced = True
+        finally:
+            if not replaced and tmp_path is not None:
+                tmp_path.unlink(missing_ok=True)
         return target
 
     def read(self, url: str) -> dict[str, object] | None:
