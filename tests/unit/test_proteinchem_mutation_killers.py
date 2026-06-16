@@ -443,3 +443,23 @@ def test_p53_n_terminal_10_residue_full_snapshot() -> None:
     assert p["amino_acid_counts"]["V"] == 1
     # Total of all standard AAs counts == length
     assert sum(p["amino_acid_counts"][aa] for aa in "ACDEFGHIKLMNPQRSTVWY") == 10
+
+
+def test_multichar_uppercase_letter_falls_to_other() -> None:
+    """L4: a letter whose uppercase form is multi-character (e.g. the German
+    eszett -> "SS") must NOT inflate the residue count or fabricate residues.
+
+    Counting over ``sequence.upper()`` first expands the eszett to "SS", so the
+    single input character was double-counted as two Ser. Counting per input
+    character (uppercasing each one) keeps the length invariant and routes the
+    eszett to the "other" bucket instead.
+    """
+    eszett = chr(0xDF)
+    p = compute_protein_properties("A" + eszett + "A")
+    assert p["length"] == 2
+    assert p["amino_acid_counts"]["A"] == 2
+    assert p["amino_acid_counts"]["S"] == 0
+    assert p["amino_acid_counts"]["other"] == 1
+    # MW = 2 * Ala residue mass + one water, derived from ExPASy/IUPAC values
+    # (Ala residue 71.0788, water 18.01528) -- independent of code output.
+    assert math.isclose(p["molecular_weight"], round(2 * 71.0788 + 18.01528, 4), abs_tol=1e-6)

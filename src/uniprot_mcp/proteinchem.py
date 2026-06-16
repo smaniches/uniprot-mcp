@@ -112,9 +112,10 @@ def _count_amino_acids(sequence: str) -> dict[str, int]:
     letters (X, B, Z, U, O, gaps, whitespace, …)."""
     counts: dict[str, int] = {aa: 0 for aa in STANDARD_AA}
     counts["other"] = 0
-    for ch in sequence.upper():
-        if ch in counts:
-            counts[ch] += 1
+    for ch in sequence:
+        up = ch.upper()
+        if up in counts:
+            counts[up] += 1
         elif ch.isalpha():
             counts["other"] += 1
         # whitespace / digits silently skipped
