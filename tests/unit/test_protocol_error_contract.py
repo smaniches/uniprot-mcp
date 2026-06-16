@@ -35,7 +35,11 @@ async def test_failed_tool_call_sets_iserror_without_network() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         result = await _call_tool("uniprot_get_entry", {"accession": "not-real"})
     assert result.isError is True
-    assert result.content  # sanitized error text is surfaced to the client
+    assert len(result.content) == 1
+    assert result.content[0].type == "text"
+    # The client receives the sanitized validation message, never a traceback.
+    assert "Input error" in result.content[0].text
+    assert "Traceback" not in result.content[0].text
     assert not router.calls  # validation failed before any upstream call
 
 
@@ -44,4 +48,5 @@ async def test_successful_tool_call_is_not_iserror() -> None:
         router.get("/uniprotkb/search").mock(return_value=httpx.Response(200, json={"results": []}))
         result = await _call_tool("uniprot_search", {"query": "kinase"})
     assert not result.isError
-    assert result.content
+    assert len(result.content) == 1
+    assert result.content[0].type == "text"
