@@ -38,6 +38,8 @@ would defeat the kill.
 
 from __future__ import annotations
 
+import asyncio
+
 import httpx
 import pytest
 import respx
@@ -936,3 +938,55 @@ async def test_provenance_retrieved_at_is_recent() -> None:
         assert delta_seconds < 60
     finally:
         await c.close()
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_concurrent_requests_isolate_provenance_per_task() -> None:
+    """Two concurrent tasks sharing one client each read THEIR OWN request's
+    provenance, never the other in-flight request's.
+
+    A barrier forces both successful provenance writes to land before either
+    task reads ``last_provenance``. With a shared instance attribute the second
+    write clobbers the first, so a task would attest the wrong release; the
+    request-scoped ContextVar isolates provenance per asyncio task. This test
+    fails on the old shared-attribute design and passes on the fix.
+    """
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
+        return_value=httpx.Response(
+            200,
+            json={"primaryAccession": "P04637"},
+            headers={"X-UniProt-Release": "2026_01"},
+        )
+    )
+    respx.get(f"{BASE_URL}/uniprotkb/P12345").mock(
+        return_value=httpx.Response(
+            200,
+            json={"primaryAccession": "P12345"},
+            headers={"X-UniProt-Release": "2026_02"},
+        )
+    )
+    c = UniProtClient()
+    barrier = asyncio.Barrier(2)
+    seen: dict[str, str | None] = {}
+
+    async def worker(accession: str, expected_release: str) -> None:
+        await c.get_entry(accession)
+        # Block until BOTH requests have written provenance, so a shared
+        # attribute would already have been overwritten by the other task.
+        await barrier.wait()
+        prov = c.last_provenance
+        assert prov is not None, f"{accession}: provenance is None"
+        seen[accession] = prov["release"]
+        assert prov["release"] == expected_release
+        assert prov["url"].endswith(f"/uniprotkb/{accession}")
+
+    try:
+        await asyncio.gather(
+            worker("P04637", "2026_01"),
+            worker("P12345", "2026_02"),
+        )
+    finally:
+        await c.close()
+
+    assert seen == {"P04637": "2026_01", "P12345": "2026_02"}
