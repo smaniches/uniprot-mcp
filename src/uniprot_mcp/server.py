@@ -476,10 +476,13 @@ async def uniprot_batch_entries(accessions: str, response_format: str = "markdow
         _check_format(response_format)
         acc_list = [a.strip() for a in accessions.split(",") if a.strip()][:100]
         client = _client()
+        prov_before = client.last_provenance
         data = await client.batch_entries(acc_list)
-        out = fmt_search(
-            {"results": data["results"]}, response_format, provenance=client.last_provenance
-        )
+        # batch_entries skips the network entirely when no accession is valid.
+        # In that case last_provenance still holds a previous call's value
+        # (shared client), so only attach provenance when this call fetched.
+        attached = client.last_provenance if client.last_provenance is not prov_before else None
+        out = fmt_search({"results": data["results"]}, response_format, provenance=attached)
         if data.get("invalid"):
             out += (
                 f"\n\n_Skipped {len(data['invalid'])} invalid accession(s): "
@@ -713,6 +716,10 @@ async def uniprot_target_dossier(accession: str, response_format: str = "markdow
         _check_format(response_format)
         client = _client()
         data = await client.get_entry(accession)
+        # Capture the entry's provenance now: the dossier is built from this
+        # entry JSON, and the FASTA fetch below would otherwise overwrite
+        # last_provenance on the shared client and mis-attribute the footer.
+        entry_provenance = client.last_provenance
         # Sequence chemistry needs the FASTA. One extra request.
         try:
             fasta = await client.get_fasta(accession)
@@ -726,9 +733,7 @@ async def uniprot_target_dossier(accession: str, response_format: str = "markdow
         except Exception:  # pragma: no cover — fasta-fetch failure is non-fatal
             chemistry = {}
         dossier = _assemble_target_dossier(data, chemistry)
-        return fmt_target_dossier(
-            dossier, accession, response_format, provenance=client.last_provenance
-        )
+        return fmt_target_dossier(dossier, accession, response_format, provenance=entry_provenance)
     except Exception as exc:
         return _safe_error("uniprot_target_dossier", exc)
 
@@ -950,7 +955,7 @@ async def uniprot_replay_from_cache(url: str, response_format: str = "markdown")
             return (
                 "## Cache replay\n\n"
                 f"_Provenance cache is disabled. Set `{CACHE_DIR_ENV}=/path/to/cache` "
-                "to opt in, then re-run any UniProt tool to populate the cache._"
+                "to enable cache replay._"
             )
         cache = ProvenanceCache(cache_dir)
         entry = cache.read(url)
@@ -1810,18 +1815,32 @@ def _format_verify_report(report: dict[str, object], fmt: str) -> str:
     if "error" in report:
         lines.append("")
         lines.append(f"**Error:** {report['error']}")
-    advice = _verify_advice(str(status))
+    checks_run = ("release_match" in report) + ("hash_match" in report)
+    advice = _verify_advice(str(status), checks_run)
     if advice:
         lines.extend(["", f"**Advice:** {advice}"])
     return "\n".join(lines)
 
 
-def _verify_advice(status: str) -> str:
-    return {
-        "verified": (
+def _verify_advice(status: str, checks_run: int = 2) -> str:
+    if status == "verified":
+        if checks_run == 0:
+            return (
+                "The URL is reachable, but no recorded release or response hash was "
+                "supplied, so content reproducibility was not verified. Re-run with "
+                "the recorded release and response_sha256 to confirm the bytes are "
+                "unchanged."
+            )
+        if checks_run == 1:
+            return (
+                "The one supplied check passed, but only release or hash was provided. "
+                "Supply both for full byte-level reproducibility assurance."
+            )
+        return (
             "Both checks passed. The recorded provenance is reproducible against the "
             "live UniProt API."
-        ),
+        )
+    return {
         "release_drift": (
             "UniProt has moved past the release recorded in this provenance. The "
             "underlying entry may also have changed; if you need byte-level "

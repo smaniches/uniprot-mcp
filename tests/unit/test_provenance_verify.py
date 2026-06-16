@@ -246,6 +246,32 @@ async def test_verify_markdown_renders_drift_with_advice_pointing_at_ftp() -> No
     assert "FTP snapshot" in out  # advice text mentions the recommended remediation
 
 
+async def test_verify_markdown_url_only_advice_does_not_claim_both() -> None:
+    """URL-only verification (no release/hash supplied) is reachable, but the
+    advice must not claim 'Both checks passed' — no content check ran."""
+    body = dict(_TP53_BODY)
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/P04637").mock(return_value=_fake_response(body, release="2026_02"))
+        out = await uniprot_provenance_verify(_TP53_URL, response_format="markdown")
+    assert "**Status:** verified" in out
+    assert "Both checks passed" not in out
+    assert "no recorded release or response hash was supplied" in out
+
+
+async def test_verify_markdown_single_check_advice_does_not_claim_both() -> None:
+    """Supplying only the release verifies, but the advice must flag that only
+    one of the two checks ran."""
+    body = dict(_TP53_BODY)
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/P04637").mock(return_value=_fake_response(body, release="2026_02"))
+        out = await uniprot_provenance_verify(
+            _TP53_URL, release="2026_02", response_format="markdown"
+        )
+    assert "**Status:** verified" in out
+    assert "Both checks passed" not in out
+    assert "only release or hash was provided" in out
+
+
 # ---------------------------------------------------------------------------
 # FASTA accept_header — Bug A regression tests
 # ---------------------------------------------------------------------------
