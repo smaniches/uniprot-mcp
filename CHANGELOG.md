@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.10](https://github.com/smaniches/uniprot-mcp/compare/v1.1.9...v1.1.10) (2026-06-16)
+
+
+### Bug Fixes
+
+* **cache:** unlink temp file on write failure to keep writes atomic ([#77](https://github.com/smaniches/uniprot-mcp/issues/77)) ([c21b554](https://github.com/smaniches/uniprot-mcp/commit/c21b554f764381db18737f8213b1680f8d774697))
+* **client:** sanitize Retry-After, raise on terminal id-mapping jobs, handle AlphaFold 404 ([#80](https://github.com/smaniches/uniprot-mcp/issues/80)) ([5ceb94e](https://github.com/smaniches/uniprot-mcp/commit/5ceb94e771b0717d6154efb1394803845f227d7a))
+* explicit utf-8 read in README receipts snippet (Windows-safe) ([#62](https://github.com/smaniches/uniprot-mcp/issues/62)) ([147a549](https://github.com/smaniches/uniprot-mcp/commit/147a54999f911bc775e9090335b0d07f4fa59597))
+* **formatters:** GO aspect filter in JSON + unknown positions render as '?' ([#79](https://github.com/smaniches/uniprot-mcp/issues/79)) ([5a7ff11](https://github.com/smaniches/uniprot-mcp/commit/5a7ff110fadb7d40f6f776b9d2284c21eabc972a))
+* **proteinchem:** correct swapped Trp/Tyr 280 nm extinction coefficients ([#73](https://github.com/smaniches/uniprot-mcp/issues/73)) ([a2f6fd7](https://github.com/smaniches/uniprot-mcp/commit/a2f6fd70fa3cabf1f6d123a0411093f35a4fc172))
+* **proteinchem:** count residues per-character to avoid fabricating residues ([#78](https://github.com/smaniches/uniprot-mcp/issues/78)) ([ed74a38](https://github.com/smaniches/uniprot-mcp/commit/ed74a38b0299f8b6cb236f50a2024c6fc59faf0c))
+* provenance integrity and cache documentation honesty ([#74](https://github.com/smaniches/uniprot-mcp/issues/74)) ([e0b8c0f](https://github.com/smaniches/uniprot-mcp/commit/e0b8c0f72c117b4a101d3be682bb94de98b0f16e))
+
+
+### Documentation
+
+* **replicate:** resolve latest published version dynamically; correct stale version examples ([#82](https://github.com/smaniches/uniprot-mcp/issues/82)) ([939844e](https://github.com/smaniches/uniprot-mcp/commit/939844e6948d6a58fcdf0139928b3bc910e7c950))
+* verifiable-provenance receipts demo, front and center ([#61](https://github.com/smaniches/uniprot-mcp/issues/61)) ([ed77002](https://github.com/smaniches/uniprot-mcp/commit/ed77002c1873c5933ef6e1a41066fcc0f7c44260))
+
+
+### CI/CD
+
+* add docstring-coverage gate (interrogate) ([#71](https://github.com/smaniches/uniprot-mcp/issues/71)) ([d2eb81e](https://github.com/smaniches/uniprot-mcp/commit/d2eb81e41d442c0c8e24e3d32fe8c9fef561a30a))
+* shard mutation testing + weekly schedule ([#68](https://github.com/smaniches/uniprot-mcp/issues/68)) ([fb93d8b](https://github.com/smaniches/uniprot-mcp/commit/fb93d8bc0bedd9d3bc4c147e583559faea2df2ce))
+
 ## [Unreleased]
 
 
