@@ -12,6 +12,7 @@ ast-serialize==0.5.0
     # via mypy
 attrs==26.1.0
     # via
+    #   interrogate
     #   jsonschema
     #   referencing
 bandit==1.9.4
@@ -31,12 +32,15 @@ cfgv==3.5.0
     # via pre-commit
 charset-normalizer==3.4.7
     # via requests
-click==8.4.1 ; sys_platform != 'emscripten'
-    # via uvicorn
-colorama==0.4.6 ; sys_platform == 'win32'
+click==8.4.1
+    # via
+    #   interrogate
+    #   uvicorn
+colorama==0.4.6
     # via
     #   bandit
     #   click
+    #   interrogate
     #   pytest
 coverage==7.14.1
     # via pytest-cov
@@ -77,6 +81,8 @@ idna==3.18
     #   requests
 iniconfig==2.3.0
     # via pytest
+interrogate==1.7.0
+    # via uniprot-mcp-server (pyproject.toml)
 jsonschema==4.26.0
     # via mcp
 jsonschema-specifications==2025.9.1
@@ -125,6 +131,8 @@ pluggy==1.6.0
     #   pytest-cov
 pre-commit==4.6.0
     # via uniprot-mcp-server (pyproject.toml)
+py==1.11.0
+    # via interrogate
 py-serializable==2.1.0
     # via cyclonedx-python-lib
 pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
@@ -204,6 +212,8 @@ stevedore==5.8.0
     # via bandit
 syrupy==5.3.2
     # via uniprot-mcp-server (pyproject.toml)
+tabulate==0.10.0
+    # via interrogate
 tomli==2.4.1
     # via pip-audit
 tomli-w==1.2.0
