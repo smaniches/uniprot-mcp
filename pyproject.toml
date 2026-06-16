@@ -201,16 +201,18 @@ skips = ["B101"]  # asserts in non-test code only, but we don't use them anyway
 
 [tool.interrogate]
 # Docstring-coverage gate over the package public + internal surface.
-# `fail-under` is pinned at the current measured level and is intended to
-# ratchet upward only: a PR that lowers coverage fails CI; raising it is
-# welcome. Run locally with: interrogate -c pyproject.toml src/uniprot_mcp
-fail-under = 67
-ignore-init-method = true
-ignore-magic = true
-ignore-nested-functions = true
-ignore-module = false
-ignore-private = false
-ignore-semiprivate = false
+# Keys use underscores (interrogate accepts both; underscores are the
+# documented form). `fail_under` is pinned at the exact current baseline
+# (115/171 documented objects = 67.25%) and is a one-way ratchet: any
+# regression fails CI; raising it is welcome.
+# Run locally with: interrogate -c pyproject.toml src/uniprot_mcp
+fail_under = 67.25
+ignore_init_method = true
+ignore_magic = true
+ignore_nested_functions = true
+ignore_module = false
+ignore_private = false
+ignore_semiprivate = false
 exclude = ["tests", "_scratch"]
 
 
