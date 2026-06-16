@@ -142,7 +142,7 @@ def test_fmt_citation_derives_id_from_cross_reference() -> None:
 
 
 def test_fmt_go_json_applies_aspect_filter(fixture_loader) -> None:
-    """M5: JSON output must be narrowed by ``aspect_filter`` exactly as the
+    """JSON output must be narrowed by ``aspect_filter`` exactly as the
     markdown path is, instead of returning every GO ref."""
     import json
 
@@ -160,7 +160,7 @@ def test_fmt_go_json_applies_aspect_filter(fixture_loader) -> None:
 
 
 def test_fmt_go_aspect_filter_drops_unprefixed_refs() -> None:
-    """M5: a GO ref whose ``GoTerm`` carries no recognized aspect prefix is
+    """a GO ref whose ``GoTerm`` carries no recognized aspect prefix is
     dropped by an active aspect filter in JSON output, so the JSON and
     markdown paths agree (markdown already discards such refs because they
     never enter ``by_aspect``)."""
@@ -188,7 +188,7 @@ def test_fmt_go_aspect_filter_drops_unprefixed_refs() -> None:
 
 
 def test_fmt_features_null_boundary_renders_question_mark() -> None:
-    """M6: a feature whose start (or end) boundary is the UniProt unknown
+    """a feature whose start (or end) boundary is the UniProt unknown
     sentinel ``{"value": null, "modifier": "UNKNOWN"}`` must render as ``"?"``
     not the literal string ``"None"``."""
     from uniprot_mcp.formatters import fmt_features
@@ -219,7 +219,7 @@ def test_fmt_features_null_boundary_renders_question_mark() -> None:
 
 
 def test_fmt_variants_null_position_renders_question_mark() -> None:
-    """M6: a natural-variant feature with a null start boundary must render
+    """a natural-variant feature with a null start boundary must render
     the mutation position as ``"?"`` not ``"None"``."""
     from uniprot_mcp.formatters import fmt_variants
 
@@ -241,7 +241,7 @@ def test_fmt_variants_null_position_renders_question_mark() -> None:
 
 
 def test_fmt_active_sites_null_boundary_renders_question_mark() -> None:
-    """M6: the shared ``_fmt_filtered_features`` path (here via
+    """the shared ``_fmt_filtered_features`` path (here via
     ``fmt_active_sites``) must render a null boundary as ``"?"`` not
     ``"None"``. With BOTH boundaries unknown, ``start == end`` (both ``"?"``)
     so the renderer collapses the range to a single ``**?**``."""
@@ -264,10 +264,10 @@ def test_fmt_active_sites_null_boundary_renders_question_mark() -> None:
 
 
 def test_fmt_active_sites_missing_boundary_key_renders_question_mark() -> None:
-    """M6 coverage: a location object that omits the ``start``/``end`` key
+    """A location object that omits the ``start``/``end`` key
     entirely (so ``loc.get(boundary)`` is falsy) must still render ``"?"`` --
     covering the ``(loc.get(boundary) or {})`` fallback arc of the shared
-    helper introduced by the M6 fix."""
+    null-boundary helper."""
     from uniprot_mcp.formatters import fmt_active_sites
 
     feats = [
