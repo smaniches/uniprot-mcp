@@ -229,6 +229,17 @@ def _json_envelope(data: Any, provenance: Provenance | None) -> str:
     return json.dumps(payload, indent=2, ensure_ascii=False, default=str)
 
 
+def _loc_pos(loc: dict[str, Any], boundary: str) -> Any:
+    """Read a feature location boundary (``"start"`` or ``"end"``) value,
+    rendering an unknown boundary as the ``"?"`` sentinel. UniProt encodes
+    an unknown boundary as ``{"value": null, "modifier": "UNKNOWN"}`` -- the
+    ``value`` key is present but null -- so a plain ``.get("value", "?")``
+    would surface the literal ``None``. Coalesce that null to ``"?"`` while
+    leaving a real (non-null) position untouched."""
+    value = (loc.get(boundary) or {}).get("value", "?")
+    return "?" if value is None else value
+
+
 def fmt_entry(data: Entry, fmt: str = "markdown", *, provenance: Provenance | None = None) -> str:
     if fmt == "json":
         return _json_envelope(data, provenance)
@@ -324,8 +335,8 @@ def fmt_features(
         lines.append(f"### {ftype} ({len(feats)})")
         for feat in feats[:20]:
             loc = feat.get("location", {}) or {}
-            start = loc.get("start", {}).get("value", "?")
-            end = loc.get("end", {}).get("value", "?")
+            start = _loc_pos(loc, "start")
+            end = _loc_pos(loc, "end")
             desc = feat.get("description", "")
             lines.append(f"  {start}-{end}: {desc}" if desc else f"  {start}-{end}")
         if len(feats) > 20:
@@ -334,6 +345,21 @@ def fmt_features(
     if provenance is not None:
         lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)
+
+
+def _go_aspect_of(ref: Xref) -> str:
+    """Return the single-letter GO aspect (``"F"``/``"P"``/``"C"``) for a
+    GO cross-reference by reading the ``GoTerm`` property prefix, or ``""``
+    when the term carries no recognized aspect prefix. Shared by ``fmt_go``
+    so the JSON aspect filter and the markdown aspect binning agree."""
+    props: dict[str, str] = {
+        str(p["key"]): str(p["value"]) for p in ref.get("properties", []) or []
+    }
+    term = props.get("GoTerm", "")
+    for prefix in ("F:", "P:", "C:"):
+        if term.startswith(prefix):
+            return prefix[0]
+    return ""
 
 
 def fmt_go(
@@ -345,6 +371,8 @@ def fmt_go(
     provenance: Provenance | None = None,
 ) -> str:
     go_refs: list[Xref] = [x for x in xrefs if x.get("database") == "GO"]
+    if aspect_filter:
+        go_refs = [x for x in go_refs if _go_aspect_of(x) == aspect_filter]
     if fmt == "json":
         return _json_envelope(go_refs, provenance)
     by_aspect: dict[str, list[tuple[str, str, str]]] = {"F": [], "P": [], "C": []}
@@ -358,8 +386,6 @@ def fmt_go(
         for prefix in ("F:", "P:", "C:"):
             if term.startswith(prefix):
                 by_aspect[prefix[0]].append((go_id, term[2:], ev))
-    if aspect_filter:
-        by_aspect = {k: v for k, v in by_aspect.items() if k == aspect_filter}
     names = {"F": "Molecular Function", "P": "Biological Process", "C": "Cellular Component"}
     total = sum(len(v) for v in by_aspect.values())
     lines: list[str] = [f"## GO: {accession} ({total} terms)", ""]
@@ -418,7 +444,7 @@ def fmt_variants(
     lines: list[str] = [f"## Variants: {accession} ({len(variants)})", ""]
     for v in variants[:50]:
         loc = v.get("location", {}) or {}
-        pos = loc.get("start", {}).get("value", "?")
+        pos = _loc_pos(loc, "start")
         desc = v.get("description", "")
         alt = v.get("alternativeSequence", {}) or {}
         orig = alt.get("originalSequence", "")
@@ -1799,8 +1825,8 @@ def _fmt_filtered_features(
             lines.append(f"### {ftype} ({len(feats)})")
             for feat in feats:
                 loc = feat.get("location") or {}
-                start = (loc.get("start") or {}).get("value", "?")
-                end = (loc.get("end") or {}).get("value", "?")
+                start = _loc_pos(loc, "start")
+                end = _loc_pos(loc, "end")
                 desc = str(feat.get("description", "") or "").strip()
                 ligand = feat.get("ligand") or {}
                 ligand_name = (
