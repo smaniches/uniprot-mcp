@@ -7,7 +7,7 @@ recompute from the FASTA. References:
   pK values (Lehninger)        — pI by binary search over net charge
   Kyte-Doolittle hydropathy    — GRAVY (J. Mol. Biol. 157, 105-132, 1982)
   Aromaticity (F + W + Y)      — Lobry & Gautier (1994)
-  Extinction coefficient 280nm — Pace et al. (1995): ε = 1490·Trp + 5500·Tyr
+  Extinction coefficient 280nm — Pace et al. (1995): ε = 5500·Trp + 1490·Tyr
                                   (assumes reduced cysteines; +125 per cystine
                                   if disulfide count is supplied)
   Average residue masses       — IUPAC, water-loss form (M_residue = M_aa - H2O)
@@ -193,7 +193,7 @@ def extinction_coefficient_280nm(counts: dict[str, int], cystines: int = 0) -> i
     """ε at 280 nm in M⁻¹·cm⁻¹ (Pace et al. 1995). Default assumes all
     cysteines reduced; pass ``cystines`` (the count of disulfide bonds,
     NOT free cysteines) to add 125 per S-S bond."""
-    return int(1490 * counts.get("W", 0) + 5500 * counts.get("Y", 0) + 125 * cystines)
+    return int(5500 * counts.get("W", 0) + 1490 * counts.get("Y", 0) + 125 * cystines)
 
 
 def compute_protein_properties(sequence: str, *, cystines: int = 0) -> ProteinProperties:
