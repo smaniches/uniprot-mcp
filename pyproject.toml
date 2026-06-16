@@ -172,6 +172,7 @@ select = [
     "N",        # pep8-naming
     "ASYNC",    # flake8-async
     "S",        # bandit-lite
+    "PGH",      # pygrep-hooks: require an error code on every type:ignore / noqa
 ]
 ignore = [
     "S101",     # use of assert in tests is fine
