@@ -446,7 +446,7 @@ def test_p53_n_terminal_10_residue_full_snapshot() -> None:
 
 
 def test_multichar_uppercase_letter_falls_to_other() -> None:
-    """L4: a letter whose uppercase form is multi-character (e.g. the German
+    """A letter whose uppercase form is multi-character (e.g. the German
     eszett -> "SS") must NOT inflate the residue count or fabricate residues.
 
     Counting over ``sequence.upper()`` first expands the eszett to "SS", so the

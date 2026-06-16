@@ -1,22 +1,21 @@
-"""Regression tests for the 2026-06-15 adversarial source-review fixes.
+"""Regression tests for client error-handling edge cases.
 
-Three independent client.py defects, each with branch coverage for the
-new arms introduced by the fix:
+Three independent ``client.py`` behaviors, each with branch coverage for
+the relevant arms:
 
-  M3/L1  ``parse_retry_after`` numeric branch — non-finite (nan/inf) and
-         negative delta-seconds. The buggy code returned ``nan`` (later
-         crashing ``asyncio.sleep``) and negative delays (zero-backoff hot
-         retry); the fix rejects non-finite to the exponential-backoff
-         fallback and clamps negatives to 0.0.
+  ``parse_retry_after`` numeric branch — non-finite (nan/inf) and
+  negative delta-seconds must not propagate: a non-finite value falls
+  back to the exponential-backoff delay and a negative value clamps to
+  0.0, rather than yielding a NaN sleep or a zero-backoff hot retry.
 
-  M4     ``id_mapping_results`` terminal-status branch — a job that comes
-         back HTTP 200 with a terminal ``jobStatus`` other than
-         NEW/RUNNING (e.g. "ERROR") must raise immediately, not spin 30
-         polls into a misleading ``TimeoutError``.
+  ``id_mapping_results`` terminal-status branch — a job that comes back
+  HTTP 200 with a terminal ``jobStatus`` other than NEW/RUNNING (e.g.
+  "ERROR") raises immediately rather than polling 30 times into a
+  misleading ``TimeoutError``.
 
-  M7     ``get_alphafold_summary`` 404 handling — the prediction endpoint
-         returns 404 for accessions with no model; that is a graceful
-         "no model" answer (empty record), not an opaque error.
+  ``get_alphafold_summary`` 404 handling — the prediction endpoint
+  returns 404 for accessions with no model; that is a graceful
+  "no model" answer (empty record), not an opaque error.
 
 Every expected value below is derived from an authoritative contract
 (RFC 7231, the documented fallback formula, UniProt's reference
@@ -42,7 +41,7 @@ from uniprot_mcp.client import (
 )
 
 # ---------------------------------------------------------------------------
-# M3/L1 — parse_retry_after numeric branch: non-finite + negative
+# parse_retry_after numeric branch: non-finite + negative
 # ---------------------------------------------------------------------------
 
 
@@ -135,7 +134,7 @@ async def test_client_sleeps_finite_duration_on_nan_retry_after() -> None:
 
 
 # ---------------------------------------------------------------------------
-# M4 — id_mapping_results terminal jobStatus branch
+# id_mapping_results terminal jobStatus branch
 # ---------------------------------------------------------------------------
 
 
@@ -248,7 +247,7 @@ async def test_id_mapping_results_new_status_still_polls_to_timeout() -> None:
 
 
 # ---------------------------------------------------------------------------
-# M7 — get_alphafold_summary 404 -> graceful empty record
+# get_alphafold_summary 404 -> graceful empty record
 # ---------------------------------------------------------------------------
 
 
