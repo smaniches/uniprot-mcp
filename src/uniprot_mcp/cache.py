@@ -1,11 +1,12 @@
 """Local provenance cache for offline replay.
 
-Opt-in via the ``UNIPROT_MCP_CACHE_DIR`` environment variable. When
-set, every successful UniProt response is written to disk under the
-specified directory, keyed by the SHA-256 of the request URL. The
-:func:`uniprot_replay_from_cache` MCP tool then lets agents (or human
-auditors) re-read a previously-recorded response *without* hitting the
-upstream — useful for:
+Opt-in via the ``UNIPROT_MCP_CACHE_DIR`` environment variable, which
+names the directory the :func:`uniprot_replay_from_cache` MCP tool reads
+from. Cache entries are written by :meth:`ProvenanceCache.write` (one
+JSON file per request URL, keyed by the SHA-256 of the URL); automatic
+write-through of every live response is not currently wired into the
+request path. Replaying a recorded entry lets agents (or human auditors)
+re-read it *without* hitting the upstream — useful for:
 
   - Reproducing a year-old answer from a sealed cache snapshot.
   - Working offline / behind air-gaps.

@@ -1594,7 +1594,7 @@ def fmt_properties(
     if e280 is not None:
         lines.append(
             f"**Extinction coefficient at 280 nm:** {e280} M⁻¹·cm⁻¹ "
-            f"(1490·#Trp + 5500·#Tyr; assumes reduced cysteines)"
+            f"(5500·#Trp + 1490·#Tyr; assumes reduced cysteines)"
         )
     counts = data.get("amino_acid_counts") or {}
     if counts:

@@ -293,6 +293,9 @@ async def test_target_dossier_renders_full_markdown() -> None:
     assert "Natural variants annotated: 2" in out
     assert "DNA-binding transcription factor activity" in out
     assert "Nucleus" in out
+    # Provenance footer attests the ENTRY fetch (release 2026_01), not the
+    # subsequent FASTA fetch (which carries no release header).
+    assert "2026_01" in out
 
 
 async def test_target_dossier_rejects_bad_accession() -> None:

@@ -134,6 +134,20 @@ async def test_batch_entries_happy_path() -> None:
     assert "results" in out or "P04637" in out
 
 
+async def test_batch_entries_all_invalid_does_not_leak_prior_provenance() -> None:
+    """When no accession is valid, batch_entries makes no request, so the
+    response must not carry a previous call's provenance footer (the shared
+    client would otherwise leak last_provenance)."""
+    entry = httpx.Response(200, json=_MIN_ENTRY, headers={"X-UniProt-Release": "2026_09"})
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/P04637").mock(return_value=entry)
+        await uniprot_get_entry("P04637")  # sets shared-client provenance
+    out = await uniprot_batch_entries("not-an-accession,also-bad")  # no valid -> no request
+    assert "Skipped 2 invalid accession(s)" in out
+    assert "_Source:" not in out
+    assert "2026_09" not in out
+
+
 async def test_id_mapping_happy_path() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.post("/idmapping/run").mock(return_value=httpx.Response(200, json={"jobId": "J1"}))
