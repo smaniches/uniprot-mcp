@@ -27,6 +27,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import math
 import os
 import re
 from datetime import UTC, datetime
@@ -210,9 +211,23 @@ def parse_retry_after(value: str | None, attempt: int) -> float:
     if not value:
         return fallback
     try:
-        return min(float(value), MAX_RETRY_AFTER_SECONDS)
+        seconds = float(value)
     except ValueError:
         pass
+    else:
+        # ``float()`` accepts "nan"/"inf", so a hostile or broken upstream
+        # can drive the numeric branch non-finite. ``min(nan, 120)`` is
+        # ``nan`` and ``min(inf, 120)`` is ``120``; a ``nan`` delay then
+        # reaches ``asyncio.sleep``, which on CPython treats it as a
+        # non-positive (immediate) wait -- i.e. zero-effective-backoff
+        # hot-retry against a rate-limited server (and other runtimes may
+        # reject it outright). Reject non-finite to the back-off fallback.
+        # Clamp negatives to 0.0, mirroring the HTTP-date branch -- RFC 7231
+        # 7.1.3 delta-seconds is a non-negative integer, so a negative
+        # value is malformed and must not yield a negative sleep.
+        if not math.isfinite(seconds):
+            return fallback
+        return min(max(seconds, 0.0), MAX_RETRY_AFTER_SECONDS)
     try:
         dt = parsedate_to_datetime(value)
     except (TypeError, ValueError):
@@ -408,6 +423,23 @@ class UniProtClient:
             if "redirectURL" in status:
                 url = status["redirectURL"]
                 return (await self._req("GET", url, params={"size": size})).json()  # type: ignore[no-any-return]
+            job_status = status.get("jobStatus")
+            if job_status is not None and job_status not in ("NEW", "RUNNING"):
+                # UniProt's reference id-mapping client
+                # (``check_id_mapping_results_ready``) polls only while
+                # ``jobStatus`` is "NEW" or "RUNNING" and treats any other
+                # value as a terminal failure. A terminal status (e.g.
+                # "ERROR") returned with HTTP 200 must raise immediately
+                # rather than spin 30 polls to a misleading TimeoutError;
+                # surface the upstream status and any message/error detail.
+                detail = status.get("messages") or status.get("errors") or status.get("message")
+                if isinstance(detail, list):
+                    # UniProt returns ``messages``/``errors`` as JSON arrays;
+                    # join them so the error reads as text rather than a raw
+                    # Python list repr (``['msg']``).
+                    detail = "; ".join(str(item) for item in detail)
+                suffix = f": {detail}" if detail else ""
+                raise RuntimeError(f"ID mapping failed (jobStatus={job_status!r}){suffix}")
             await asyncio.sleep(1.0)
         raise TimeoutError("ID mapping did not complete in 30s")
 
@@ -575,8 +607,16 @@ class UniProtClient:
             follow_redirects=True,
         ) as ext:
             resp = await ext.get(f"{ALPHAFOLD_API_BASE}/api/prediction/{accession}")
-            resp.raise_for_status()
-            payload: list[dict[str, Any]] = resp.json()
+            # The prediction endpoint returns 404 for accessions with no
+            # AlphaFold model (e.g. Q8WZ42). That is a legitimate
+            # "no model" answer, not an error -- route it into the same
+            # graceful empty-record branch as an empty ``[]`` body. Any
+            # other non-2xx status still raises ``HTTPStatusError``.
+            if resp.status_code == 404:
+                payload: list[dict[str, Any]] = []
+            else:
+                resp.raise_for_status()
+                payload = resp.json()
         if not payload:
             self._last_provenance = Provenance(
                 source="AlphaFoldDB",
