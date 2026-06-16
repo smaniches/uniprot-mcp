@@ -170,6 +170,38 @@ async def test_id_mapping_results_raises_on_terminal_error_status() -> None:
     # The upstream status and message must be surfaced, not hidden.
     assert "ERROR" in str(excinfo.value)
     assert "Invalid from/to database pair" in str(excinfo.value)
+    # The list-valued ``messages`` must read as text, not a raw list repr.
+    assert "['" not in str(excinfo.value)
+
+
+async def test_id_mapping_results_joins_list_detail() -> None:
+    """A terminal status whose ``messages`` is a multi-element JSON array
+    must render as semicolon-joined text, not a Python list repr.
+
+    Oracle: UniProt returns ``messages``/``errors`` as arrays; the readable
+    surface is ``a; b`` rather than ``['a', 'b']``. Fail-on-unfixed guard for
+    the list-join arm — the pre-fix code emits the bracketed repr.
+    """
+    with respx.mock(base_url=BASE_URL) as router:
+        router.get("/idmapping/status/JOBLIST").mock(
+            return_value=httpx.Response(
+                200,
+                json={"jobStatus": "ERROR", "messages": ["first problem", "second problem"]},
+            )
+        )
+        with patch("uniprot_mcp.client.asyncio.sleep", new=AsyncMock(return_value=None)):
+            client = UniProtClient()
+            try:
+                with pytest.raises(RuntimeError) as excinfo:
+                    await client.id_mapping_results("JOBLIST")
+            finally:
+                await client.close()
+
+    msg = str(excinfo.value)
+    assert "first problem; second problem" in msg
+    # Not a raw Python list repr (the pre-fix bug surfaces ``['a', 'b']``); the
+    # ``'`` quotes around the repr'd ``jobStatus`` are expected and fine.
+    assert "['" not in msg
 
 
 async def test_id_mapping_results_terminal_status_without_detail() -> None:

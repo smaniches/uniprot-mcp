@@ -433,6 +433,11 @@ class UniProtClient:
                 # rather than spin 30 polls to a misleading TimeoutError;
                 # surface the upstream status and any message/error detail.
                 detail = status.get("messages") or status.get("errors") or status.get("message")
+                if isinstance(detail, list):
+                    # UniProt returns ``messages``/``errors`` as JSON arrays;
+                    # join them so the error reads as text rather than a raw
+                    # Python list repr (``['msg']``).
+                    detail = "; ".join(str(item) for item in detail)
                 suffix = f": {detail}" if detail else ""
                 raise RuntimeError(f"ID mapping failed (jobStatus={job_status!r}){suffix}")
             await asyncio.sleep(1.0)
