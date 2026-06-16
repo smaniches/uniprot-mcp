@@ -1,4 +1,4 @@
-# One-command beta-lab replication of the v1.1.0 sealed benchmark (Windows).
+# One-command beta-lab replication of the sealed benchmark (Windows).
 #
 # See scripts/replicate.sh for the canonical narrative; this is the
 # PowerShell port for Windows beta-labs.
@@ -11,7 +11,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$VERSION = if ($env:VERSION) { $env:VERSION } else { "1.1.3" }
+$VERSION = if ($env:VERSION) { $env:VERSION } else { (Invoke-RestMethod "https://pypi.org/pypi/uniprot-mcp-server/json").info.version }
 $PKG = "uniprot-mcp-server"
 $REPO = "smaniches/uniprot-mcp"
 
