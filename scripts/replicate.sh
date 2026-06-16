@@ -41,7 +41,7 @@
 
 set -euo pipefail
 
-VERSION="${VERSION:-1.1.8}"
+VERSION="${VERSION:-$(python -c 'import json,urllib.request; print(json.load(urllib.request.urlopen("https://pypi.org/pypi/uniprot-mcp-server/json"))["info"]["version"])')}"
 PKG="uniprot-mcp-server"
 REPO="smaniches/uniprot-mcp"
 
