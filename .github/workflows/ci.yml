@@ -46,6 +46,8 @@ jobs:
         run: ruff format --check .
       - name: Mypy
         run: mypy src/uniprot_mcp
+      - name: Docstring coverage (interrogate)
+        run: interrogate -c pyproject.toml src/uniprot_mcp
       - name: Bandit (security lint)
         run: bandit -r src/uniprot_mcp
       - name: pip-audit (CVE scan)
