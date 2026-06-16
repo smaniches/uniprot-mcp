@@ -16,6 +16,7 @@ import json
 
 import pytest
 
+import uniprot_mcp.cache as cache_mod
 from uniprot_mcp.cache import (
     CACHE_DIR_ENV,
     ProvenanceCache,
@@ -209,3 +210,43 @@ async def test_replay_truncates_long_body_in_markdown(
     out = await uniprot_replay_from_cache(prov["url"], "markdown")
     assert "truncated" in out
     assert "10000 bytes" in out
+
+
+def test_cache_write_unlinks_tmp_when_replace_fails(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If ``os.replace`` raises (e.g. ENOSPC / EACCES), ``write`` must
+    propagate the exception *and* unlink the partial temp file so a failed
+    write never orphans a ``<key>.<random>.tmp`` on disk — upholding the
+    module's atomicity promise that a crashed process never leaves a
+    half-written entry behind.
+
+    Against the pre-fix code this test fails: the orphaned ``.tmp`` file
+    survives (the success path lacked any try/finally cleanup).
+    """
+    cache = ProvenanceCache(tmp_path)
+    url = "https://rest.uniprot.org/uniprotkb/P04637"
+    prov = {
+        "source": "UniProt",
+        "release": "2026_01",
+        "release_date": None,
+        "retrieved_at": "2026-04-25T12:00:00Z",
+        "url": url,
+        "response_sha256": "0" * 64,
+    }
+
+    def _boom(*_args: object, **_kwargs: object) -> None:
+        raise OSError("simulated ENOSPC during os.replace")
+
+    monkeypatch.setattr(cache_mod.os, "replace", _boom)
+
+    with pytest.raises(OSError, match="simulated ENOSPC"):
+        cache.write(url, '{"primaryAccession": "P04637"}', prov)  # type: ignore[arg-type]
+
+    # No orphaned temp file remains in the cache directory.
+    leftovers = [p.name for p in tmp_path.iterdir() if p.suffix == ".tmp"]
+    assert leftovers == [], f"failed write orphaned temp files: {leftovers}"
+    # And the final <key>.json was never created (the replace never ran).
+    assert not (tmp_path / f"{key_for(url)}.json").exists()
+    # Whole cache directory is clean.
+    assert list(tmp_path.iterdir()) == []
