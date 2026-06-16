@@ -67,10 +67,10 @@ def test_aromaticity_is_fyw_fraction() -> None:
 
 
 def test_extinction_coefficient_pace_formula() -> None:
-    """Pace 1995: ε = 1490·#Trp + 5500·#Tyr (reduced cysteines)."""
-    # 5 W + 3 Y = 1490*5 + 5500*3 = 7450 + 16500 = 23950
+    """Pace 1995: ε = 5500·#Trp + 1490·#Tyr (reduced cysteines)."""
+    # 5 W + 3 Y = 5500*5 + 1490*3 = 27500 + 4470 = 31970
     p = compute_protein_properties("WWWWWYYYAAAA")
-    assert p["extinction_coefficient_280nm"] == 23950
+    assert p["extinction_coefficient_280nm"] == 31970
 
 
 def test_gravy_for_pure_isoleucine() -> None:
