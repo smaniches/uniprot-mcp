@@ -181,16 +181,16 @@ def test_single_residue_net_charge_pH7_pins_pk_constants(aa: str, expected_charg
 # ---------------------------------------------------------------------------
 
 
-def test_extinction_one_W_zero_Y_pins_1490() -> None:
-    """Pace 1995: epsilon_W = 1490. With 1 Trp, 0 Tyr, 0 cystines,
-    epsilon must equal exactly 1490 (any mutation of the magic number
+def test_extinction_one_W_zero_Y_pins_5500() -> None:
+    """Pace 1995: epsilon_Trp = 5500. With 1 Trp, 0 Tyr, 0 cystines,
+    epsilon must equal exactly 5500 (any mutation of the magic number
     fails)."""
-    assert extinction_coefficient_280nm({"W": 1, "Y": 0}) == 1490
+    assert extinction_coefficient_280nm({"W": 1, "Y": 0}) == 5500
 
 
-def test_extinction_zero_W_one_Y_pins_5500() -> None:
-    """Pace 1995: epsilon_Y = 5500."""
-    assert extinction_coefficient_280nm({"W": 0, "Y": 1}) == 5500
+def test_extinction_zero_W_one_Y_pins_1490() -> None:
+    """Pace 1995: epsilon_Tyr = 1490."""
+    assert extinction_coefficient_280nm({"W": 0, "Y": 1}) == 1490
 
 
 def test_extinction_zero_W_zero_Y_one_cystine_pins_125() -> None:
@@ -199,8 +199,8 @@ def test_extinction_zero_W_zero_Y_one_cystine_pins_125() -> None:
 
 
 def test_extinction_combined_pins_full_formula() -> None:
-    """5 W + 3 Y + 2 cystines → 1490*5 + 5500*3 + 125*2 = 24200."""
-    assert extinction_coefficient_280nm({"W": 5, "Y": 3}, cystines=2) == 24200
+    """5 W + 3 Y + 2 cystines → 5500*5 + 1490*3 + 125*2 = 32220."""
+    assert extinction_coefficient_280nm({"W": 5, "Y": 3}, cystines=2) == 32220
 
 
 def test_extinction_zero_inputs_returns_zero() -> None:
@@ -216,7 +216,7 @@ def test_extinction_returns_int_not_float() -> None:
     would return float for non-integer cystine counts."""
     e = extinction_coefficient_280nm({"W": 5, "Y": 3})
     assert isinstance(e, int)
-    assert e == 1490 * 5 + 5500 * 3  # 24200 - 125*0
+    assert e == 5500 * 5 + 1490 * 3  # 31970, no cystines
 
 
 # ---------------------------------------------------------------------------
@@ -443,3 +443,23 @@ def test_p53_n_terminal_10_residue_full_snapshot() -> None:
     assert p["amino_acid_counts"]["V"] == 1
     # Total of all standard AAs counts == length
     assert sum(p["amino_acid_counts"][aa] for aa in "ACDEFGHIKLMNPQRSTVWY") == 10
+
+
+def test_multichar_uppercase_letter_falls_to_other() -> None:
+    """L4: a letter whose uppercase form is multi-character (e.g. the German
+    eszett -> "SS") must NOT inflate the residue count or fabricate residues.
+
+    Counting over ``sequence.upper()`` first expands the eszett to "SS", so the
+    single input character was double-counted as two Ser. Counting per input
+    character (uppercasing each one) keeps the length invariant and routes the
+    eszett to the "other" bucket instead.
+    """
+    eszett = chr(0xDF)
+    p = compute_protein_properties("A" + eszett + "A")
+    assert p["length"] == 2
+    assert p["amino_acid_counts"]["A"] == 2
+    assert p["amino_acid_counts"]["S"] == 0
+    assert p["amino_acid_counts"]["other"] == 1
+    # MW = 2 * Ala residue mass + one water, derived from ExPASy/IUPAC values
+    # (Ala residue 71.0788, water 18.01528) -- independent of code output.
+    assert math.isclose(p["molecular_weight"], round(2 * 71.0788 + 18.01528, 4), abs_tol=1e-6)
