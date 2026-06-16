@@ -14,7 +14,9 @@ from __future__ import annotations
 import json
 
 import httpx
+import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.client import (
     CITATION_ID_RE,
@@ -67,30 +69,44 @@ def test_citation_id_regex() -> None:
 
 
 async def test_get_uniparc_rejects_bad_upi_without_network() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_uniparc("not-a-upi", "markdown")
-    assert "Input error" in out and "UPI" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_uniparc("not-a-upi", "markdown")
+    msg = str(exc_info.value)
+    assert "Input error" in msg and "UPI" in msg
     assert not router.calls
 
 
 async def test_get_proteome_rejects_bad_upid_without_network() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_proteome("UP12345", "markdown")
-    assert "Input error" in out and "UP" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_proteome("UP12345", "markdown")
+    msg = str(exc_info.value)
+    assert "Input error" in msg and "UP" in msg
     assert not router.calls
 
 
 async def test_get_citation_rejects_non_numeric() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_citation("PMID:1234", "markdown")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_citation("PMID:1234", "markdown")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 
 async def test_resolve_pdb_rejects_bad_accession() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_resolve_pdb("not-real", "markdown")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_resolve_pdb("not-real", "markdown")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 

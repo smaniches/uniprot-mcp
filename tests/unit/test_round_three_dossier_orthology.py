@@ -13,7 +13,9 @@ from __future__ import annotations
 import json
 
 import httpx
+import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.server import (
     _ORTHOLOGY_DATABASES,
@@ -102,9 +104,12 @@ async def test_orthology_json_envelope() -> None:
 
 
 async def test_orthology_rejects_bad_accession() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_resolve_orthology("not-real")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_resolve_orthology("not-real")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 
@@ -299,9 +304,12 @@ async def test_target_dossier_renders_full_markdown() -> None:
 
 
 async def test_target_dossier_rejects_bad_accession() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_target_dossier("not-real")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_target_dossier("not-real")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 

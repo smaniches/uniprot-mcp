@@ -19,7 +19,9 @@ from __future__ import annotations
 import json
 
 import httpx
+import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.client import canonical_response_hash
 from uniprot_mcp.server import uniprot_provenance_verify
@@ -69,19 +71,24 @@ def test_canonical_hash_falls_back_to_bytes_for_non_json() -> None:
 
 
 async def test_verify_rejects_non_uniprot_url() -> None:
-    out = await uniprot_provenance_verify("https://example.com/foo", "")
-    assert "Input error" in out
-    assert "https://rest.uniprot.org/" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_provenance_verify("https://example.com/foo", "")
+    msg = str(exc_info.value)
+    assert "Input error" in msg
+    assert "https://rest.uniprot.org/" in msg
 
 
 async def test_verify_rejects_oversize_url() -> None:
-    out = await uniprot_provenance_verify("https://rest.uniprot.org/" + "x" * 2000)
-    assert "Input error" in out and "url" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_provenance_verify("https://rest.uniprot.org/" + "x" * 2000)
+    msg = str(exc_info.value)
+    assert "Input error" in msg and "url" in msg
 
 
 async def test_verify_rejects_oversize_release() -> None:
-    out = await uniprot_provenance_verify(_TP53_URL, release="2026_02_with_an_unreasonable_suffix")
-    assert "Input error" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_provenance_verify(_TP53_URL, release="2026_02_with_an_unreasonable_suffix")
+    assert "Input error" in str(exc_info.value)
 
 
 # ---------------------------------------------------------------------------
@@ -343,9 +350,11 @@ async def test_verify_fasta_with_json_accept_reports_hash_drift() -> None:
 
 
 async def test_verify_rejects_invalid_accept_header() -> None:
-    out = await uniprot_provenance_verify(
-        _TP53_URL,
-        accept_header="text/html",
-    )
-    assert "Input error" in out
-    assert "accept_header" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_provenance_verify(
+            _TP53_URL,
+            accept_header="text/html",
+        )
+    msg = str(exc_info.value)
+    assert "Input error" in msg
+    assert "accept_header" in msg

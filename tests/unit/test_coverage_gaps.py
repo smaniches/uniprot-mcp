@@ -15,6 +15,7 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp import server
 from uniprot_mcp.client import (
@@ -381,72 +382,83 @@ async def test_get_sequence_masks_runtime_error() -> None:
     """Upstream 4xx -> httpx.HTTPStatusError -> caught + masked."""
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.get("/uniprotkb/P04637").mock(return_value=httpx.Response(400))
-        out = await uniprot_get_sequence("P04637")
-    assert "Error in uniprot_get_sequence" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_get_sequence("P04637")
+    assert "Error in uniprot_get_sequence" in str(exc_info.value)
 
 
 async def test_get_go_terms_rejects_bad_aspect() -> None:
-    out = await uniprot_get_go_terms("P04637", "X")
-    assert "aspect must be" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_get_go_terms("P04637", "X")
+    assert "aspect must be" in str(exc_info.value)
 
 
 async def test_get_go_terms_masks_upstream_error() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.get("/uniprotkb/P04637").mock(return_value=httpx.Response(400))
-        out = await uniprot_get_go_terms("P04637")
-    assert "Error in uniprot_get_go_terms" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_get_go_terms("P04637")
+    assert "Error in uniprot_get_go_terms" in str(exc_info.value)
 
 
 async def test_get_cross_refs_masks_upstream_error() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.get("/uniprotkb/P04637").mock(return_value=httpx.Response(400))
-        out = await uniprot_get_cross_refs("P04637")
-    assert "Error in uniprot_get_cross_refs" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_get_cross_refs("P04637")
+    assert "Error in uniprot_get_cross_refs" in str(exc_info.value)
 
 
 async def test_get_variants_masks_upstream_error() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.get("/uniprotkb/P04637").mock(return_value=httpx.Response(400))
-        out = await uniprot_get_variants("P04637")
-    assert "Error in uniprot_get_variants" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_get_variants("P04637")
+    assert "Error in uniprot_get_variants" in str(exc_info.value)
 
 
 async def test_id_mapping_rejects_empty_ids() -> None:
-    out = await uniprot_id_mapping("", "Gene_Name", "UniProtKB")
-    assert "ids must contain at least one" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_id_mapping("", "Gene_Name", "UniProtKB")
+    assert "ids must contain at least one" in str(exc_info.value)
 
 
 async def test_id_mapping_rejects_over_100_ids() -> None:
     ids = ",".join(f"G{i}" for i in range(101))
-    out = await uniprot_id_mapping(ids, "Gene_Name", "UniProtKB")
-    assert "cannot exceed 100" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_id_mapping(ids, "Gene_Name", "UniProtKB")
+    assert "cannot exceed 100" in str(exc_info.value)
 
 
 async def test_id_mapping_masks_upstream_error() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.post("/idmapping/run").mock(return_value=httpx.Response(400))
-        out = await uniprot_id_mapping("BRCA1", "Gene_Name", "UniProtKB")
-    assert "Error in uniprot_id_mapping" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_id_mapping("BRCA1", "Gene_Name", "UniProtKB")
+    assert "Error in uniprot_id_mapping" in str(exc_info.value)
 
 
 async def test_batch_entries_oversize_input() -> None:
     huge = ",".join(["P04637"] * 2000)  # 12k chars, exceeds MAX_IDS_LEN
-    out = await uniprot_batch_entries(huge)
-    assert "Input error" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_batch_entries(huge)
+    assert "Input error" in str(exc_info.value)
 
 
 async def test_taxonomy_search_masks_upstream_error() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.get("/taxonomy/search").mock(return_value=httpx.Response(400))
-        out = await uniprot_taxonomy_search("Homo sapiens")
-    assert "Error in uniprot_taxonomy_search" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_taxonomy_search("Homo sapiens")
+    assert "Error in uniprot_taxonomy_search" in str(exc_info.value)
 
 
 async def test_search_masks_upstream_error() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.get("/uniprotkb/search").mock(return_value=httpx.Response(400))
-        out = await uniprot_search("kinase")
-    assert "Error in uniprot_search" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_search("kinase")
+    assert "Error in uniprot_search" in str(exc_info.value)
 
 
 async def test_get_features_with_filter_happy_path() -> None:
