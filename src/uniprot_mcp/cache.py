@@ -1,11 +1,12 @@
 """Local provenance cache for offline replay.
 
-Opt-in via the ``UNIPROT_MCP_CACHE_DIR`` environment variable. When
-set, every successful UniProt response is written to disk under the
-specified directory, keyed by the SHA-256 of the request URL. The
-:func:`uniprot_replay_from_cache` MCP tool then lets agents (or human
-auditors) re-read a previously-recorded response *without* hitting the
-upstream — useful for:
+Opt-in via the ``UNIPROT_MCP_CACHE_DIR`` environment variable, which
+names the directory the :func:`uniprot_replay_from_cache` MCP tool reads
+from. Cache entries are written by :meth:`ProvenanceCache.write` (one
+JSON file per request URL, keyed by the SHA-256 of the URL); automatic
+write-through of every live response is not currently wired into the
+request path. Replaying a recorded entry lets agents (or human auditors)
+re-read it *without* hitting the upstream — useful for:
 
   - Reproducing a year-old answer from a sealed cache snapshot.
   - Working offline / behind air-gaps.
@@ -89,17 +90,26 @@ class ProvenanceCache:
         }
         encoded = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         # Use a NamedTemporaryFile in the same directory so os.replace
-        # is guaranteed atomic on the same filesystem.
-        with tempfile.NamedTemporaryFile(
-            mode="wb",
-            dir=self.base_dir,
-            prefix=f"{key_for(url)}.",
-            suffix=".tmp",
-            delete=False,
-        ) as tf:
-            tf.write(encoded)
-            tmp_path = Path(tf.name)
-        os.replace(tmp_path, target)
+        # is guaranteed atomic on the same filesystem. If the write or the
+        # replace raises (e.g. ENOSPC), unlink the partial temp file before
+        # re-raising so a failed write never orphans a ``.tmp`` on disk.
+        tmp_path: Path | None = None
+        replaced = False
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                dir=self.base_dir,
+                prefix=f"{key_for(url)}.",
+                suffix=".tmp",
+                delete=False,
+            ) as tf:
+                tmp_path = Path(tf.name)
+                tf.write(encoded)
+            os.replace(tmp_path, target)
+            replaced = True
+        finally:
+            if not replaced and tmp_path is not None:
+                tmp_path.unlink(missing_ok=True)
         return target
 
     def read(self, url: str) -> dict[str, object] | None:
