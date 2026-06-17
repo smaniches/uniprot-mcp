@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.1](https://github.com/smaniches/uniprot-mcp/compare/v1.2.0...v1.2.1) (2026-06-17)
+
+
+### Documentation
+
+* **citation:** add v1.2.0 Zenodo version DOI and align release date ([#90](https://github.com/smaniches/uniprot-mcp/issues/90)) ([e5a5e3b](https://github.com/smaniches/uniprot-mcp/commit/e5a5e3b722decd272ccce0ec7315a5c8a3ddcfff))
+* soften two overstated phrasings ([#92](https://github.com/smaniches/uniprot-mcp/issues/92)) ([e874dec](https://github.com/smaniches/uniprot-mcp/commit/e874dec4078c97161c8a2d45e7fa1c19279a5b5f))
+
 ## [1.2.0](https://github.com/smaniches/uniprot-mcp/compare/v1.1.10...v1.2.0) (2026-06-17)
 
 
