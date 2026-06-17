@@ -9,7 +9,9 @@ from __future__ import annotations
 import json
 
 import httpx
+import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.client import UNIREF_ID_RE
 from uniprot_mcp.formatters import (
@@ -58,20 +60,26 @@ def test_uniref_id_regex_rejects_non_canonical() -> None:
 
 
 async def test_get_uniref_rejects_bad_id_without_network() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_uniref("UniRef25_P04637", "markdown")
-    assert "Input error" in out and "UniRef" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_uniref("UniRef25_P04637", "markdown")
+    msg = str(exc_info.value)
+    assert "Input error" in msg and "UniRef" in msg
     assert not router.calls
 
 
 async def test_search_uniref_rejects_bad_identity_tier() -> None:
-    out = await uniprot_search_uniref("kinase", identity_tier="42")
-    assert "identity_tier must be" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_search_uniref("kinase", identity_tier="42")
+    assert "identity_tier must be" in str(exc_info.value)
 
 
 async def test_search_uniref_rejects_oversize_query() -> None:
-    out = await uniprot_search_uniref("x" * 1000)
-    assert "Input error" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_search_uniref("x" * 1000)
+    assert "Input error" in str(exc_info.value)
 
 
 # ---------------------------------------------------------------------------
