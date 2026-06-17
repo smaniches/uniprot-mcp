@@ -34,7 +34,7 @@ How does the small intrinsically disordered protein α-synuclein cause disease, 
 
 ## Cross-references
 
-PDB has the fibril cryo-EM structures (revolutionary post-2018); ChEMBL has anle138b and aggregation modulators; ClinVar has familial PD variants (A53T, A30P, E46K, H50Q, G51D).
+PDB has the fibril cryo-EM structures (resolved post-2018); ChEMBL has anle138b and aggregation modulators; ClinVar has familial PD variants (A53T, A30P, E46K, H50Q, G51D).
 
 ## Adjacent ontologies
 

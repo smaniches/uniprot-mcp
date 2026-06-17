@@ -131,5 +131,5 @@ the old answer as a release-pinned record.
   knows; whether your specific drug-discovery program can translate
   that into a credible target hypothesis is a separate question.
 
-The dossier is the **fastest possible defensible first pass** — every
-fact has a provenance footer and a UniProt entry behind it.
+The dossier is a **fast, defensible first pass** — one call instead of
+nine, and every fact has a provenance footer and a UniProt entry behind it.

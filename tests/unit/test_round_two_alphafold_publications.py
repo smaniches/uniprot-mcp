@@ -10,7 +10,9 @@ from __future__ import annotations
 import json
 
 import httpx
+import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.client import ALPHAFOLD_API_BASE
 from uniprot_mcp.formatters import _plddt_band, fmt_alphafold_confidence
@@ -46,9 +48,9 @@ _ALPHAFOLD_FIXTURE = [
 
 
 async def test_alphafold_confidence_rejects_bad_accession() -> None:
-    with respx.mock(base_url=ALPHAFOLD_API_BASE) as router:
-        out = await uniprot_get_alphafold_confidence("not-real")
-    assert "Input error" in out
+    with respx.mock(base_url=ALPHAFOLD_API_BASE) as router, pytest.raises(ToolError) as exc_info:
+        await uniprot_get_alphafold_confidence("not-real")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 
@@ -177,9 +179,12 @@ def test_extract_publications_empty_when_no_references() -> None:
 
 
 async def test_get_publications_rejects_bad_accession() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_publications("not-real")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_publications("not-real")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 

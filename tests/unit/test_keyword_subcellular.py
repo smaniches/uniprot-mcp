@@ -16,7 +16,9 @@ from __future__ import annotations
 import json
 
 import httpx
+import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.client import KEYWORD_ID_RE, SUBCELLULAR_LOCATION_ID_RE
 from uniprot_mcp.formatters import (
@@ -63,33 +65,45 @@ def test_subcellular_location_id_regex_rejects_non_canonical() -> None:
 
 
 async def test_get_keyword_rejects_bad_id_without_network() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_keyword("KW-7", "markdown")
-    assert "Input error" in out and "KW-0007" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_keyword("KW-7", "markdown")
+    msg = str(exc_info.value)
+    assert "Input error" in msg and "KW-0007" in msg
     assert not router.calls
 
 
 async def test_get_keyword_rejects_bad_format() -> None:
-    out = await uniprot_get_keyword("KW-0007", "yaml")
-    assert "response_format must be one of" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_get_keyword("KW-0007", "yaml")
+    assert "response_format must be one of" in str(exc_info.value)
 
 
 async def test_get_subcellular_location_rejects_bad_id_without_network() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_subcellular_location("SL-86", "markdown")
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_subcellular_location("SL-86", "markdown")
     # Error message gives an example canonical ID. Real Cell-membrane = SL-0039.
-    assert "Input error" in out and "SL-" in out
+    msg = str(exc_info.value)
+    assert "Input error" in msg and "SL-" in msg
     assert not router.calls
 
 
 async def test_search_keywords_rejects_oversize_query() -> None:
-    out = await uniprot_search_keywords("x" * 1000, response_format="markdown")
-    assert "Input error" in out and "query" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_search_keywords("x" * 1000, response_format="markdown")
+    msg = str(exc_info.value)
+    assert "Input error" in msg and "query" in msg
 
 
 async def test_search_subcellular_locations_rejects_oversize_query() -> None:
-    out = await uniprot_search_subcellular_locations("x" * 1000)
-    assert "Input error" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_search_subcellular_locations("x" * 1000)
+    assert "Input error" in str(exc_info.value)
 
 
 # ---------------------------------------------------------------------------
