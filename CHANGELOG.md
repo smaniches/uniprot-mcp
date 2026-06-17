@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.0](https://github.com/smaniches/uniprot-mcp/compare/v1.1.10...v1.2.0) (2026-06-17)
+
+
+### Features
+
+* **server:** raise ToolError so failed tool calls set isError ([#88](https://github.com/smaniches/uniprot-mcp/issues/88)) ([e8bbf53](https://github.com/smaniches/uniprot-mcp/commit/e8bbf53835e846861b87670804da7556c7172487))
+
+
+### Bug Fixes
+
+* **client:** scope provenance per-request via ContextVar ([#86](https://github.com/smaniches/uniprot-mcp/issues/86)) ([2aaa112](https://github.com/smaniches/uniprot-mcp/commit/2aaa112d127bd5c7b7d8f2f4c8e37936d934851e))
+
+
+### Documentation
+
+* **atlas:** make atlas metadata version-agnostic and cite the concept DOI ([#87](https://github.com/smaniches/uniprot-mcp/issues/87)) ([507b730](https://github.com/smaniches/uniprot-mcp/commit/507b730afddcccd0f621e6acc409548bbb7a763b))
+* **citation:** add v1.1.10 Zenodo version DOI ([#84](https://github.com/smaniches/uniprot-mcp/issues/84)) ([05b89c2](https://github.com/smaniches/uniprot-mcp/commit/05b89c294418346f84f6a746104139410e5490c2))
+
 ## [1.1.10](https://github.com/smaniches/uniprot-mcp/compare/v1.1.9...v1.1.10) (2026-06-16)
 
 
