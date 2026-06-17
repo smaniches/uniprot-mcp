@@ -14,7 +14,9 @@ from __future__ import annotations
 import json
 
 import httpx
+import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.client import NCBI_EUTILS_BASE
 from uniprot_mcp.server import uniprot_resolve_clinvar
@@ -68,13 +70,15 @@ _BRCA1_ESUMMARY = {
 
 
 async def test_clinvar_rejects_bad_accession() -> None:
-    out = await uniprot_resolve_clinvar("not-real")
-    assert "Input error" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_resolve_clinvar("not-real")
+    assert "Input error" in str(exc_info.value)
 
 
 async def test_clinvar_rejects_bad_change() -> None:
-    out = await uniprot_resolve_clinvar("P38398", change="p.R175H")
-    assert "Input error" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_resolve_clinvar("P38398", change="p.R175H")
+    assert "Input error" in str(exc_info.value)
 
 
 # ---------------------------------------------------------------------------
@@ -172,9 +176,11 @@ async def test_clinvar_handles_entry_without_gene_name() -> None:
                 200, json=entry_no_gene, headers={"X-UniProt-Release": "2026_01"}
             )
         )
-        out = await uniprot_resolve_clinvar("P00000")
-    assert "Input error" in out
-    assert "no canonical gene name" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_resolve_clinvar("P00000")
+    msg = str(exc_info.value)
+    assert "Input error" in msg
+    assert "no canonical gene name" in msg
 
 
 async def test_clinvar_json_envelope() -> None:

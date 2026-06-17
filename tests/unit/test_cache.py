@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.cache import (
     CACHE_DIR_ENV,
@@ -187,8 +188,9 @@ async def test_replay_json_format_returns_full_entry(
 
 
 async def test_replay_rejects_oversize_url(monkeypatch: pytest.MonkeyPatch) -> None:
-    out = await uniprot_replay_from_cache("https://x.example/" + "y" * 2000)
-    assert "Input error" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_replay_from_cache("https://x.example/" + "y" * 2000)
+    assert "Input error" in str(exc_info.value)
 
 
 async def test_replay_truncates_long_body_in_markdown(

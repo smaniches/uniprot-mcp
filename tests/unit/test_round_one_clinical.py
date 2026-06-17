@@ -20,6 +20,7 @@ import math
 import httpx
 import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.proteinchem import (
     aromaticity,
@@ -142,9 +143,12 @@ def test_helper_functions_work_independently() -> None:
 
 
 async def test_compute_properties_rejects_bad_accession() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_compute_properties("not-real")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_compute_properties("not-real")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 
@@ -256,16 +260,22 @@ async def test_features_at_position_finds_no_features_outside_chain() -> None:
 
 
 async def test_features_at_position_rejects_negative_position() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_features_at_position("P04637", -5, "markdown")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_features_at_position("P04637", -5, "markdown")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 
 async def test_features_at_position_rejects_oversize_position() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_features_at_position("P04637", 999_999, "markdown")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_features_at_position("P04637", 999_999, "markdown")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 
@@ -312,9 +322,12 @@ async def test_lookup_variant_finds_no_match_for_unknown_change() -> None:
 
 
 async def test_lookup_variant_rejects_bad_change() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_lookup_variant("P04637", "p.R175H", "markdown")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_lookup_variant("P04637", "p.R175H", "markdown")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 
