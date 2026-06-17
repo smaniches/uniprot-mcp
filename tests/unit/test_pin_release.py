@@ -14,6 +14,7 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.client import (
     PIN_RELEASE_ENV,
@@ -163,15 +164,17 @@ async def test_server_tool_returns_agent_safe_release_mismatch_message() -> None
             srv._uniprot = None
         try:
             srv._uniprot = UniProtClient(pin_release="2026_02")
-            out = await uniprot_get_entry("P04637", "markdown")
+            with pytest.raises(ToolError) as exc_info:
+                await uniprot_get_entry("P04637", "markdown")
         finally:
             if srv._uniprot is not None:
                 await srv._uniprot.close()
                 srv._uniprot = None
-    assert "Release mismatch" in out
-    assert "'2026_02'" in out
-    assert "'2030_01'" in out
-    assert PIN_RELEASE_ENV in out  # advice mentions how to opt out
+    msg = str(exc_info.value)
+    assert "Release mismatch" in msg
+    assert "'2026_02'" in msg
+    assert "'2030_01'" in msg
+    assert PIN_RELEASE_ENV in msg  # advice mentions how to opt out
 
 
 def test_safe_error_formats_release_mismatch_distinctly() -> None:

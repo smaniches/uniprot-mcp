@@ -28,7 +28,9 @@ from __future__ import annotations
 import json
 
 import httpx
+import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp.formatters import (
     ACTIVE_SITE_FEATURE_TYPES,
@@ -233,16 +235,22 @@ async def test_active_sites_json_envelope() -> None:
 
 
 async def test_active_sites_rejects_bad_accession() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_active_sites("not-an-accession", "markdown")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_active_sites("not-an-accession", "markdown")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls  # no upstream call on validation failure
 
 
 async def test_active_sites_rejects_bad_format() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_active_sites("P12345", "yaml")
-    assert "Input error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_active_sites("P12345", "yaml")
+    assert "Input error" in str(exc_info.value)
     assert not router.calls
 
 

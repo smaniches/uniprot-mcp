@@ -25,6 +25,7 @@ import sys
 import httpx
 import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp import server
 from uniprot_mcp.server import (
@@ -440,8 +441,9 @@ async def test_resolve_clinvar_gene_name_block_not_dict() -> None:
     }
     with respx.mock(base_url=_BASE) as router:
         router.get("/uniprotkb/P04637").mock(return_value=httpx.Response(200, json=entry))
-        out = await uniprot_resolve_clinvar("P04637")
-    assert "no canonical gene name" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_resolve_clinvar("P04637")
+    assert "no canonical gene name" in str(exc_info.value)
 
 
 # ===========================================================================
@@ -465,29 +467,33 @@ async def test_accession_tool_masks_upstream_error(tool, path: str) -> None:
     """Each accession-based tool's ``except Exception -> _safe_error`` arc."""
     with respx.mock(base_url=_BASE) as router:
         router.get(path).mock(return_value=httpx.Response(400))
-        out = await tool("P04637")
-    assert out.startswith("Error in ")
+        with pytest.raises(ToolError) as exc_info:
+            await tool("P04637")
+    assert str(exc_info.value).startswith("Error in ")
 
 
 async def test_search_uniparc_masks_upstream_error() -> None:
     with respx.mock(base_url=_BASE) as router:
         router.get("/uniparc/search").mock(return_value=httpx.Response(400))
-        out = await uniprot_search_uniparc("taxonomy_id:9606")
-    assert "Error in uniprot_search_uniparc" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_search_uniparc("taxonomy_id:9606")
+    assert "Error in uniprot_search_uniparc" in str(exc_info.value)
 
 
 async def test_search_proteomes_masks_upstream_error() -> None:
     with respx.mock(base_url=_BASE) as router:
         router.get("/proteomes/search").mock(return_value=httpx.Response(400))
-        out = await uniprot_search_proteomes("organism_id:9606")
-    assert "Error in uniprot_search_proteomes" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_search_proteomes("organism_id:9606")
+    assert "Error in uniprot_search_proteomes" in str(exc_info.value)
 
 
 async def test_search_citations_masks_upstream_error() -> None:
     with respx.mock(base_url=_BASE) as router:
         router.get("/citations/search").mock(return_value=httpx.Response(400))
-        out = await uniprot_search_citations("p53")
-    assert "Error in uniprot_search_citations" in out
+        with pytest.raises(ToolError) as exc_info:
+            await uniprot_search_citations("p53")
+    assert "Error in uniprot_search_citations" in str(exc_info.value)
 
 
 # ===========================================================================

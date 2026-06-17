@@ -10,11 +10,13 @@ final resolved URL. Callers (MCP tool handlers) read that property
 immediately after a request and pass the record into the formatter,
 which surfaces it to the LLM or downstream consumer.
 
-Thread-safety: a single :class:`UniProtClient` is not safe to share
-across concurrent tasks that care about provenance. The stdio MCP
-transport serializes tool invocations, so the module-level singleton
-in ``server.py`` is fine; if you ever move to HTTP/SSE with parallel
-tool calls, give each invocation its own client.
+Thread-safety: provenance is stored in a request-scoped
+:class:`~contextvars.ContextVar`, so a single :class:`UniProtClient` is
+safe to share across concurrent asyncio tasks — each task reads the
+provenance of its own request, never another in-flight request's. The
+stdio MCP transport serializes tool invocations today; the context
+scoping also keeps the module-level singleton in ``server.py`` correct
+under a future parallel HTTP/SSE transport.
 
 Author: Santiago Maniches <santiago.maniches@gmail.com>
         ORCID https://orcid.org/0009-0005-6480-1987
@@ -25,6 +27,7 @@ License: Apache-2.0
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import hashlib
 import json
 import math
@@ -201,6 +204,19 @@ __all__ = [
 ]
 
 
+# Request-scoped provenance. Each successful request stores its provenance
+# here; the ``last_provenance`` property reads it back when a tool renders
+# its footer. Storing it in a :class:`~contextvars.ContextVar` (rather than a
+# shared instance attribute) makes provenance per-request: concurrent MCP tool
+# calls run as separate asyncio tasks, each with its own context copy, so a
+# footer can never attest the bytes of a different in-flight request. The
+# stdio transport serialises calls today, but this also makes the shared
+# module-level client safe under a future parallel HTTP/SSE transport.
+_request_provenance: contextvars.ContextVar[Provenance | None] = contextvars.ContextVar(
+    "uniprot_request_provenance", default=None
+)
+
+
 def parse_retry_after(value: str | None, attempt: int) -> float:
     """Parse an RFC 7231 ``Retry-After`` response header.
 
@@ -303,7 +319,6 @@ class UniProtClient:
 
     def __init__(self, *, pin_release: str | None = None) -> None:
         self._client: httpx.AsyncClient | None = None
-        self._last_provenance: Provenance | None = None
         if pin_release is None:
             pin_release = os.environ.get(PIN_RELEASE_ENV, "").strip() or None
         self._pin_release: str | None = pin_release
@@ -315,9 +330,13 @@ class UniProtClient:
 
     @property
     def last_provenance(self) -> Provenance | None:
-        """Provenance of the most recent successful request, or ``None``
-        if no request has completed yet on this client."""
-        return self._last_provenance
+        """Provenance of the most recent successful request in the current
+        request context, or ``None`` if no request has completed yet in it.
+
+        Backed by a request-scoped :class:`~contextvars.ContextVar`, so under
+        concurrent tool calls each task reads the provenance of its own
+        request — never another in-flight request's."""
+        return _request_provenance.get()
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -359,7 +378,7 @@ class UniProtClient:
                         observed=provenance["release"],
                         url=str(resp.url),
                     )
-                self._last_provenance = provenance
+                _request_provenance.set(provenance)
                 return resp
             except httpx.TimeoutException:
                 await asyncio.sleep(1.5 ** (attempt + 1))
@@ -405,7 +424,7 @@ class UniProtClient:
                         observed=provenance["release"],
                         url=str(resp.url),
                     )
-                self._last_provenance = provenance
+                _request_provenance.set(provenance)
                 job_id: str = resp.json()["jobId"]
                 return job_id
             except httpx.TimeoutException:
@@ -558,14 +577,16 @@ class UniProtClient:
             ids: list[str] = list(esearch_result.get("idlist") or [])
             total = int(esearch_result.get("count") or 0)
             if not ids:
-                self._last_provenance = Provenance(
-                    source="NCBI ClinVar (eutils)",
-                    release=None,
-                    release_date=None,
-                    retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    url=str(r_search.url),
-                    response_sha256=canonical_response_hash(r_search),
-                    accept_header="application/json",
+                _request_provenance.set(
+                    Provenance(
+                        source="NCBI ClinVar (eutils)",
+                        release=None,
+                        release_date=None,
+                        retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        url=str(r_search.url),
+                        response_sha256=canonical_response_hash(r_search),
+                        accept_header="application/json",
+                    )
                 )
                 return {"records": [], "total": total}
             r_summary = await ext.get(
@@ -580,14 +601,16 @@ class UniProtClient:
             rec = result_block.get(uid)
             if isinstance(rec, dict):
                 records.append(rec)
-        self._last_provenance = Provenance(
-            source="NCBI ClinVar (eutils)",
-            release=None,
-            release_date=None,
-            retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            url=str(r_summary.url),
-            response_sha256=canonical_response_hash(r_summary),
-            accept_header="application/json",
+        _request_provenance.set(
+            Provenance(
+                source="NCBI ClinVar (eutils)",
+                release=None,
+                release_date=None,
+                retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                url=str(r_summary.url),
+                response_sha256=canonical_response_hash(r_summary),
+                accept_header="application/json",
+            )
         )
         return {"records": records, "total": total}
 
@@ -618,27 +641,31 @@ class UniProtClient:
                 resp.raise_for_status()
                 payload = resp.json()
         if not payload:
-            self._last_provenance = Provenance(
-                source="AlphaFoldDB",
-                release=None,
-                release_date=None,
-                retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                url=str(resp.url),
-                response_sha256=canonical_response_hash(resp),
-                accept_header="application/json",
+            _request_provenance.set(
+                Provenance(
+                    source="AlphaFoldDB",
+                    release=None,
+                    release_date=None,
+                    retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    url=str(resp.url),
+                    response_sha256=canonical_response_hash(resp),
+                    accept_header="application/json",
+                )
             )
             return {}
         record: dict[str, Any] = payload[0]
         version_value = record.get("latestVersion")
         version = f"v{version_value}" if version_value is not None else None
-        self._last_provenance = Provenance(
-            source="AlphaFoldDB",
-            release=version,
-            release_date=str(record.get("modelCreatedDate") or "") or None,
-            retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            url=str(resp.url),
-            response_sha256=canonical_response_hash(resp),
-            accept_header="application/json",
+        _request_provenance.set(
+            Provenance(
+                source="AlphaFoldDB",
+                release=version,
+                release_date=str(record.get("modelCreatedDate") or "") or None,
+                retrieved_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                url=str(resp.url),
+                response_sha256=canonical_response_hash(resp),
+                accept_header="application/json",
+            )
         )
         return record
 

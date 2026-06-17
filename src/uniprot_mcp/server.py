@@ -34,10 +34,11 @@ import logging
 import os
 import re
 import sys
-from typing import Any, Final
+from typing import Any, Final, NoReturn
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
 from uniprot_mcp.cache import (
@@ -267,11 +268,14 @@ def _parse_variant_change(value: str) -> tuple[str, int, str]:
 
 
 def _safe_error(tool: str, exc: BaseException) -> str:
-    """Format an agent-safe error. Detail goes to stderr log, not the LLM.
+    """Build an agent-safe error message. Detail goes to the stderr log,
+    not the LLM.
 
     Output is intentionally human-readable plain text with no structured
-    error codes. Automation should branch on MCP-level isError, not on
-    string content.
+    error codes. This message becomes the body of the :class:`ToolError`
+    raised by :func:`_raise_tool_error`, so the MCP client receives it as
+    the content of an ``isError=True`` result; automation should branch on
+    that flag rather than parse this string.
     """
     logger.exception("tool=%s failed", tool)
     if isinstance(exc, _InputError):
@@ -289,6 +293,19 @@ def _safe_error(tool: str, exc: BaseException) -> str:
     return f"Error in {tool}: upstream request failed; see server logs for details."
 
 
+def _raise_tool_error(tool: str, exc: BaseException) -> NoReturn:
+    """Raise a sanitized :class:`ToolError` for a failed tool call.
+
+    The message is built by :func:`_safe_error`, so the same sanitized,
+    traceback-free text is used regardless of how the client surfaces it.
+    Raising (rather than returning the string) makes FastMCP mark the
+    result ``isError=True`` with this message as its content, giving MCP
+    clients a real error signal instead of an error-shaped success result.
+    Always raises; never returns.
+    """
+    raise ToolError(_safe_error(tool, exc)) from exc
+
+
 @mcp.tool(
     name="uniprot_get_entry",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
@@ -303,7 +320,7 @@ async def uniprot_get_entry(accession: str, response_format: str = "markdown") -
         data = await client.get_entry(accession)
         return fmt_entry(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_entry", exc)
+        _raise_tool_error("uniprot_get_entry", exc)
 
 
 @mcp.tool(name="uniprot_search", annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
@@ -335,7 +352,7 @@ async def uniprot_search(
         data = await client.search(q, size=size)
         return fmt_search(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_search", exc)
+        _raise_tool_error("uniprot_search", exc)
 
 
 @mcp.tool(
@@ -350,7 +367,7 @@ async def uniprot_get_sequence(accession: str) -> str:
         fasta = await client.get_fasta(accession)
         return fmt_fasta(fasta, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_sequence", exc)
+        _raise_tool_error("uniprot_get_sequence", exc)
 
 
 @mcp.tool(
@@ -374,7 +391,7 @@ async def uniprot_get_features(
             features = [f for f in features if str(f.get("type", "")).lower() in types]
         return fmt_features(features, accession, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_features", exc)
+        _raise_tool_error("uniprot_get_features", exc)
 
 
 @mcp.tool(
@@ -397,7 +414,7 @@ async def uniprot_get_go_terms(
             xrefs, accession, aspect or None, response_format, provenance=client.last_provenance
         )
     except Exception as exc:
-        return _safe_error("uniprot_get_go_terms", exc)
+        _raise_tool_error("uniprot_get_go_terms", exc)
 
 
 @mcp.tool(
@@ -419,7 +436,7 @@ async def uniprot_get_cross_refs(
             xrefs, accession, database or None, response_format, provenance=client.last_provenance
         )
     except Exception as exc:
-        return _safe_error("uniprot_get_cross_refs", exc)
+        _raise_tool_error("uniprot_get_cross_refs", exc)
 
 
 @mcp.tool(
@@ -436,7 +453,7 @@ async def uniprot_get_variants(accession: str, response_format: str = "markdown"
         features = data.get("features", []) or []
         return fmt_variants(features, accession, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_variants", exc)
+        _raise_tool_error("uniprot_get_variants", exc)
 
 
 @mcp.tool(
@@ -462,7 +479,7 @@ async def uniprot_id_mapping(
         data = await client.id_mapping_results(job_id)
         return fmt_idmapping(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_id_mapping", exc)
+        _raise_tool_error("uniprot_id_mapping", exc)
 
 
 @mcp.tool(
@@ -490,7 +507,7 @@ async def uniprot_batch_entries(accessions: str, response_format: str = "markdow
             )
         return out
     except Exception as exc:
-        return _safe_error("uniprot_batch_entries", exc)
+        _raise_tool_error("uniprot_batch_entries", exc)
 
 
 @mcp.tool(
@@ -509,7 +526,7 @@ async def uniprot_taxonomy_search(
         data = await client.taxonomy_search(query, size)
         return fmt_taxonomy(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_taxonomy_search", exc)
+        _raise_tool_error("uniprot_taxonomy_search", exc)
 
 
 @mcp.tool(
@@ -526,7 +543,7 @@ async def uniprot_get_keyword(keyword_id: str, response_format: str = "markdown"
         data = await client.get_keyword(keyword_id)
         return fmt_keyword(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_keyword", exc)
+        _raise_tool_error("uniprot_get_keyword", exc)
 
 
 @mcp.tool(
@@ -546,7 +563,7 @@ async def uniprot_search_keywords(
         data = await client.search_keywords(query, size=size)
         return fmt_keyword_search(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_search_keywords", exc)
+        _raise_tool_error("uniprot_search_keywords", exc)
 
 
 @mcp.tool(
@@ -565,7 +582,7 @@ async def uniprot_get_subcellular_location(
         data = await client.get_subcellular_location(location_id)
         return fmt_subcellular_location(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_subcellular_location", exc)
+        _raise_tool_error("uniprot_get_subcellular_location", exc)
 
 
 @mcp.tool(
@@ -587,7 +604,7 @@ async def uniprot_search_subcellular_locations(
             data, response_format, provenance=client.last_provenance
         )
     except Exception as exc:
-        return _safe_error("uniprot_search_subcellular_locations", exc)
+        _raise_tool_error("uniprot_search_subcellular_locations", exc)
 
 
 @mcp.tool(
@@ -606,7 +623,7 @@ async def uniprot_get_uniref(uniref_id: str, response_format: str = "markdown") 
         data = await client.get_uniref(uniref_id)
         return fmt_uniref(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_uniref", exc)
+        _raise_tool_error("uniprot_get_uniref", exc)
 
 
 @mcp.tool(
@@ -639,7 +656,7 @@ async def uniprot_search_uniref(
         data = await client.search_uniref(q, size=size)
         return fmt_uniref_search(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_search_uniref", exc)
+        _raise_tool_error("uniprot_search_uniref", exc)
 
 
 _ORTHOLOGY_DATABASES: Final[frozenset[str]] = frozenset(
@@ -687,7 +704,7 @@ async def uniprot_resolve_orthology(accession: str, response_format: str = "mark
                     grouped.setdefault(db, []).append(xid)
         return fmt_orthology(grouped, accession, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_resolve_orthology", exc)
+        _raise_tool_error("uniprot_resolve_orthology", exc)
 
 
 @mcp.tool(
@@ -735,7 +752,7 @@ async def uniprot_target_dossier(accession: str, response_format: str = "markdow
         dossier = _assemble_target_dossier(data, chemistry)
         return fmt_target_dossier(dossier, accession, response_format, provenance=entry_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_target_dossier", exc)
+        _raise_tool_error("uniprot_target_dossier", exc)
 
 
 def _assemble_target_dossier(entry: dict[str, Any], chemistry: dict[str, Any]) -> dict[str, Any]:
@@ -986,7 +1003,7 @@ async def uniprot_replay_from_cache(url: str, response_format: str = "markdown")
         ]
         return "\n".join(lines)
     except Exception as exc:
-        return _safe_error("uniprot_replay_from_cache", exc)
+        _raise_tool_error("uniprot_replay_from_cache", exc)
 
 
 @mcp.tool(
@@ -1046,7 +1063,7 @@ async def uniprot_resolve_clinvar(
             provenance=client.last_provenance,
         )
     except Exception as exc:
-        return _safe_error("uniprot_resolve_clinvar", exc)
+        _raise_tool_error("uniprot_resolve_clinvar", exc)
 
 
 @mcp.tool(
@@ -1076,7 +1093,7 @@ async def uniprot_get_alphafold_confidence(
             record, accession, response_format, provenance=client.last_provenance
         )
     except Exception as exc:
-        return _safe_error("uniprot_get_alphafold_confidence", exc)
+        _raise_tool_error("uniprot_get_alphafold_confidence", exc)
 
 
 @mcp.tool(
@@ -1100,7 +1117,7 @@ async def uniprot_get_publications(accession: str, response_format: str = "markd
             publications, accession, response_format, provenance=client.last_provenance
         )
     except Exception as exc:
-        return _safe_error("uniprot_get_publications", exc)
+        _raise_tool_error("uniprot_get_publications", exc)
 
 
 def _extract_publications(entry: dict[str, object]) -> list[dict[str, object]]:
@@ -1173,7 +1190,7 @@ async def uniprot_compute_properties(accession: str, response_format: str = "mar
             dict(properties), accession, response_format, provenance=client.last_provenance
         )
     except Exception as exc:
-        return _safe_error("uniprot_compute_properties", exc)
+        _raise_tool_error("uniprot_compute_properties", exc)
 
 
 @mcp.tool(
@@ -1213,7 +1230,7 @@ async def uniprot_features_at_position(
             provenance=client.last_provenance,
         )
     except Exception as exc:
-        return _safe_error("uniprot_features_at_position", exc)
+        _raise_tool_error("uniprot_features_at_position", exc)
 
 
 def _filter_features_by_type(
@@ -1250,7 +1267,7 @@ async def uniprot_get_active_sites(accession: str, response_format: str = "markd
             filtered, accession, response_format, provenance=client.last_provenance
         )
     except Exception as exc:
-        return _safe_error("uniprot_get_active_sites", exc)
+        _raise_tool_error("uniprot_get_active_sites", exc)
 
 
 @mcp.tool(
@@ -1274,7 +1291,7 @@ async def uniprot_get_processing_features(accession: str, response_format: str =
             filtered, accession, response_format, provenance=client.last_provenance
         )
     except Exception as exc:
-        return _safe_error("uniprot_get_processing_features", exc)
+        _raise_tool_error("uniprot_get_processing_features", exc)
 
 
 @mcp.tool(
@@ -1298,7 +1315,7 @@ async def uniprot_get_ptms(accession: str, response_format: str = "markdown") ->
         filtered = _filter_features_by_type(features, PTM_FEATURE_TYPES)
         return fmt_ptms(filtered, accession, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_ptms", exc)
+        _raise_tool_error("uniprot_get_ptms", exc)
 
 
 @mcp.tool(
@@ -1341,7 +1358,7 @@ async def uniprot_lookup_variant(
             matches, accession, change, response_format, provenance=client.last_provenance
         )
     except Exception as exc:
-        return _safe_error("uniprot_lookup_variant", exc)
+        _raise_tool_error("uniprot_lookup_variant", exc)
 
 
 @mcp.tool(
@@ -1401,7 +1418,7 @@ async def uniprot_get_disease_associations(
             associations, accession, response_format, provenance=client.last_provenance
         )
     except Exception as exc:
-        return _safe_error("uniprot_get_disease_associations", exc)
+        _raise_tool_error("uniprot_get_disease_associations", exc)
 
 
 @mcp.tool(
@@ -1421,7 +1438,7 @@ async def uniprot_get_uniparc(upi: str, response_format: str = "markdown") -> st
         data = await client.get_uniparc(upi)
         return fmt_uniparc(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_uniparc", exc)
+        _raise_tool_error("uniprot_get_uniparc", exc)
 
 
 @mcp.tool(
@@ -1441,7 +1458,7 @@ async def uniprot_search_uniparc(
         data = await client.search_uniparc(query, size=size)
         return fmt_uniparc_search(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_search_uniparc", exc)
+        _raise_tool_error("uniprot_search_uniparc", exc)
 
 
 @mcp.tool(
@@ -1460,7 +1477,7 @@ async def uniprot_get_proteome(proteome_id: str, response_format: str = "markdow
         data = await client.get_proteome(proteome_id)
         return fmt_proteome(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_proteome", exc)
+        _raise_tool_error("uniprot_get_proteome", exc)
 
 
 @mcp.tool(
@@ -1481,7 +1498,7 @@ async def uniprot_search_proteomes(
         data = await client.search_proteomes(query, size=size)
         return fmt_proteome_search(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_search_proteomes", exc)
+        _raise_tool_error("uniprot_search_proteomes", exc)
 
 
 @mcp.tool(
@@ -1498,7 +1515,7 @@ async def uniprot_get_citation(citation_id: str, response_format: str = "markdow
         data = await client.get_citation(citation_id)
         return fmt_citation(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_citation", exc)
+        _raise_tool_error("uniprot_get_citation", exc)
 
 
 @mcp.tool(
@@ -1518,7 +1535,7 @@ async def uniprot_search_citations(
         data = await client.search_citations(query, size=size)
         return fmt_citation_search(data, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_search_citations", exc)
+        _raise_tool_error("uniprot_search_citations", exc)
 
 
 @mcp.tool(
@@ -1537,7 +1554,7 @@ async def uniprot_resolve_pdb(accession: str, response_format: str = "markdown")
         data = await client.get_entry(accession)
         return fmt_pdb(data, accession, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_resolve_pdb", exc)
+        _raise_tool_error("uniprot_resolve_pdb", exc)
 
 
 @mcp.tool(
@@ -1554,7 +1571,7 @@ async def uniprot_resolve_alphafold(accession: str, response_format: str = "mark
         data = await client.get_entry(accession)
         return fmt_alphafold(data, accession, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_resolve_alphafold", exc)
+        _raise_tool_error("uniprot_resolve_alphafold", exc)
 
 
 @mcp.tool(
@@ -1572,7 +1589,7 @@ async def uniprot_resolve_interpro(accession: str, response_format: str = "markd
         data = await client.get_entry(accession)
         return fmt_interpro(data, accession, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_resolve_interpro", exc)
+        _raise_tool_error("uniprot_resolve_interpro", exc)
 
 
 @mcp.tool(
@@ -1590,7 +1607,7 @@ async def uniprot_resolve_chembl(accession: str, response_format: str = "markdow
         data = await client.get_entry(accession)
         return fmt_chembl(data, accession, response_format, provenance=client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_resolve_chembl", exc)
+        _raise_tool_error("uniprot_resolve_chembl", exc)
 
 
 @mcp.tool(
@@ -1610,7 +1627,7 @@ async def uniprot_get_evidence_summary(accession: str, response_format: str = "m
         data = await client.get_entry(accession)
         return _format_evidence_summary(data, accession, response_format, client.last_provenance)
     except Exception as exc:
-        return _safe_error("uniprot_get_evidence_summary", exc)
+        _raise_tool_error("uniprot_get_evidence_summary", exc)
 
 
 def _format_evidence_summary(
@@ -1724,7 +1741,7 @@ async def uniprot_provenance_verify(
             response_format=response_format,
         )
     except Exception as exc:
-        return _safe_error("uniprot_provenance_verify", exc)
+        _raise_tool_error("uniprot_provenance_verify", exc)
 
 
 async def _provenance_verify_impl(

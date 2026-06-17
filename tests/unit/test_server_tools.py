@@ -11,7 +11,9 @@ Ensures:
 from __future__ import annotations
 
 import httpx
+import pytest
 import respx
+from mcp.server.fastmcp.exceptions import ToolError
 
 from uniprot_mcp import server
 from uniprot_mcp.server import (
@@ -22,21 +24,26 @@ from uniprot_mcp.server import (
 
 
 async def test_get_entry_rejects_bad_accession_without_network() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_entry("not-real", "markdown")
-    assert "Input error" in out or "Error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_entry("not-real", "markdown")
+    assert "Input error" in str(exc_info.value) or "Error" in str(exc_info.value)
     # respx asserts no HTTP calls were made because router never matched.
     assert not router.calls
 
 
 async def test_get_entry_rejects_bad_response_format() -> None:
-    out = await uniprot_get_entry("P04637", "yaml")
-    assert "response_format must be one of" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_get_entry("P04637", "yaml")
+    assert "response_format must be one of" in str(exc_info.value)
 
 
 async def test_search_rejects_oversize_query() -> None:
-    out = await uniprot_search("x" * 1000)
-    assert "Input error" in out and "query" in out
+    with pytest.raises(ToolError) as exc_info:
+        await uniprot_search("x" * 1000)
+    assert "Input error" in str(exc_info.value) and "query" in str(exc_info.value)
 
 
 async def test_search_quotes_multiword_organism_name() -> None:
@@ -62,9 +69,12 @@ async def test_search_numeric_organism_uses_taxon_id() -> None:
 
 
 async def test_features_filter_no_network_on_bad_accession() -> None:
-    with respx.mock(base_url="https://rest.uniprot.org") as router:
-        out = await uniprot_get_features("garbage", "Domain")
-    assert "Input error" in out or "Error" in out
+    with (
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+        pytest.raises(ToolError) as exc_info,
+    ):
+        await uniprot_get_features("garbage", "Domain")
+    assert "Input error" in str(exc_info.value) or "Error" in str(exc_info.value)
     assert not router.calls
 
 
