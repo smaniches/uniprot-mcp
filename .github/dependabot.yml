@@ -8,22 +8,29 @@ updates:
       # Pin the run to a predictable local hour. With no time/timezone,
       # Dependabot fires at its default slot in UTC (~04:40 UTC), which lands
       # in the middle of the night for the maintainer. NOTE: adjust `timezone`
-      # to your actual IANA zone if America/New_York is not yours — it was
-      # chosen to match the observed UTC-4 offset of the prior run.
+      # to your actual IANA zone if America/New_York is not yours.
       time: "09:00"
       timezone: "America/New_York"
     open-pull-requests-limit: 5
-    # Manage DIRECT dependencies only — the ones declared in pyproject.toml.
-    # constraints/dev.txt is a DERIVED uv lock; its transitive pins (msgpack,
-    # pydantic-core, pydantic-settings, cachecontrol, ...) must advance by
-    # regenerating the lock, not by standalone Dependabot line-edits. Those
-    # edits don't run `uv pip compile`, so a transitive bump either cascades
-    # and fails the "Dev lock in sync" gate (see closed PR #104, where the
-    # recompile reverted a solo pydantic-core bump) or churns as one-off PRs.
-    # Transitive CVEs are NOT lost: Dependabot *security* updates patch
-    # vulnerable lock entries regardless of this allow filter.
-    allow:
-      - dependency-type: "direct"
+    # Dependabot manages the DIRECT deps declared in pyproject.toml only.
+    #
+    # constraints/dev.lock is a DERIVED uv lock. Dependabot's pip parser would
+    # treat every pinned line in it as a top-level requirement (the `# via`
+    # annotations are comments, not a dependency graph it understands), so it
+    # cannot distinguish transitive pins (msgpack, pydantic-core, ...) from real
+    # direct deps. `allow: dependency-type: direct` therefore does NOT exclude
+    # them — confirmed in production: closed PR #109 still bumped 6 transitive
+    # pins and failed the "Dev lock in sync" gate. Two things keep the lock out
+    # of Dependabot's reach instead:
+    #   1. it is named *.lock (not *.txt / *.in), so the pip file fetcher does
+    #      not parse it as a requirements file at all; and
+    #   2. exclude-paths skips the constraints/ directory before manifest
+    #      parsing, as a second, explicit layer.
+    # Transitive pins advance via .github/workflows/dev-lock-maintenance.yml.
+    # Transitive CVEs are still patched by Dependabot *security* updates, which
+    # act on vulnerable lock entries independently of this version-update config.
+    exclude-paths:
+      - "constraints/**"
     groups:
       runtime:
         patterns: ["httpx", "mcp"]
@@ -41,9 +48,8 @@ updates:
           - "interrogate"
       docs:
         patterns: ["mkdocs*"]
-      # Fallback batcher. With `allow: direct` the transitive lock pins should
-      # already be excluded, leaving this empty. If a future run still surfaces
-      # an indirect dep, this keeps it to a single PR instead of one-per-package.
+      # Catch-all so a direct dep not matched above still lands in one PR
+      # rather than a standalone one.
       other:
         patterns: ["*"]
   - package-ecosystem: "github-actions"

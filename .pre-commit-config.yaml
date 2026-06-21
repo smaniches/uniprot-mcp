@@ -14,7 +14,7 @@ repos:
         args: ["--fix=lf"]
 
   # Linter revs AND the mypy type-stub deps are kept in lockstep with
-  # constraints/dev.txt so a contributor's local `pre-commit run` enforces
+  # constraints/dev.lock so a contributor's local `pre-commit run` enforces
   # the same versions the CI lint job pins. Bump these together with the lock.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.17
