@@ -97,7 +97,7 @@ mcp==1.27.2
     # via uniprot-mcp-server (pyproject.toml)
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.2.0
+msgpack==1.2.1
     # via cachecontrol
 mypy==2.1.0
     # via uniprot-mcp-server (pyproject.toml)
