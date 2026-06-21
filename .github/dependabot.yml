@@ -27,8 +27,18 @@ updates:
     #   2. exclude-paths skips the constraints/ directory before manifest
     #      parsing, as a second, explicit layer.
     # Transitive pins advance via .github/workflows/dev-lock-maintenance.yml.
-    # Transitive CVEs are still patched by Dependabot *security* updates, which
-    # act on vulnerable lock entries independently of this version-update config.
+    # Trade-off: because the lock is hidden from Dependabot, its transitive pins
+    # get NO Dependabot security PRs either — they refresh on that workflow's
+    # schedule (or on-demand via workflow_dispatch for an urgent CVE). Accepted
+    # because the lock is CI/dev-only: the shipped package pins only httpx>=0.27
+    # / mcp>=1.2 (covered by Dependabot alerts) and end users resolve transitives
+    # fresh at install, so they are never pinned to this lock's versions.
+    #
+    # Caveat: if Dependabot ever raises a pyproject floor above the pinned
+    # version, it edits pyproject but not the excluded lock, so CI's "Dev lock in
+    # sync" gate goes red. Remedy: regenerate the lock onto that PR (run dev-lock-
+    # maintenance, or `uv pip compile ... --output-file constraints/dev.lock`).
+    # Rare with the >= floors here, which Dependabot leaves alone.
     exclude-paths:
       - "constraints/**"
     groups:
