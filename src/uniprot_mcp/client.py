@@ -33,6 +33,7 @@ import json
 import math
 import os
 import re
+import urllib.parse
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from importlib.metadata import version as _pkg_version
@@ -114,6 +115,39 @@ _RELEASE_DATE_HEADER = "X-UniProt-Release-Date"
 # refuses results from any release other than the pinned one rather than
 # silently accepting drift.
 PIN_RELEASE_ENV = "UNIPROT_PIN_RELEASE"
+
+
+class UntrustedRedirectError(RuntimeError):
+    """An id-mapping redirectURL pointed outside the trusted UniProt origin.
+
+    The id-mapping poll loop follows the server-supplied ``redirectURL`` as
+    an *absolute* URL. ``httpx`` does not constrain absolute URLs to the
+    client's ``base_url``, so a malicious or MITM'd ``redirectURL`` would be
+    fetched verbatim. The client therefore validates the host against a
+    suffix allowlist (``*.uniprot.org`` / ``uniprot.org``) and raises this
+    error rather than dispatching a request to an untrusted origin.
+    """
+
+
+def _assert_trusted_redirect(url: str) -> None:
+    """Raise :class:`UntrustedRedirectError` unless ``url`` targets UniProt.
+
+    The legitimate id-mapping redirect target is ``rest.uniprot.org``. We
+    accept only ``http``/``https`` URLs whose host is ``uniprot.org`` or a
+    subdomain of it. The check is a hostname *suffix* match on
+    ``.uniprot.org`` (not ``netloc.endswith("uniprot.org")``, which would
+    also match a hostile ``evil-uniprot.org`` or ``uniprot.org.evil.com``).
+    """
+    parsed = urllib.parse.urlparse(url)
+    host = parsed.hostname
+    if parsed.scheme not in ("http", "https") or host is None:
+        raise UntrustedRedirectError(
+            f"id-mapping redirectURL is not an absolute http(s) URL: {url!r}"
+        )
+    if host != "uniprot.org" and not host.endswith(".uniprot.org"):
+        raise UntrustedRedirectError(
+            f"id-mapping redirectURL points outside the trusted UniProt origin: {url!r}"
+        )
 
 
 class ReleaseMismatchError(RuntimeError):
@@ -199,6 +233,7 @@ __all__ = [
     "Provenance",
     "ReleaseMismatchError",
     "UniProtClient",
+    "UntrustedRedirectError",
     "canonical_response_hash",
     "parse_retry_after",
 ]
@@ -279,6 +314,35 @@ def canonical_response_hash(response: httpx.Response) -> str:
         ).encode("utf-8")
         return hashlib.sha256(canonical).hexdigest()
     return hashlib.sha256(response.content).hexdigest()
+
+
+async def _get_with_retry(
+    client: httpx.AsyncClient, url: str, *, params: dict[str, Any] | None = None
+) -> httpx.Response:
+    """GET ``url`` through a bounded retry policy mirroring ``_req``.
+
+    Used by the cross-origin callers (NCBI eutils, AlphaFold-DB) which open
+    their own short-lived :class:`httpx.AsyncClient`. Retries on HTTP 429
+    (honouring ``Retry-After``), HTTP >= 500, and :class:`httpx.TimeoutException`
+    with ``1.5 ** (attempt + 1)`` back-off, up to ``MAX_RETRIES + 1`` attempts.
+
+    Any other response — including 404 — is returned to the caller unchanged.
+    This matters for AlphaFold-DB, where 404 is a legitimate "no model"
+    answer the caller must see and not a transient failure to retry.
+    """
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            resp = await client.get(url, params=params)
+            if resp.status_code == 429:
+                await asyncio.sleep(parse_retry_after(resp.headers.get("Retry-After"), attempt))
+                continue
+            if resp.status_code >= 500:
+                await asyncio.sleep(1.5 ** (attempt + 1))
+                continue
+            return resp
+        except httpx.TimeoutException:
+            await asyncio.sleep(1.5 ** (attempt + 1))
+    raise RuntimeError(f"Request to {url} failed after {MAX_RETRIES + 1} attempts")
 
 
 def _extract_provenance(response: httpx.Response, *, now: datetime | None = None) -> Provenance:
@@ -441,6 +505,7 @@ class UniProtClient:
                 continue
             if "redirectURL" in status:
                 url = status["redirectURL"]
+                _assert_trusted_redirect(url)
                 return (await self._req("GET", url, params={"size": size})).json()  # type: ignore[no-any-return]
             job_status = status.get("jobStatus")
             if job_status is not None and job_status not in ("NEW", "RUNNING"):
@@ -464,20 +529,27 @@ class UniProtClient:
 
     async def batch_entries(
         self, accessions: list[str], fields: list[str] | None = None
-    ) -> dict[str, list[Any]]:
+    ) -> dict[str, Any]:
         """Fetch up to 100 entries.
 
         Invalid accessions are filtered client-side so a single bad token
         does not cause UniProt to reject the whole batch. The raw invalid
         tokens are returned under the ``invalid`` key for the caller to
-        surface.
+        surface. When more than 100 valid accessions are supplied the batch
+        is capped at 100 and ``truncated`` is set to ``True`` so the caller
+        can signal the elision rather than silently dropping the tail.
+        ``n_valid`` reports the total number of valid accessions supplied
+        before the cap, so the caller can report "showing 100 of N".
         """
         valid = [a for a in accessions if ACCESSION_RE.match(a.upper())]
-        invalid = [a for a in accessions if a not in valid]
-        if len(valid) > 100:
+        valid_set = set(valid)
+        invalid = [a for a in accessions if a not in valid_set]
+        n_valid = len(valid)
+        truncated = n_valid > 100
+        if truncated:
             valid = valid[:100]
         if not valid:
-            return {"results": [], "invalid": invalid}
+            return {"results": [], "invalid": invalid, "truncated": truncated, "n_valid": n_valid}
         query = " OR ".join(f"accession:{a}" for a in valid)
         params: dict[str, Any] = {"query": query, "size": len(valid)}
         if fields:
@@ -485,7 +557,7 @@ class UniProtClient:
         results = (
             (await self._req("GET", "/uniprotkb/search", params=params)).json().get("results", [])
         )
-        return {"results": results, "invalid": invalid}
+        return {"results": results, "invalid": invalid, "truncated": truncated, "n_valid": n_valid}
 
     async def taxonomy_search(self, query: str, size: int = 10) -> dict[str, Any]:
         data: dict[str, Any] = (
@@ -570,7 +642,9 @@ class UniProtClient:
             headers={"User-Agent": UA, "Accept": "application/json"},
             follow_redirects=True,
         ) as ext:
-            r_search = await ext.get(f"{NCBI_EUTILS_BASE}/esearch.fcgi", params=params_search)
+            r_search = await _get_with_retry(
+                ext, f"{NCBI_EUTILS_BASE}/esearch.fcgi", params=params_search
+            )
             r_search.raise_for_status()
             search_payload = r_search.json()
             esearch_result = search_payload.get("esearchresult", {})
@@ -589,7 +663,8 @@ class UniProtClient:
                     )
                 )
                 return {"records": [], "total": total}
-            r_summary = await ext.get(
+            r_summary = await _get_with_retry(
+                ext,
                 f"{NCBI_EUTILS_BASE}/esummary.fcgi",
                 params={"db": "clinvar", "id": ",".join(ids), "retmode": "json"},
             )
@@ -629,7 +704,7 @@ class UniProtClient:
             headers={"User-Agent": UA, "Accept": "application/json"},
             follow_redirects=True,
         ) as ext:
-            resp = await ext.get(f"{ALPHAFOLD_API_BASE}/api/prediction/{accession}")
+            resp = await _get_with_retry(ext, f"{ALPHAFOLD_API_BASE}/api/prediction/{accession}")
             # The prediction endpoint returns 404 for accessions with no
             # AlphaFold model (e.g. Q8WZ42). That is a legitimate
             # "no model" answer, not an error -- route it into the same

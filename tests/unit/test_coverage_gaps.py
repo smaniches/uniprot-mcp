@@ -198,7 +198,10 @@ async def test_id_mapping_submit_retries_on_timeout() -> None:
 async def test_id_mapping_results_follows_redirect() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.get("/idmapping/status/JOBR").mock(
-            return_value=httpx.Response(200, json={"redirectURL": "/idmapping/results/JOBR"})
+            return_value=httpx.Response(
+                200,
+                json={"redirectURL": "https://rest.uniprot.org/idmapping/results/JOBR"},
+            )
         )
         router.get("/idmapping/results/JOBR").mock(
             return_value=httpx.Response(200, json={"results": [{"from": "X", "to": "Y"}]})
@@ -592,6 +595,18 @@ async def test_batch_entries_server_appends_invalid_suffix() -> None:
         )
         out = await uniprot_batch_entries("P04637,BADTOK")
     assert "Skipped 1 invalid" in out
+
+
+async def test_batch_entries_server_appends_truncated_suffix() -> None:
+    """Covers the >100 truncation notice surfaced by uniprot_batch_entries."""
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/search").mock(
+            return_value=httpx.Response(200, json={"results": [{"primaryAccession": "P00000"}]})
+        )
+        # 101 valid accessions -> only the first 100 are fetched; notice surfaced.
+        many = ",".join(f"P{i:05d}" for i in range(101))
+        out = await uniprot_batch_entries(many)
+    assert "Showing the first 100 of 101 valid accessions" in out
 
 
 def test_fmt_entry_function_with_empty_texts() -> None:
