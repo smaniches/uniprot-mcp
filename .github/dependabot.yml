@@ -36,8 +36,8 @@ updates:
     #
     # Caveat: if Dependabot ever raises a pyproject floor above the pinned
     # version, it edits pyproject but not the excluded lock, so CI's "Dev lock in
-    # sync" gate goes red. Remedy: regenerate the lock onto that PR (run dev-lock-
-    # maintenance, or `uv pip compile ... --output-file constraints/dev.lock`).
+    # sync" gate goes red. Remedy: regenerate the lock onto that PR (run
+    # dev-lock-maintenance, or `uv pip compile ... --output-file constraints/dev.lock`).
     # Rare with the >= floors here, which Dependabot leaves alone.
     exclude-paths:
       - "constraints/**"
