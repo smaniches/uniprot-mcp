@@ -13,6 +13,17 @@ updates:
       time: "09:00"
       timezone: "America/New_York"
     open-pull-requests-limit: 5
+    # Manage DIRECT dependencies only — the ones declared in pyproject.toml.
+    # constraints/dev.txt is a DERIVED uv lock; its transitive pins (msgpack,
+    # pydantic-core, pydantic-settings, cachecontrol, ...) must advance by
+    # regenerating the lock, not by standalone Dependabot line-edits. Those
+    # edits don't run `uv pip compile`, so a transitive bump either cascades
+    # and fails the "Dev lock in sync" gate (see closed PR #104, where the
+    # recompile reverted a solo pydantic-core bump) or churns as one-off PRs.
+    # Transitive CVEs are NOT lost: Dependabot *security* updates patch
+    # vulnerable lock entries regardless of this allow filter.
+    allow:
+      - dependency-type: "direct"
     groups:
       runtime:
         patterns: ["httpx", "mcp"]
@@ -27,21 +38,14 @@ updates:
           - "bandit"
           - "pip-audit"
           - "pre-commit"
-      # Catch-all for everything the named groups above don't claim — chiefly
-      # transitive deps pinned only in constraints/dev.txt (msgpack,
-      # pydantic-settings, ...). Without it each opens its own PR; Dependabot
-      # assigns a dependency to the first matching group in file order, so
-      # runtime/dev still take their own members.
-      indirect:
+          - "interrogate"
+      docs:
+        patterns: ["mkdocs*"]
+      # Fallback batcher. With `allow: direct` the transitive lock pins should
+      # already be excluded, leaving this empty. If a future run still surfaces
+      # an indirect dep, this keeps it to a single PR instead of one-per-package.
+      other:
         patterns: ["*"]
-    ignore:
-      # pydantic-core is pinned to an EXACT version by pydantic (pydantic
-      # 2.13.x requires pydantic-core==2.46.4). A standalone bump can never
-      # satisfy `uv pip compile` — the recompile reverts it — so the
-      # "Dev lock in sync" gate fails (see closed PR #104). pydantic-core
-      # only advances when pydantic itself is bumped; block solo bumps so we
-      # don't keep getting un-mergeable, perpetually-red PRs for it.
-      - dependency-name: "pydantic-core"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
