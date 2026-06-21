@@ -116,7 +116,7 @@ def test_user_agent_string_is_pinned_exactly() -> None:
     is bumped lock-step with releases (release-please updates the pinned
     string below). Pin both the product token and the URL hint."""
     assert (
-        UA == "uniprot-mcp/1.2.1 (+https://github.com/smaniches/uniprot-mcp)"  # x-release-please-version
+        UA == "uniprot-mcp/1.2.2 (+https://github.com/smaniches/uniprot-mcp)"  # x-release-please-version
     )  # fmt: skip
 
 
