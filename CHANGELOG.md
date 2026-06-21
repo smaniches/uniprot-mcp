@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.2](https://github.com/smaniches/uniprot-mcp/compare/v1.2.1...v1.2.2) (2026-06-21)
+
+
+### Documentation
+
+* **citation:** add v1.2.1 Zenodo version DOI ([#94](https://github.com/smaniches/uniprot-mcp/issues/94)) ([4c5803a](https://github.com/smaniches/uniprot-mcp/commit/4c5803a60e8760544e23b0e352a123223d6bf187))
+
+
+### CI/CD
+
+* harden lock-refresh (upload pristine before exec) and correct lock security docs ([#112](https://github.com/smaniches/uniprot-mcp/issues/112)) ([5bcb045](https://github.com/smaniches/uniprot-mcp/commit/5bcb0455ed9e4b9bbe3424f6e6aac137e1a1a4bc))
+* scope Dependabot to direct deps + add monthly dev-lock maintenance ([#107](https://github.com/smaniches/uniprot-mcp/issues/107)) ([c123ff1](https://github.com/smaniches/uniprot-mcp/commit/c123ff10bc33e587507c8f1e149cf3d265a5b266))
+* stop Dependabot touching the uv lock; isolate lock-refresh write creds ([#110](https://github.com/smaniches/uniprot-mcp/issues/110)) ([4410422](https://github.com/smaniches/uniprot-mcp/commit/4410422356876f3a98696ce56584b49195bbb29f))
+
 ## [1.2.1](https://github.com/smaniches/uniprot-mcp/compare/v1.2.0...v1.2.1) (2026-06-17)
 
 
