@@ -108,7 +108,6 @@ async def test_truncated_flag_set_when_over_100(mock_search) -> None:
 
 
 async def test_truncated_flag_false_at_exactly_100(mock_search) -> None:
-    _router, _route = mock_search
     valid = [f"P{i:05d}" for i in range(100)]
     client = UniProtClient()
     try:
