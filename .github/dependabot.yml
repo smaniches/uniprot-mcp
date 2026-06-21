@@ -4,7 +4,26 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      # Pin the run to a predictable local hour. With no time/timezone,
+      # Dependabot fires at its default slot in UTC (~04:40 UTC), which lands
+      # in the middle of the night for the maintainer. NOTE: adjust `timezone`
+      # to your actual IANA zone if America/New_York is not yours — it was
+      # chosen to match the observed UTC-4 offset of the prior run.
+      time: "09:00"
+      timezone: "America/New_York"
     open-pull-requests-limit: 5
+    # Manage DIRECT dependencies only — the ones declared in pyproject.toml.
+    # constraints/dev.txt is a DERIVED uv lock; its transitive pins (msgpack,
+    # pydantic-core, pydantic-settings, cachecontrol, ...) must advance by
+    # regenerating the lock, not by standalone Dependabot line-edits. Those
+    # edits don't run `uv pip compile`, so a transitive bump either cascades
+    # and fails the "Dev lock in sync" gate (see closed PR #104, where the
+    # recompile reverted a solo pydantic-core bump) or churns as one-off PRs.
+    # Transitive CVEs are NOT lost: Dependabot *security* updates patch
+    # vulnerable lock entries regardless of this allow filter.
+    allow:
+      - dependency-type: "direct"
     groups:
       runtime:
         patterns: ["httpx", "mcp"]
@@ -19,10 +38,28 @@ updates:
           - "bandit"
           - "pip-audit"
           - "pre-commit"
+          - "interrogate"
+      docs:
+        patterns: ["mkdocs*"]
+      # Fallback batcher. With `allow: direct` the transitive lock pins should
+      # already be excluded, leaving this empty. If a future run still surfaces
+      # an indirect dep, this keeps it to a single PR instead of one-per-package.
+      other:
+        patterns: ["*"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 5
+    groups:
+      # Batch all action bumps into a single weekly PR instead of one each
+      # (previously actions/checkout, release-drafter and action-gh-release
+      # arrived as three separate PRs in the same run).
+      actions:
+        patterns: ["*"]
     ignore:
       # release-drafter v7.x has a regression on the pull_request trigger
       # path: it sends `targetCommitish: refs/pull/N/merge` to GitHub's

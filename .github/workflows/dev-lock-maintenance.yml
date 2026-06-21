@@ -1,0 +1,113 @@
+name: Dev lock maintenance
+
+# Refreshes constraints/dev.txt (the uv-compiled CI/dev toolchain lock) to the
+# newest versions allowed by pyproject.toml's ranges, then opens a single PR.
+#
+# This is the companion to .github/dependabot.yml restricting Dependabot to
+# DIRECT dependencies: transitive pins (msgpack, pydantic-core, ...) no longer
+# churn as one-off Dependabot PRs, so they advance here instead — as one batched
+# recompile that can't desync the lock. Transitive CVEs are still patched
+# immediately and independently by Dependabot security updates.
+
+on:
+  schedule:
+    # 1st of each month, 13:00 UTC (~09:00 America/New_York). Monthly is enough:
+    # this only moves transitive pins, and anything security-critical is handled
+    # out-of-band by Dependabot security updates.
+    - cron: "0 13 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-lock-maintenance
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh dev lock
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # push the chore/dev-lock-refresh branch
+      pull-requests: write  # open/update the refresh PR
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Recompile constraints/dev.txt with --upgrade
+        # Mirrors the `lock` job in ci.yml (same uv pin, same flags) plus
+        # --upgrade, which advances every pin to the newest version allowed by
+        # pyproject's ranges instead of reusing the committed pins as
+        # preferences. --upgrade is NOT recorded in the lock header, so the
+        # output stays byte-identical to what the CI `lock` gate regenerates —
+        # bump uv here together with ci.yml.
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv==0.11.20
+          uv pip compile pyproject.toml --extra test --extra dev --universal --no-emit-package pip --upgrade --output-file constraints/dev.txt
+
+      - name: Detect whether the lock changed
+        id: diff
+        run: |
+          if git diff --quiet constraints/dev.txt; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Lock already current — nothing to refresh."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git --no-pager diff --stat constraints/dev.txt
+          fi
+
+      - name: Validate the refreshed toolchain
+        # Same quality gate as ci.yml's `lint` job, run here so the PR we open is
+        # already known-good. PRs created with GITHUB_TOKEN do not auto-trigger
+        # CI, so this inline gate is what actually proves the upgraded pins
+        # install and pass lint/type/security. Keep in sync with ci.yml `lint`.
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          pip install -c constraints/dev.txt ".[test,dev]"
+          ruff check .
+          ruff format --check .
+          mypy src/uniprot_mcp
+          interrogate -c pyproject.toml src/uniprot_mcp
+          bandit -r src/uniprot_mcp
+          pip freeze --exclude uniprot-mcp-server > /tmp/audit-deps.txt
+          pip-audit --strict --ignore-vuln CVE-2026-3219 -r /tmp/audit-deps.txt
+
+      - name: Open or update the refresh PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          # Prefer a PAT (LOCK_PR_TOKEN) so the PR triggers CI; fall back to the
+          # workflow token, in which case the inline gate above is the validation
+          # of record. The PAT is optional — nothing breaks without it.
+          GH_TOKEN: ${{ secrets.LOCK_PR_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH=chore/dev-lock-refresh
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add constraints/dev.txt
+          git commit -m "chore(deps): refresh dev lock to latest compatible pins"
+          # Bot-owned branch; force is safe and keeps an existing PR updated in
+          # place rather than spawning a new one each month.
+          git push --force origin "$BRANCH"
+          if [ -n "$(gh pr list --head "$BRANCH" --state open --json number -q '.[].number')" ]; then
+            echo "PR already open for $BRANCH; the force-push updated it."
+            exit 0
+          fi
+          cat > "${RUNNER_TEMP}/pr-body.md" <<'BODY'
+          Automated monthly refresh of `constraints/dev.txt` via `uv pip compile --upgrade`.
+
+          Transitive pins are advanced to the newest versions allowed by `pyproject.toml` ranges. The refreshed toolchain passed the lint / type / docstring / security (bandit, pip-audit) gate inside the maintenance run before this PR was opened.
+
+          This is the batched home for transitive-dependency updates now that Dependabot is scoped to direct deps. Review the diff, confirm checks, and merge.
+
+          Note: if this PR shows no CI checks, it was opened with GITHUB_TOKEN, which cannot trigger workflow runs. Close and reopen it to run CI, or add a LOCK_PR_TOKEN repo secret (a fine-grained PAT with contents + pull-requests write) to have CI trigger automatically.
+          BODY
+          gh pr create --base main --head "$BRANCH" --draft \
+            --title "chore(deps): refresh dev lock" \
+            --body-file "${RUNNER_TEMP}/pr-body.md"
