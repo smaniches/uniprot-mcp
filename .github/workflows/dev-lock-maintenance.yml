@@ -1,27 +1,33 @@
 name: Dev lock maintenance
 
-# Refreshes constraints/dev.lock (the uv-compiled CI/dev toolchain lock) to the
+# Refreshes constraints/dev.lock (the uv-compiled CI/DEV toolchain lock) to the
 # newest versions allowed by pyproject.toml's ranges, then opens a single PR.
 #
-# Companion to .github/dependabot.yml, which is scoped to DIRECT deps: transitive
-# pins (msgpack, pydantic-core, ...) advance here, as one batched recompile that
-# can't desync the lock, instead of churning as one-off Dependabot PRs.
-# Transitive CVEs are still patched immediately by Dependabot security updates.
+# Companion to .github/dependabot.yml, which is scoped to DIRECT deps. The lock
+# is renamed off a pip-recognized name and excluded, so Dependabot does not see
+# its transitive pins at all — which also means it opens NO security PRs for
+# them. That is an accepted trade-off here, because:
+#   * the lock pins the CI/DEV toolchain, not the shipped package — end users get
+#     httpx>=0.27 / mcp>=1.2 from pyproject and resolve transitives FRESH at
+#     install time, so they are never pinned to this lock's versions;
+#   * the shipped direct deps (httpx, mcp) ARE covered by Dependabot alerts via
+#     pyproject; and
+#   * for an urgent transitive CVE in the toolchain, dispatch this workflow
+#     (workflow_dispatch) to refresh within minutes.
 #
 # Security model (two jobs on purpose):
-#   * `validate` recompiles with --upgrade and then INSTALLS AND RUNS the newly
-#     upgraded third-party toolchain. That is untrusted code, so this job is
-#     granted `contents: read` only — its token cannot push, period.
-#   * `open-pr` runs only trusted code (git + gh) on the lock file produced by
-#     `validate` (passed as an artifact, i.e. data, not executable), so it is the
-#     only job granted write scope. No upgraded dependency ever executes with a
-#     push-capable token.
+#   * `validate` recompiles with --upgrade, UPLOADS the pristine lock as an
+#     artifact, and ONLY THEN installs and runs the upgraded third-party
+#     toolchain. Upload-before-exec means a compromised upgraded tool cannot
+#     rewrite the lock that `open-pr` later commits. The job is `contents: read`
+#     only, so its token cannot push regardless.
+#   * `open-pr` runs only trusted code (git + gh) on that artifact (data, not
+#     executable) and is the only job granted write scope.
 
 on:
   schedule:
-    # 1st of each month, 13:00 UTC (~09:00 America/New_York). Monthly is enough:
-    # this only moves transitive pins, and anything security-critical is handled
-    # out-of-band by Dependabot security updates.
+    # 1st of each month, 13:00 UTC (~09:00 America/New_York). The toolchain lock
+    # is low-urgency (CI/dev only); for an urgent CVE use workflow_dispatch.
     - cron: "0 13 1 * *"
   workflow_dispatch:
 
@@ -70,10 +76,23 @@ jobs:
             git --no-pager diff --stat constraints/dev.lock
           fi
 
+      - name: Upload the pristine refreshed lock
+        # Uploaded BEFORE the validate step below installs/runs any upgraded
+        # code, so a compromised tool cannot tamper with the lock that `open-pr`
+        # commits. open-pr consumes this artifact only if `validate` succeeds.
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: dev-lock
+          path: constraints/dev.lock
+          retention-days: 1
+          if-no-files-found: error
+
       - name: Validate the refreshed toolchain
-        # Same quality gate as ci.yml's `lint` job. This installs and executes
-        # the upgraded toolchain, so it runs here under the read-only token.
-        # Keep in sync with ci.yml `lint`.
+        # Installs and EXECUTES the upgraded toolchain (untrusted code), so it
+        # runs LAST — after the pristine lock is already uploaded — under the
+        # read-only token. Same quality gate as ci.yml's `lint`; a failure here
+        # fails the job and skips `open-pr`. Keep in sync with ci.yml `lint`.
         if: steps.diff.outputs.changed == 'true'
         run: |
           pip install -c constraints/dev.lock ".[test,dev]"
@@ -84,15 +103,6 @@ jobs:
           bandit -r src/uniprot_mcp
           pip freeze --exclude uniprot-mcp-server > "${RUNNER_TEMP}/audit-deps.txt"
           pip-audit --strict --ignore-vuln CVE-2026-3219 -r "${RUNNER_TEMP}/audit-deps.txt"
-
-      - name: Upload the refreshed lock
-        if: steps.diff.outputs.changed == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: dev-lock
-          path: constraints/dev.lock
-          retention-days: 1
-          if-no-files-found: error
 
   open-pr:
     name: Open or update the refresh PR
@@ -110,7 +120,7 @@ jobs:
           # token is persisted so the git push below authenticates.
           token: ${{ secrets.LOCK_PR_TOKEN || github.token }}
 
-      - name: Download the refreshed lock
+      - name: Download the pristine refreshed lock
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: dev-lock
@@ -139,7 +149,7 @@ jobs:
             exit 0
           fi
           cat > "${RUNNER_TEMP}/pr-body.md" <<'BODY'
-          Automated monthly refresh of `constraints/dev.lock` via `uv pip compile --upgrade`.
+          Automated refresh of `constraints/dev.lock` via `uv pip compile --upgrade`.
 
           Transitive pins are advanced to the newest versions allowed by `pyproject.toml` ranges. The refreshed toolchain passed the lint / type / docstring / security (bandit, pip-audit) gate in the read-only `validate` job before this PR was opened.
 
