@@ -57,7 +57,12 @@ async def test_all_invalid_short_circuits_no_http(mock_search) -> None:
     finally:
         await client.close()
 
-    assert out == {"results": [], "invalid": ["garbage1", "garbage2"]}
+    assert out == {
+        "results": [],
+        "invalid": ["garbage1", "garbage2"],
+        "truncated": False,
+        "n_valid": 0,
+    }
     assert not route.called, "no HTTP request should be sent when all tokens are invalid"
 
 
@@ -82,4 +87,32 @@ async def test_empty_input() -> None:
         out = await client.batch_entries([])
     finally:
         await client.close()
-    assert out == {"results": [], "invalid": []}
+    assert out == {"results": [], "invalid": [], "truncated": False, "n_valid": 0}
+
+
+async def test_truncated_flag_set_when_over_100(mock_search) -> None:
+    _router, _route = mock_search
+    # 101 valid 6-char accessions -> capped at 100, truncated True.
+    valid = [f"P{i:05d}" for i in range(101)]
+    client = UniProtClient()
+    try:
+        out = await client.batch_entries(valid)
+    finally:
+        await client.close()
+    assert out["truncated"] is True
+    assert out["n_valid"] == 101
+    # The mock returns 2 results, but the cap applies to the request size,
+    # not the mocked response. Assert the cap held on what we asked for.
+    size = int(_route.calls[0].request.url.params["size"])
+    assert size == 100
+
+
+async def test_truncated_flag_false_at_exactly_100(mock_search) -> None:
+    _router, _route = mock_search
+    valid = [f"P{i:05d}" for i in range(100)]
+    client = UniProtClient()
+    try:
+        out = await client.batch_entries(valid)
+    finally:
+        await client.close()
+    assert out["truncated"] is False

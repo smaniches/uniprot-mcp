@@ -275,17 +275,24 @@ async def test_get_alphafold_summary_404_returns_empty_record() -> None:
     assert client.last_provenance["release"] is None
 
 
-async def test_get_alphafold_summary_500_still_raises() -> None:
-    """Contract guard for the else-arm: a non-404 error status from the
-    prediction endpoint must still raise ``HTTPStatusError`` (the 404
-    interception must not broaden into a catch-all). Derived from the
-    task contract: "let other statuses still raise."
+async def test_get_alphafold_summary_500_retries_then_raises() -> None:
+    """A persistent server error (500) from the prediction endpoint must
+    NOT be interpreted as a "no model" answer. The cross-origin GET now
+    routes through the bounded retry helper, so a persistent 5xx is
+    retried ``MAX_RETRIES + 1`` times and then surfaces as the helper's
+    ``RuntimeError`` (the 404 graceful path must remain the *only*
+    non-2xx status the caller treats as empty). ``asyncio.sleep`` is
+    patched so the back-off does not slow the test.
     """
+    from uniprot_mcp.client import MAX_RETRIES
+
     with respx.mock(base_url=ALPHAFOLD_API_BASE) as router:
-        router.get("/api/prediction/P04637").mock(return_value=httpx.Response(500))
+        route = router.get("/api/prediction/P04637").mock(return_value=httpx.Response(500))
         client = UniProtClient()
-        try:
-            with pytest.raises(httpx.HTTPStatusError):
-                await client.get_alphafold_summary("P04637")
-        finally:
-            await client.close()
+        with patch("uniprot_mcp.client.asyncio.sleep", new=AsyncMock(return_value=None)):
+            try:
+                with pytest.raises(RuntimeError, match="failed after"):
+                    await client.get_alphafold_summary("P04637")
+            finally:
+                await client.close()
+    assert route.call_count == MAX_RETRIES + 1

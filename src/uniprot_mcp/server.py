@@ -487,11 +487,11 @@ async def uniprot_id_mapping(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_batch_entries(accessions: str, response_format: str = "markdown") -> str:
-    """Fetch multiple entries. accessions=comma-separated UniProt IDs (max 100)."""
+    """Fetch multiple entries. accessions=comma-separated UniProt IDs (first 100 fetched)."""
     try:
         _check_len("accessions", accessions, MAX_IDS_LEN)
         _check_format(response_format)
-        acc_list = [a.strip() for a in accessions.split(",") if a.strip()][:100]
+        acc_list = [a.strip() for a in accessions.split(",") if a.strip()]
         client = _client()
         prov_before = client.last_provenance
         data = await client.batch_entries(acc_list)
@@ -504,6 +504,11 @@ async def uniprot_batch_entries(accessions: str, response_format: str = "markdow
             out += (
                 f"\n\n_Skipped {len(data['invalid'])} invalid accession(s): "
                 f"{', '.join(data['invalid'])}_"
+            )
+        if data.get("truncated"):
+            out += (
+                f"\n\n_Showing the first 100 of {data['n_valid']} valid accessions; "
+                f"the remaining {data['n_valid'] - 100} were not fetched._"
             )
         return out
     except Exception as exc:
