@@ -215,9 +215,7 @@ syrupy==5.3.2
 tabulate==0.10.0
     # via interrogate
 tomli==2.4.1
-    # via
-    #   coverage
-    #   pip-audit
+    # via pip-audit
 tomli-w==1.2.0
     # via pip-audit
 typing-extensions==4.15.0
