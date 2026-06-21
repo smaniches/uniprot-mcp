@@ -32,14 +32,14 @@ jobs:
         # installed package metadata. Local dev keeps `-e` via
         # `pip install -e ".[test,dev]"`.
         #
-        # `-c constraints/dev.txt` pins the dev/CI toolchain so this
+        # `-c constraints/dev.lock` pins the dev/CI toolchain so this
         # quality gate is reproducible run-to-run. The pin applies only
         # to this job — the test matrix below intentionally installs on
         # floors to keep exercising the supported dependency ranges.
         # Regenerate the lock with the command in its header.
         run: |
           python -m pip install --upgrade pip
-          pip install -c constraints/dev.txt ".[test,dev]"
+          pip install -c constraints/dev.lock ".[test,dev]"
       - name: Ruff lint
         run: ruff check .
       - name: Ruff format check
@@ -107,7 +107,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - name: Verify constraints/dev.txt is in sync with pyproject.toml
+      - name: Verify constraints/dev.lock is in sync with pyproject.toml
         # uv reuses the committed pins as preferences, so recompiling only
         # changes the file when pyproject's test/dev deps changed without a
         # lock refresh. uv is pinned so the output is byte-stable across
@@ -116,5 +116,5 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install uv==0.11.20
-          uv pip compile pyproject.toml --extra test --extra dev --universal --no-emit-package pip --output-file constraints/dev.txt
-          git diff --exit-code constraints/dev.txt
+          uv pip compile pyproject.toml --extra test --extra dev --universal --no-emit-package pip --output-file constraints/dev.lock
+          git diff --exit-code constraints/dev.lock
