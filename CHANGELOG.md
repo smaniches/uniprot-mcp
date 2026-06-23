@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.3](https://github.com/smaniches/uniprot-mcp/compare/v1.2.2...v1.2.3) (2026-06-23)
+
+
+### Bug Fixes
+
+* **release-verify:** compare Zenodo version without the v prefix ([#115](https://github.com/smaniches/uniprot-mcp/issues/115)) ([e381ddd](https://github.com/smaniches/uniprot-mcp/commit/e381ddd090e6a12710c94c56ccf7513f79082eda))
+
+
+### CI/CD
+
+* scope release-please token permissions to job level (Scorecard TokenPermissions) ([#117](https://github.com/smaniches/uniprot-mcp/issues/117)) ([6a9e569](https://github.com/smaniches/uniprot-mcp/commit/6a9e569f1344923f1b267db885f8979894586311))
+
 ## [1.2.2](https://github.com/smaniches/uniprot-mcp/compare/v1.2.1...v1.2.2) (2026-06-21)
 
 
