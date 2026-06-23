@@ -120,8 +120,8 @@ jobs:
         run: |
           set -euo pipefail
           v="${{ steps.version.outputs.version }}"
-          # Zenodo stores `metadata.version` with the `v` prefix
-          # (e.g. v1.1.5, v1.1.6). The concept record's
+          # Zenodo stores `metadata.version` WITHOUT a `v` prefix
+          # (e.g. 1.1.5, 1.1.6). The concept record's
           # `metadata.version` is always the latest version's tag —
           # so when the webhook mints v1.1.6, this field flips from
           # v1.1.5 to v1.1.6. The deposit is async; retry for ~5 min.
@@ -131,12 +131,12 @@ jobs:
           # interpreter — Scorecard's Pinned-Dependencies check flags the
           # `curl | python` pipe pattern even when the python runs a
           # literal inline script.
-          want="v${v}"
+          want="${v}"
           url="https://zenodo.org/api/records/${ZENODO_CONCEPT_RECID}"
           for i in 1 2 3 4 5 6 7 8 9 10; do
             curl -fsSL -H "Accept: application/json" "$url" -o /tmp/zenodo.json
             got=$(python3 -c 'import json;print(json.load(open("/tmp/zenodo.json")).get("metadata",{}).get("version",""))')
-            if [ "$got" = "$want" ]; then
+            if [ "${got#v}" = "$want" ]; then
               echo "Zenodo: concept record ${ZENODO_CONCEPT_RECID} latest version is ${got}"
               exit 0
             fi
