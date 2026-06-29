@@ -49,7 +49,7 @@ jobs:
           # the push-tag fallback, inputs.tag is empty and github.ref is the
           # tag ref, so the same checkout is correct either way.
           ref: ${{ inputs.tag || github.ref }}
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: "3.12"
           cache: pip
@@ -65,7 +65,7 @@ jobs:
           cyclonedx-py requirements -o sbom.cdx.json <(pip freeze)
           echo "path=sbom.cdx.json" >> "$GITHUB_OUTPUT"
       - name: SLSA provenance attestation (dist)
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4.1.0
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373  # v4.1.1
         with:
           subject-path: "dist/*"
       - name: SBOM attestation (CycloneDX)
