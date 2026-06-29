@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.4](https://github.com/smaniches/uniprot-mcp/compare/v1.2.3...v1.2.4) (2026-06-29)
+
+
+### CI/CD
+
+* **integration:** ride out transient UniProt blips and make failures diagnosable ([#119](https://github.com/smaniches/uniprot-mcp/issues/119)) ([60eed32](https://github.com/smaniches/uniprot-mcp/commit/60eed3211c9967a3a0500b0e05a802ae31ec4383))
+
 ## [1.2.3](https://github.com/smaniches/uniprot-mcp/compare/v1.2.2...v1.2.3) (2026-06-23)
 
 
