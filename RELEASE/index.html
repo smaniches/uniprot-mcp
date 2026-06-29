@@ -1254,20 +1254,22 @@ and auditable years after the fact — every artefact carries a
 provenance attestation, an SBOM, and a Zenodo DOI.</p>
 <h2 id="the-chain">The chain<a class="headerlink" href="#the-chain" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git tag v1.1.6  ──►  release.yml (Actions)  ──►  PyPI (Trusted Publishing, OIDC)
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>       │                       │
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>       │                       ├──►  GitHub Release (assets: dist/*, sbom.cdx.json, *.sigstore.json)
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>       │                       │            │
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>       │                       │            ├──►  release-verify.yml (this PR)
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>       │                       │            │            ├── pip index versions uniprot-mcp-server
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>       │                       │            │            ├── gh release view (asset presence)
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>       │                       │            │            ├── gh attestation verify (SLSA)
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>       │                       │            │            └── Zenodo records API (concept DOI lookup)
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>       │                       │            │
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>       │                       │            └──►  Zenodo webhook  ──►  version DOI minted
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>       │                       │
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>       │                       └──►  Sigstore signing (gh-action-sigstore-python)
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>       │
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>       └──►  release-drafter.yml (next-release draft updated on every push to main)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>       │                       │                       │
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>       │                       │                       └──►  MCP Registry (registry.modelcontextprotocol.io, GitHub OIDC)
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>       │                       │
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>       │                       ├──►  GitHub Release (assets: dist/*, sbom.cdx.json, *.sigstore.json)
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>       │                       │            │
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>       │                       │            ├──►  release-verify.yml (this PR)
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>       │                       │            │            ├── pip index versions uniprot-mcp-server
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>       │                       │            │            ├── gh release view (asset presence)
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>       │                       │            │            ├── gh attestation verify (SLSA)
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>       │                       │            │            └── Zenodo records API (concept DOI lookup)
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>       │                       │            │
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>       │                       │            └──►  Zenodo webhook  ──►  version DOI minted
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>       │                       │
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>       │                       └──►  Sigstore signing (gh-action-sigstore-python)
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>       │
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>       └──►  release-drafter.yml (next-release draft updated on every push to main)
 </code></pre></div>
 <h2 id="step-by-step">Step-by-step<a class="headerlink" href="#step-by-step" title="Permanent link">&para;</a></h2>
 <h3 id="1-pre-tag-on-the-release-branch">1. Pre-tag (on the release branch)<a class="headerlink" href="#1-pre-tag-on-the-release-branch" title="Permanent link">&para;</a></h3>
@@ -1305,11 +1307,21 @@ provenance attestation, an SBOM, and a Zenodo DOI.</p>
 <td>PyPI upload via OIDC Trusted Publishing (no token)</td>
 </tr>
 <tr>
+<td><code>publish-mcp-registry</code></td>
+<td><code>server.json</code> published to the official MCP Registry (<code>registry.modelcontextprotocol.io</code>); runs after <code>publish-pypi</code>; GitHub OIDC auth, no secret</td>
+</tr>
+<tr>
 <td><code>sign-and-release</code></td>
 <td>Sigstore signatures (<code>*.sigstore.json</code>); GitHub Release created with all assets</td>
 </tr>
 </tbody>
 </table>
+<p>The <code>publish-mcp-registry</code> job authenticates to the registry with GitHub
+OIDC for the <code>io.github.smaniches</code> namespace, and the registry verifies
+control of the PyPI package via the <code>mcp-name: io.github.smaniches/uniprot-mcp</code>
+marker in <code>README.md</code> (the PyPI long description). Both must stay intact for
+the publish to validate. <code>server.json</code>'s version is bumped by release-please
+(an <code>extra-files</code> target), so it always matches the released PyPI version.</p>
 <p>If any job fails: read the failure, fix on a follow-up commit, push
 a <em>new</em> tag (<code>v1.1.6.post1</code> or <code>v1.1.7</code>). Do not delete and re-push
 the original tag — Zenodo treats the original as a separate version
