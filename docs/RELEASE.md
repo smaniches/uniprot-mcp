@@ -9,6 +9,8 @@ provenance attestation, an SBOM, and a Zenodo DOI.
 
 ```
 git tag v1.1.6  ──►  release.yml (Actions)  ──►  PyPI (Trusted Publishing, OIDC)
+       │                       │                       │
+       │                       │                       └──►  MCP Registry (registry.modelcontextprotocol.io, GitHub OIDC)
        │                       │
        │                       ├──►  GitHub Release (assets: dist/*, sbom.cdx.json, *.sigstore.json)
        │                       │            │
@@ -54,7 +56,15 @@ The tag triggers `.github/workflows/release.yml`. Watch the run at
 |---|---|
 | `build` | sdist + wheel; CycloneDX SBOM (`sbom.cdx.json`); SLSA build-provenance attestation; SBOM attestation; uploads as `release-artifacts` |
 | `publish-pypi` | PyPI upload via OIDC Trusted Publishing (no token) |
+| `publish-mcp-registry` | `server.json` published to the official MCP Registry (`registry.modelcontextprotocol.io`); runs after `publish-pypi`; GitHub OIDC auth, no secret |
 | `sign-and-release` | Sigstore signatures (`*.sigstore.json`); GitHub Release created with all assets |
+
+The `publish-mcp-registry` job authenticates to the registry with GitHub
+OIDC for the `io.github.smaniches` namespace, and the registry verifies
+control of the PyPI package via the `mcp-name: io.github.smaniches/uniprot-mcp`
+marker in `README.md` (the PyPI long description). Both must stay intact for
+the publish to validate. `server.json`'s version is bumped by release-please
+(an `extra-files` target), so it always matches the released PyPI version.
 
 If any job fails: read the failure, fix on a follow-up commit, push
 a *new* tag (`v1.1.6.post1` or `v1.1.7`). Do not delete and re-push
