@@ -330,19 +330,23 @@ async def _get_with_retry(
     This matters for AlphaFold-DB, where 404 is a legitimate "no model"
     answer the caller must see and not a transient failure to retry.
     """
+    last_detail = "no response"
     for attempt in range(MAX_RETRIES + 1):
         try:
             resp = await client.get(url, params=params)
             if resp.status_code == 429:
+                last_detail = "HTTP 429 (rate limited)"
                 await asyncio.sleep(parse_retry_after(resp.headers.get("Retry-After"), attempt))
                 continue
             if resp.status_code >= 500:
+                last_detail = f"HTTP {resp.status_code}"
                 await asyncio.sleep(1.5 ** (attempt + 1))
                 continue
             return resp
         except httpx.TimeoutException:
+            last_detail = "timeout"
             await asyncio.sleep(1.5 ** (attempt + 1))
-    raise RuntimeError(f"Request to {url} failed after {MAX_RETRIES + 1} attempts")
+    raise RuntimeError(f"Request to {url} failed after {MAX_RETRIES + 1} attempts ({last_detail})")
 
 
 def _extract_provenance(response: httpx.Response, *, now: datetime | None = None) -> Provenance:
@@ -425,13 +429,16 @@ class UniProtClient:
     ) -> httpx.Response:
         client = await self._get_client()
         headers = {"Accept": accept} if accept else {}
+        last_detail = "no response"
         for attempt in range(MAX_RETRIES + 1):
             try:
                 resp = await client.request(method, path, params=params, headers=headers)
                 if resp.status_code == 429:
+                    last_detail = "HTTP 429 (rate limited)"
                     await asyncio.sleep(parse_retry_after(resp.headers.get("Retry-After"), attempt))
                     continue
                 if resp.status_code >= 500:
+                    last_detail = f"HTTP {resp.status_code}"
                     await asyncio.sleep(1.5 ** (attempt + 1))
                     continue
                 resp.raise_for_status()
@@ -445,8 +452,9 @@ class UniProtClient:
                 _request_provenance.set(provenance)
                 return resp
             except httpx.TimeoutException:
+                last_detail = "timeout"
                 await asyncio.sleep(1.5 ** (attempt + 1))
-        raise RuntimeError(f"Request failed after {MAX_RETRIES + 1} attempts")
+        raise RuntimeError(f"Request failed after {MAX_RETRIES + 1} attempts ({last_detail})")
 
     async def get_entry(self, accession: str) -> dict[str, Any]:
         data: dict[str, Any] = (await self._req("GET", f"/uniprotkb/{accession}")).json()
@@ -468,6 +476,7 @@ class UniProtClient:
     async def id_mapping_submit(self, from_db: str, to_db: str, ids: list[str]) -> str:
         """Submit an ID mapping job. Retries on 429 / 5xx / timeout."""
         client = await self._get_client()
+        last_detail = "no response"
         for attempt in range(MAX_RETRIES + 1):
             try:
                 resp = await client.post(
@@ -475,9 +484,11 @@ class UniProtClient:
                     data={"from": from_db, "to": to_db, "ids": ",".join(ids)},
                 )
                 if resp.status_code == 429:
+                    last_detail = "HTTP 429 (rate limited)"
                     await asyncio.sleep(parse_retry_after(resp.headers.get("Retry-After"), attempt))
                     continue
                 if resp.status_code >= 500:
+                    last_detail = f"HTTP {resp.status_code}"
                     await asyncio.sleep(1.5 ** (attempt + 1))
                     continue
                 resp.raise_for_status()
@@ -492,8 +503,11 @@ class UniProtClient:
                 job_id: str = resp.json()["jobId"]
                 return job_id
             except httpx.TimeoutException:
+                last_detail = "timeout"
                 await asyncio.sleep(1.5 ** (attempt + 1))
-        raise RuntimeError(f"id_mapping_submit failed after {MAX_RETRIES + 1} attempts")
+        raise RuntimeError(
+            f"id_mapping_submit failed after {MAX_RETRIES + 1} attempts ({last_detail})"
+        )
 
     async def id_mapping_results(self, job_id: str, size: int = 500) -> dict[str, Any]:
         for _ in range(30):

@@ -184,8 +184,9 @@ async def test_id_mapping_submit_retries_on_timeout() -> None:
         router.post("/idmapping/run").mock(side_effect=_side)
         client = UniProtClient()
         try:
-            with pytest.raises(RuntimeError, match="id_mapping_submit failed"):
+            with pytest.raises(RuntimeError, match="id_mapping_submit failed") as exc_info:
                 await client.id_mapping_submit("Gene_Name", "UniProtKB", ["BRCA1"])
+            assert "timeout" in str(exc_info.value)
         finally:
             await client.close()
 
