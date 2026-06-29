@@ -927,6 +927,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#release-policy-releases-are-deliberate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release policy — releases are deliberate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-chain" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1096,6 +1107,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#release-policy-releases-are-deliberate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release policy — releases are deliberate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-chain" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1252,6 +1274,17 @@
 when something looks wrong. The chain is designed to be re-runnable
 and auditable years after the fact — every artefact carries a
 provenance attestation, an SBOM, and a Zenodo DOI.</p>
+<h2 id="release-policy-releases-are-deliberate">Release policy — releases are deliberate<a class="headerlink" href="#release-policy-releases-are-deliberate" title="Permanent link">&para;</a></h2>
+<p>release-please opens a release PR <strong>only</strong> for <code>feat:</code> (minor) and
+<code>fix:</code> (patch) commits. Housekeeping types — <code>ci</code>, <code>docs</code>, <code>test</code>,
+<code>refactor</code>, <code>perf</code>, <code>deps</code> — are marked <code>hidden: true</code> in
+<code>release-please-config.json</code>, so merging them lands silently on <code>main</code>
+<strong>without</strong> proposing a version bump. This stops a steady stream of
+<code>ci:</code>/<code>docs:</code> merges from each cutting their own patch release. A
+housekeeping change that genuinely warrants a release (e.g. a
+security-relevant dependency bump) should be committed as <code>fix:</code> so it
+triggers one. Past releases are immutable on PyPI/Zenodo regardless;
+this only governs what gets cut going forward.</p>
 <h2 id="the-chain">The chain<a class="headerlink" href="#the-chain" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git tag v1.1.6  ──►  release.yml (Actions)  ──►  PyPI (Trusted Publishing, OIDC)
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>       │                       │                       │
