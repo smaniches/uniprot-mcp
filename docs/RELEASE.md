@@ -5,6 +5,19 @@ when something looks wrong. The chain is designed to be re-runnable
 and auditable years after the fact — every artefact carries a
 provenance attestation, an SBOM, and a Zenodo DOI.
 
+## Release policy — releases are deliberate
+
+release-please opens a release PR **only** for `feat:` (minor) and
+`fix:` (patch) commits. Housekeeping types — `ci`, `docs`, `test`,
+`refactor`, `perf`, `deps` — are marked `hidden: true` in
+`release-please-config.json`, so merging them lands silently on `main`
+**without** proposing a version bump. This stops a steady stream of
+`ci:`/`docs:` merges from each cutting their own patch release. A
+housekeeping change that genuinely warrants a release (e.g. a
+security-relevant dependency bump) should be committed as `fix:` so it
+triggers one. Past releases are immutable on PyPI/Zenodo regardless;
+this only governs what gets cut going forward.
+
 ## The chain
 
 ```
