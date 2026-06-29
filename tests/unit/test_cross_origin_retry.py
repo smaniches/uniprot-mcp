@@ -88,8 +88,9 @@ async def test_get_with_retry_exhausts_on_persistent_timeout() -> None:
             side_effect=httpx.TimeoutException("timed out")
         )
         async with httpx.AsyncClient() as ext:
-            with pytest.raises(RuntimeError, match="failed after"):
+            with pytest.raises(RuntimeError, match="failed after") as exc_info:
                 await _get_with_retry(ext, f"{NCBI_EUTILS_BASE}/esearch.fcgi")
+    assert "timeout" in str(exc_info.value)
     assert route.call_count == MAX_RETRIES + 1
 
 

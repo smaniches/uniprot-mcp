@@ -33,16 +33,47 @@ jobs:
         # entire purpose. Belt-and-braces with the conftest hook that
         # also calls pytest_socket.enable_socket() per integration
         # item.
+        #
+        # A single transient upstream blip (a 429 / 5xx / timeout on one
+        # endpoint, e.g. UniProt's id-mapping service) must not fail the
+        # whole nightly drift-detector. We rerun ONLY the just-failed
+        # tests (``--last-failed``, from pytest's own cache) up to two
+        # more times with back-off: a brief outage is ridden out, while a
+        # genuine schema change still fails every attempt and the issue
+        # below is opened. ``&&``/``||`` keep these from tripping ``set -e``.
         run: |
-          pytest --integration tests/integration -v \
-            --override-ini="addopts=--strict-markers --strict-config -ra"
+          run_suite() {
+            pytest --integration tests/integration -v "$@" \
+              --override-ini="addopts=--strict-markers --strict-config -ra"
+          }
+          run_suite && exit 0
+          for backoff in 30 60; do
+            echo "::warning::Live integration suite failed; rerunning failed tests in ${backoff}s"
+            sleep "${backoff}"
+            run_suite --last-failed && exit 0
+          done
+          echo "::error::Live integration suite still failing after retries"
+          exit 1
       - name: Open an issue on failure
         if: failure()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
         with:
           script: |
-            const title = `Nightly integration failed on ${new Date().toISOString().slice(0,10)}`;
-            const body = `The live UniProt integration suite failed. This often means UniProt changed its response shape. See run ${context.runId}.`;
+            const today = new Date().toISOString().slice(0, 10);
+            const title = `Nightly live integration failed on ${today}`;
+            const body = [
+              `The live UniProt integration suite failed on run ${context.runId}, ` +
+                `after automatically rerunning the failed test(s) with back-off.`,
+              ``,
+              `Likely one of:`,
+              `- **Schema drift** — UniProt changed a response shape and the suite needs updating.`,
+              `- **Sustained upstream outage / rate-limit** — UniProt was unavailable for the ` +
+                `whole run window (transient; re-running the workflow may pass).`,
+              ``,
+              `Open the run log and check the failing test's error to tell which: a ` +
+                "`RuntimeError: ... failed after N attempts (HTTP 5xx / HTTP 429 / timeout)` " +
+                `points to an outage; an assertion or KeyError on the response points to drift.`,
+            ].join("\n");
             const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner, repo: context.repo.repo,
               labels: "integration-drift", state: "open",

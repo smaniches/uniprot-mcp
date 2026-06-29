@@ -446,10 +446,13 @@ async def test_req_raises_runtime_error_after_max_retries_exhausted() -> None:
     route = respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(500))
     c = UniProtClient()
     try:
-        with pytest.raises(RuntimeError, match="failed after 4 attempts"):
+        with pytest.raises(RuntimeError, match="failed after 4 attempts") as exc_info:
             await c.get_entry("P04637")
     finally:
         await c.close()
+    # The exhaustion error must carry the last observed status so the
+    # nightly drift-detector's log distinguishes an outage from drift.
+    assert "HTTP 500" in str(exc_info.value)
     # Each retry calls the upstream once; total = MAX_RETRIES + 1 = 4.
     assert route.call_count == 4
 
