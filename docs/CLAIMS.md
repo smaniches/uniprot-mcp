@@ -157,10 +157,10 @@ retracted in v1.1.3 (see CHANGELOG.md).
 
 ---
 
-## C6. 916 offline + 44 live integration tests
+## C6. 917 offline + 44 live integration tests
 
 **Claim (README badge, testing section).** The offline test suite
-contains 916 tests; the live integration suite contains 44 tests.
+contains 917 tests; the live integration suite contains 44 tests.
 
 **Evidence.**
 - `pytest --collect-only --ignore=tests/integration -q` — offline
