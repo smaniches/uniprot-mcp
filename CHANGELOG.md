@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.6](https://github.com/smaniches/uniprot-mcp/compare/v1.2.5...v1.2.6) (2026-07-06)
+
+
+### Bug Fixes
+
+* correct SECURITY.md supported-versions table to 1.2.x ([#128](https://github.com/smaniches/uniprot-mcp/issues/128)) ([1dbac8e](https://github.com/smaniches/uniprot-mcp/commit/1dbac8eb540e922ff408abddaaafbbe8829461f3))
+
 ## [1.2.5](https://github.com/smaniches/uniprot-mcp/compare/v1.2.4...v1.2.5) (2026-06-29)
 
 
