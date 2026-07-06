@@ -27,8 +27,8 @@ authors:
     email: "santiago.maniches@gmail.com"
     orcid: "https://orcid.org/0009-0005-6480-1987"
     affiliation: "TOPOLOGICA LLC"
-version: 1.2.5 # x-release-please-version
-date-released: "2026-06-29" # x-release-please-date
+version: 1.2.6 # x-release-please-version
+date-released: "2026-07-06" # x-release-please-date
 license: Apache-2.0
 identifiers:
   - type: doi
