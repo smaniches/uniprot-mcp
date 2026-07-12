@@ -157,10 +157,10 @@ retracted in v1.1.3 (see CHANGELOG.md).
 
 ---
 
-## C6. 917 offline + 44 live integration tests
+## C6. 956 offline + 44 live integration tests
 
 **Claim (README badge, testing section).** The offline test suite
-contains 917 tests; the live integration suite contains 44 tests.
+contains 956 tests; the live integration suite contains 44 tests.
 
 **Evidence.**
 - `pytest --collect-only --ignore=tests/integration -q` — offline
@@ -180,20 +180,20 @@ badge is a static shield; it is manually updated and may lag by one
 patch release. The authoritative count is always
 `pytest --collect-only`.
 
-**Last reviewed:** 2026-07-06.
+**Last reviewed:** 2026-07-12.
 
 ---
 
 ## C7. 100% line + branch coverage (gate-enforced)
 
 **Claim (README, OVERVIEW.md).** Measured coverage is 100.00% line +
-branch across all six source files, with the gate set to enforce it.
+branch across all seven source files, with the gate set to enforce it.
 
 **Evidence.**
 - `pyproject.toml` `[tool.coverage.report]` — `fail_under = 100` (the
   enforced floor; the measured figure equals it).
 - The suite reports `Total coverage: 100.00%`; the per-file table
-  shows 100% for `__init__`, `cache`, `client`, `formatters`,
+  shows 100% for `__init__`, `cache`, `client`, `eco`, `formatters`,
   `proteinchem`, and `server`.
 - Two branches carry a justified `# pragma: no cover` for
   genuinely-unreachable code: the client.py import-time version-lookup
@@ -216,7 +216,7 @@ restored to 100% with assertion-bearing tests for every previously
 fails CI. The three `# pragma: no cover` branches are unreachable in
 normal operation, not untested behaviour.
 
-**Last reviewed:** 2026-06-08.
+**Last reviewed:** 2026-07-12.
 
 ---
 

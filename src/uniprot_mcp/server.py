@@ -62,6 +62,7 @@ from uniprot_mcp.client import (
     UniProtClient,
     canonical_response_hash,
 )
+from uniprot_mcp.eco import ECO_HUMAN_LABELS, confidence_markdown_lines, score_evidence
 from uniprot_mcp.formatters import (
     ACTIVE_SITE_FEATURE_TYPES,
     PROCESSING_FEATURE_TYPES,
@@ -1906,11 +1907,18 @@ async def uniprot_resolve_chembl(
 async def uniprot_get_evidence_summary(
     accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
 ) -> str:
-    """Summarise the ECO (Evidence and Conclusion Ontology) codes attached to
-    a UniProt entry's annotations. Counts how many features and comments cite
-    each evidence code, distinguishing experimental from inferred annotations.
-    Critical for distinguishing 'wet-lab confirmed' annotations from 'inferred
-    by similarity' for any downstream agent that cares about evidence quality."""
+    """Summarise and grade the ECO (Evidence and Conclusion Ontology) codes
+    attached to a UniProt entry's annotations. Counts how many features and
+    comments cite each evidence code, then classifies every occurrence as
+    experimental (wet-lab, ECO:0000269), manual (curator-reviewed inference),
+    or automatic (un-reviewed pipeline call) and collapses that into a single
+    0-100 evidence-confidence score with a high / moderate / low / very-low
+    band. A score near 100 means the entry is dominated by direct experimental
+    evidence; a score near 10 means it is almost entirely computationally
+    inferred. Critical for any downstream agent that must distinguish
+    'wet-lab confirmed' annotations from 'inferred by similarity'. JSON output
+    adds an ``evidence_confidence`` block (score, band, per-class breakdown,
+    weights) alongside the raw ``evidence_counts``."""
     try:
         _check_accession(accession)
         _check_format(response_format)
@@ -1944,10 +1952,19 @@ def _format_evidence_summary(
 
     visit(data)
 
+    confidence = score_evidence(counts)
+
     if fmt == "json":
         from uniprot_mcp.formatters import _json_envelope
 
-        return _json_envelope({"accession": accession, "evidence_counts": counts}, provenance)  # type: ignore[arg-type]
+        return _json_envelope(
+            {
+                "accession": accession,
+                "evidence_counts": counts,
+                "evidence_confidence": confidence,
+            },
+            provenance,  # type: ignore[arg-type]
+        )
 
     from uniprot_mcp.formatters import _provenance_md_footer  # local import — cheap
 
@@ -1955,33 +1972,15 @@ def _format_evidence_summary(
     if not counts:
         lines.append("_No evidence annotations on this entry._")
     else:
+        lines.extend(confidence_markdown_lines(confidence))
+        lines.extend(["", "**ECO codes by occurrence:**"])
         for code, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
-            description = _ECO_HUMAN_LABELS.get(code, "")
+            description = ECO_HUMAN_LABELS.get(code, "")
             suffix = f"  —  {description}" if description else ""
             lines.append(f"- **{code}**: {n} occurrence(s){suffix}")
     if provenance is not None:
         lines.extend(_provenance_md_footer(provenance))  # type: ignore[arg-type]
     return "\n".join(lines)
-
-
-# Human-readable labels for the most common ECO codes UniProt uses. The
-# ECO ontology has thousands of terms; this curated subset covers the
-# overwhelming majority of UniProt usage. Source:
-# https://www.evidenceontology.org/ — ECO term labels.
-_ECO_HUMAN_LABELS: Final[dict[str, str]] = {
-    "ECO:0000269": "experimental evidence used in manual assertion",
-    "ECO:0000250": "sequence similarity evidence used in manual assertion",
-    "ECO:0000305": "curator inference used in manual assertion",
-    "ECO:0000244": "combinatorial evidence used in manual assertion",
-    "ECO:0000255": "match to InterPro member signature evidence used in manual assertion",
-    "ECO:0000256": "match to sequence model evidence used in automatic assertion",
-    "ECO:0000259": "match to InterPro member signature used in automatic assertion",
-    "ECO:0000303": "non-traceable author statement used in manual assertion",
-    "ECO:0000304": "traceable author statement used in manual assertion",
-    "ECO:0000312": "imported information used in manual assertion",
-    "ECO:0007744": "combinatorial evidence used in automatic assertion",
-    "ECO:0000501": "evidence used in automatic assertion",
-}
 
 
 @mcp.tool(

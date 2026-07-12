@@ -440,10 +440,26 @@ async def test_evidence_summary_groups_eco_codes_by_count() -> None:
         )
         out = await uniprot_get_evidence_summary("P04637", "markdown")
     assert "Evidence summary: P04637 (3 distinct ECO codes)" in out
+    assert "**ECO codes by occurrence:**" in out
     assert "**ECO:0000269**: 2 occurrence(s)" in out  # most-common first
     assert "experimental evidence" in out
     assert "**ECO:0000250**: 1 occurrence(s)" in out
     assert "**ECO:0000305**: 1 occurrence(s)" in out
+
+
+async def test_evidence_summary_renders_confidence_grade() -> None:
+    # 2 experimental (1.0) + 2 manual (0.5) over 4 -> (2.0 + 1.0)/4 = 0.75.
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/P04637").mock(
+            return_value=httpx.Response(
+                200, json=_ENTRY_WITH_EVIDENCES, headers={"X-UniProt-Release": "2026_01"}
+            )
+        )
+        out = await uniprot_get_evidence_summary("P04637", "markdown")
+    assert "**Evidence confidence:** 75.0 / 100 (high)" in out
+    assert "- Experimental (wet-lab): 2 (50.0%)" in out
+    assert "- Manual (curator-reviewed): 2 (50.0%)" in out
+    assert "- Automatic (pipeline-inferred): 0 (0.0%)" in out
 
 
 async def test_evidence_summary_json_shape() -> None:
@@ -460,6 +476,12 @@ async def test_evidence_summary_json_shape() -> None:
     assert counts["ECO:0000269"] == 2
     assert counts["ECO:0000250"] == 1
     assert counts["ECO:0000305"] == 1
+    confidence = payload["data"]["evidence_confidence"]
+    assert confidence["score"] == 75.0
+    assert confidence["band"] == "high"
+    assert confidence["classified_occurrences"] == 4
+    assert confidence["breakdown"]["experimental"]["occurrences"] == 2
+    assert confidence["weights"]["experimental"] == 1.0
 
 
 async def test_evidence_summary_handles_no_evidences() -> None:
