@@ -70,4 +70,6 @@ async def test_id_mapping_gene_to_uniprot(client: UniProtClient) -> None:
     job = await client.id_mapping_submit("GeneID", "UniProtKB", ["672"])
     data = await client.id_mapping_results(job)
     accessions = {r["to"]["primaryAccession"] for r in data.get("results", [])}
-    assert "P38398" in accessions, f"P38398 not in GeneID 672 mapping results; got {sorted(accessions)}"
+    assert "P38398" in accessions, (
+        f"P38398 not in GeneID 672 mapping results; got {sorted(accessions)}"
+    )
