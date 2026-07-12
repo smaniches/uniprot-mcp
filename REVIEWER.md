@@ -88,7 +88,7 @@ pip install -e ".[test,dev]"
 pytest tests/unit tests/property tests/client tests/contract -v
 ```
 
-This runs the full offline suite (917 tests). No network
+This runs the full offline suite (956 tests). No network
 access is needed; `pytest-socket` blocks outbound connections.
 
 ## 6. Run lint, type-check, and security scan (~1 min)

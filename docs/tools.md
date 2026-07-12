@@ -98,7 +98,7 @@ and in [the threat model](THREAT_MODEL.md#t3b-cross-origin-allowlist-for-non-uni
 | Tool | Purpose |
 |---|---|
 | `uniprot_resolve_orthology` | Group orthology cross-references by source DB (KEGG / OMA / OrthoDB / eggNOG / 8 more). |
-| `uniprot_get_evidence_summary` | Aggregate ECO codes (Evidence and Conclusion Ontology) across an entry. Distinguishes wet-lab confirmed from inferred-by-similarity from automatic. |
+| `uniprot_get_evidence_summary` | Aggregate ECO codes (Evidence and Conclusion Ontology) across an entry and grade them into a 0-100 evidence-confidence score (high / moderate / low / very-low). Distinguishes wet-lab confirmed from inferred-by-similarity from automatic. |
 | `uniprot_target_dossier` | One-call comprehensive characterisation: nine sections in one structured report. |
 | `uniprot_provenance_verify` | Re-fetch a previously recorded URL and compare release + canonical SHA-256. Five verdicts (`verified` / `release_drift` / `hash_drift` / `release_and_hash_drift` / `url_unreachable`). |
 | `uniprot_replay_from_cache` | Read a cached UniProt response without hitting the upstream. Opt-in via `UNIPROT_MCP_CACHE_DIR`. |
