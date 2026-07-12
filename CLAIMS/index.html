@@ -968,10 +968,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#c6-917-offline-44-live-integration-tests" class="md-nav__link">
+  <a href="#c6-956-offline-44-live-integration-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        C6. 917 offline + 44 live integration tests
+        C6. 956 offline + 44 live integration tests
       
     </span>
   </a>
@@ -1184,9 +1184,9 @@ successful tool call is a v1.2.0 roadmap item. This was explicitly
 retracted in v1.1.3 (see CHANGELOG.md).</p>
 <p><strong>Last reviewed:</strong> 2026-05-26.</p>
 <hr />
-<h2 id="c6-917-offline-44-live-integration-tests">C6. 917 offline + 44 live integration tests<a class="headerlink" href="#c6-917-offline-44-live-integration-tests" title="Permanent link">&para;</a></h2>
+<h2 id="c6-956-offline-44-live-integration-tests">C6. 956 offline + 44 live integration tests<a class="headerlink" href="#c6-956-offline-44-live-integration-tests" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README badge, testing section).</strong> The offline test suite
-contains 917 tests; the live integration suite contains 44 tests.</p>
+contains 956 tests; the live integration suite contains 44 tests.</p>
 <p><strong>Evidence.</strong>
 - <code>pytest --collect-only --ignore=tests/integration -q</code> — offline
   count.
@@ -1201,16 +1201,16 @@ contains 917 tests; the live integration suite contains 44 tests.</p>
 badge is a static shield; it is manually updated and may lag by one
 patch release. The authoritative count is always
 <code>pytest --collect-only</code>.</p>
-<p><strong>Last reviewed:</strong> 2026-07-06.</p>
+<p><strong>Last reviewed:</strong> 2026-07-12.</p>
 <hr />
 <h2 id="c7-100-line-branch-coverage-gate-enforced">C7. 100% line + branch coverage (gate-enforced)<a class="headerlink" href="#c7-100-line-branch-coverage-gate-enforced" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, OVERVIEW.md).</strong> Measured coverage is 100.00% line +
-branch across all six source files, with the gate set to enforce it.</p>
+branch across all seven source files, with the gate set to enforce it.</p>
 <p><strong>Evidence.</strong>
 - <code>pyproject.toml</code> <code>[tool.coverage.report]</code> — <code>fail_under = 100</code> (the
   enforced floor; the measured figure equals it).
 - The suite reports <code>Total coverage: 100.00%</code>; the per-file table
-  shows 100% for <code>__init__</code>, <code>cache</code>, <code>client</code>, <code>formatters</code>,
+  shows 100% for <code>__init__</code>, <code>cache</code>, <code>client</code>, <code>eco</code>, <code>formatters</code>,
   <code>proteinchem</code>, and <code>server</code>.
 - Two branches carry a justified <code># pragma: no cover</code> for
   genuinely-unreachable code: the client.py import-time version-lookup
@@ -1229,7 +1229,7 @@ restored to 100% with assertion-bearing tests for every previously
 -uncovered arc, and the gate now enforces 100% so a future regression
 fails CI. The three <code># pragma: no cover</code> branches are unreachable in
 normal operation, not untested behaviour.</p>
-<p><strong>Last reviewed:</strong> 2026-06-08.</p>
+<p><strong>Last reviewed:</strong> 2026-07-12.</p>
 <hr />
 <h2 id="c8-3030-sealed-prompt-benchmark-verified-against-live-uniprot">C8. 30/30 sealed-prompt benchmark verified against live UniProt<a class="headerlink" href="#c8-3030-sealed-prompt-benchmark-verified-against-live-uniprot" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, OVERVIEW.md).</strong> A 30-prompt benchmark with
