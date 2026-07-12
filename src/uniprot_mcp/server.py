@@ -34,12 +34,13 @@ import logging
 import os
 import re
 import sys
-from typing import Any, Final, NoReturn
+from typing import Annotated, Any, Final, NoReturn
 
 import httpx
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
+from pydantic import Field
 
 from uniprot_mcp.cache import (
     CACHE_DIR_ENV,
@@ -150,6 +151,48 @@ ALLOWED_ACCEPT_HEADERS: Final[frozenset[str]] = frozenset(
         "text/plain;format=fasta",
     }
 )
+
+# Shared parameter annotations. FastMCP reads ``Field(description=...)``
+# on an ``Annotated`` parameter into the tool's JSON-schema property
+# description, so every tool that reuses one of these gets the same
+# precise, example-bearing guidance for free — one definition, applied
+# consistently across the whole surface, instead of re-explaining
+# "what does 'accession' mean" 30 separate times with 30 chances to drift.
+AccessionParam = Annotated[
+    str,
+    Field(
+        description=(
+            "UniProt accession, e.g. 'P04637' (human TP53) or 'P38398' "
+            "(human BRCA1). Both reviewed (Swiss-Prot) and unreviewed "
+            "(TrEMBL) accessions are accepted; case-sensitive."
+        )
+    ),
+]
+ResponseFormatParam = Annotated[
+    str,
+    Field(
+        description=(
+            "'markdown' (default) for a human-readable report with a "
+            "provenance footer, or 'json' for a machine-parseable "
+            "structured payload with the same data. Any other value is "
+            "rejected."
+        )
+    ),
+]
+QueryParam = Annotated[
+    str,
+    Field(
+        description=(
+            "UniProt query-language expression, e.g. "
+            "'(gene:TP53) AND (organism_id:9606)'. Field syntax follows "
+            "https://www.uniprot.org/help/query-fields."
+        )
+    ),
+]
+SizeParam = Annotated[
+    int,
+    Field(description="Maximum number of results to return; capped at 500 server-side."),
+]
 
 # Module-level lazy client. No lifespan. No ctx injection. Just works.
 _uniprot: UniProtClient | None = None
@@ -310,7 +353,9 @@ def _raise_tool_error(tool: str, exc: BaseException) -> NoReturn:
     name="uniprot_get_entry",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_entry(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_get_entry(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """Fetch a UniProt protein entry by accession (e.g. P04637 for p53, P38398 for BRCA1).
     Returns function, gene, organism, disease associations, cross-references."""
     try:
@@ -325,14 +370,29 @@ async def uniprot_get_entry(accession: str, response_format: str = "markdown") -
 
 @mcp.tool(name="uniprot_search", annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
 async def uniprot_search(
-    query: str,
-    size: int = 10,
-    reviewed_only: bool = False,
-    organism: str = "",
-    response_format: str = "markdown",
+    query: QueryParam,
+    size: SizeParam = 10,
+    reviewed_only: Annotated[
+        bool, Field(description="If true, restrict results to reviewed Swiss-Prot entries only.")
+    ] = False,
+    organism: Annotated[
+        str,
+        Field(
+            description=(
+                "Optional organism filter: a taxonomy ID ('9606') or a scientific "
+                "name ('Homo sapiens'). Applied as an additional AND clause on top "
+                "of ``query``; leave empty to search all organisms."
+            )
+        ),
+    ] = "",
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Search UniProtKB. Examples: '(gene:TP53) AND (organism_id:9606)', 'kinase AND reviewed:true'.
-    Set reviewed_only=true for Swiss-Prot only. Set organism to taxonomy ID or name."""
+    """The general-purpose entry point for finding UniProtKB proteins by any
+    combination of gene, organism, keyword, or free text. Use this first when
+    you don't already have an accession; use ``uniprot_get_entry`` once you
+    do. Examples: '(gene:TP53) AND (organism_id:9606)', 'kinase AND reviewed:true'.
+    ``reviewed_only`` and ``organism`` are convenience shortcuts equivalent to
+    adding the corresponding clause to ``query`` yourself."""
     try:
         _check_len("query", query, MAX_QUERY_LEN)
         _check_len("organism", organism, MAX_ORGANISM_LEN)
@@ -359,8 +419,15 @@ async def uniprot_search(
     name="uniprot_get_sequence",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_sequence(accession: str) -> str:
-    """Get protein sequence in FASTA format for a UniProt accession."""
+async def uniprot_get_sequence(accession: AccessionParam) -> str:
+    """Fetch the canonical protein sequence in FASTA format. Use this when
+    you need the raw residue string itself (e.g. for local sequence
+    analysis); for pre-computed chemistry derived from this same sequence
+    (molecular weight, pI, hydrophobicity) call ``uniprot_compute_properties``
+    instead, which fetches the FASTA internally so you don't have to parse
+    it yourself. Always returns markdown/plain-text FASTA — there is no
+    ``response_format`` parameter because FASTA is already the interchange
+    format."""
     try:
         _check_accession(accession)
         client = _client()
@@ -375,10 +442,27 @@ async def uniprot_get_sequence(accession: str) -> str:
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_features(
-    accession: str, feature_types: str = "", response_format: str = "markdown"
+    accession: AccessionParam,
+    feature_types: Annotated[
+        str,
+        Field(
+            description=(
+                "Optional comma-separated allow-list of UniProt feature type "
+                "names, e.g. 'Domain,Active site,Binding site,Modified residue'. "
+                "Leave empty to return every feature on the entry."
+            )
+        ),
+    ] = "",
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Get protein features: domains, binding sites, PTMs, signal peptides.
-    Optional filter (comma-separated): 'Domain,Active site,Binding site,Modified residue'."""
+    """Return the full, unfiltered feature array for an entry: domains,
+    binding sites, PTMs, signal peptides, and every other annotated region,
+    optionally narrowed by ``feature_types``. For a residue-specific view
+    ('what's at position 175?') use ``uniprot_features_at_position``
+    instead; for the curated subsets (active/binding sites, processing,
+    PTMs alone) the dedicated ``uniprot_get_active_sites`` /
+    ``uniprot_get_processing_features`` / ``uniprot_get_ptms`` tools apply
+    the same filter server-side."""
     try:
         _check_accession(accession)
         _check_len("feature_types", feature_types, MAX_FEATURE_TYPES_LEN)
@@ -399,9 +483,19 @@ async def uniprot_get_features(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_go_terms(
-    accession: str, aspect: str = "", response_format: str = "markdown"
+    accession: AccessionParam,
+    aspect: Annotated[
+        str,
+        Field(
+            description=(
+                "Optional Gene Ontology aspect filter: 'F' (molecular function), "
+                "'P' (biological process), 'C' (cellular component), or empty for all three."
+            )
+        ),
+    ] = "",
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Get GO annotations grouped by aspect. Optional filter: 'F' (function), 'P' (process), 'C' (component)."""
+    """Get GO annotations grouped by aspect."""
     try:
         _check_accession(accession)
         _check_format(response_format)
@@ -422,9 +516,27 @@ async def uniprot_get_go_terms(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_cross_refs(
-    accession: str, database: str = "", response_format: str = "markdown"
+    accession: AccessionParam,
+    database: Annotated[
+        str,
+        Field(
+            description=(
+                "Optional exact database name to filter to, e.g. 'PDB', 'Pfam', "
+                "'Ensembl', 'Reactome', 'KEGG', 'STRING'. Leave empty to return "
+                "cross-references to every linked database."
+            )
+        ),
+    ] = "",
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Get cross-references to PDB, Pfam, ENSEMBL, Reactome, KEGG, STRING, etc. Optional database filter."""
+    """List every external-database cross-reference UniProt has curated for
+    an entry (PDB, Pfam, Ensembl, Reactome, KEGG, STRING, and dozens more),
+    optionally narrowed to one ``database``. For the common single-database
+    cases there are dedicated, richer tools that resolve structured details
+    beyond a bare ID: ``uniprot_resolve_pdb`` (structures with
+    method/resolution), ``uniprot_resolve_alphafold``, ``uniprot_resolve_interpro``,
+    and ``uniprot_resolve_chembl``. Use this tool for any other database or
+    to see the full cross-reference set at once."""
     try:
         _check_accession(accession)
         _check_len("database", database, MAX_DATABASE_LEN)
@@ -443,8 +555,17 @@ async def uniprot_get_cross_refs(
     name="uniprot_get_variants",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_variants(accession: str, response_format: str = "markdown") -> str:
-    """Get known natural variants and disease mutations for a protein."""
+async def uniprot_get_variants(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
+    """List every literature-described natural variant UniProt has curated
+    for an entry, including disease-associated mutations. Use this to see
+    the full variant catalogue for a protein; to check one specific
+    HGVS-shorthand change (e.g. 'R175H') use ``uniprot_lookup_variant``
+    instead, which does the position/residue matching for you. UniProt's
+    natural-variant annotations only cover literature-described variants —
+    for population-scale clinical significance data use
+    ``uniprot_resolve_clinvar``."""
     try:
         _check_accession(accession)
         _check_format(response_format)
@@ -461,9 +582,25 @@ async def uniprot_get_variants(accession: str, response_format: str = "markdown"
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_id_mapping(
-    ids: str, from_db: str, to_db: str, response_format: str = "markdown"
+    ids: Annotated[
+        str, Field(description="Comma-separated identifiers to map, up to 100 per call.")
+    ],
+    from_db: Annotated[
+        str,
+        Field(
+            description=(
+                "Source database code, e.g. 'UniProtKB_AC-ID', 'PDB', 'Ensembl', "
+                "'GeneID' (Entrez), or 'Gene_Name'."
+            )
+        ),
+    ],
+    to_db: Annotated[str, Field(description="Target database code, same code set as ``from_db``.")],
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Map between ID types. ids=comma-separated. Common db codes: UniProtKB_AC-ID, PDB, Ensembl, GeneID, Gene_Name."""
+    """Map identifiers between UniProt and external databases (or between
+    two external databases) via UniProt's ID mapping service. Submits an
+    async job and polls it to completion server-side, so the call may take
+    a few seconds for large batches."""
     try:
         _check_len("ids", ids, MAX_IDS_LEN)
         _check_len("from_db", from_db, MAX_DATABASE_LEN)
@@ -486,8 +623,23 @@ async def uniprot_id_mapping(
     name="uniprot_batch_entries",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_batch_entries(accessions: str, response_format: str = "markdown") -> str:
-    """Fetch multiple entries. accessions=comma-separated UniProt IDs (first 100 fetched)."""
+async def uniprot_batch_entries(
+    accessions: Annotated[
+        str,
+        Field(
+            description=(
+                "Comma-separated UniProt accessions, e.g. 'P04637,P38398'. "
+                "Invalid accessions are skipped rather than failing the whole "
+                "call; only the first 100 valid accessions are fetched."
+            )
+        ),
+    ],
+    response_format: ResponseFormatParam = "markdown",
+) -> str:
+    """Fetch multiple entries in a single call. Use this instead of repeated
+    ``uniprot_get_entry`` calls when you already have a list of accessions —
+    one network round-trip instead of N, with invalid accessions reported
+    rather than aborting the batch."""
     try:
         _check_len("accessions", accessions, MAX_IDS_LEN)
         _check_format(response_format)
@@ -520,9 +672,27 @@ async def uniprot_batch_entries(accessions: str, response_format: str = "markdow
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_taxonomy_search(
-    query: str, size: int = 5, response_format: str = "markdown"
+    query: Annotated[
+        str,
+        Field(
+            description=(
+                "Organism name or partial name to search for, e.g. 'Homo sapiens' "
+                "or 'coli'. Matches against scientific and common names."
+            )
+        ),
+    ],
+    size: SizeParam = 5,
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Search UniProt taxonomy by organism name. Returns taxonomy IDs."""
+    """Resolve an organism name to its NCBI taxonomy ID(s) — the numeric ID
+    other UniProt tools expect (e.g. the ``organism`` parameter of
+    ``uniprot_search``, or ``organism_id:`` in a query string). Returns
+    each match's taxonomy ID, scientific name, common name, and rank
+    (species / genus / etc.); a name can resolve to multiple IDs when
+    it's ambiguous (e.g. a genus with several species), so inspect the
+    rank and full scientific name before picking one. Use this before
+    filtering any other search by organism if you only know the name,
+    not the numeric ID."""
     try:
         _check_len("query", query, MAX_QUERY_LEN)
         _check_format(response_format)
@@ -538,7 +708,15 @@ async def uniprot_taxonomy_search(
     name="uniprot_get_keyword",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_keyword(keyword_id: str, response_format: str = "markdown") -> str:
+async def uniprot_get_keyword(
+    keyword_id: Annotated[
+        str,
+        Field(
+            description="UniProt keyword ID, e.g. 'KW-0007' (Acetylation). Always starts with 'KW-'."
+        ),
+    ],
+    response_format: ResponseFormatParam = "markdown",
+) -> str:
     """Fetch a UniProt keyword by ID (e.g. KW-0007 for Acetylation, KW-0539 for Nucleus).
     Returns name, definition, category, synonyms, GO cross-refs, and parent/child hierarchy."""
     try:
@@ -556,7 +734,7 @@ async def uniprot_get_keyword(keyword_id: str, response_format: str = "markdown"
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_search_keywords(
-    query: str, size: int = 10, response_format: str = "markdown"
+    query: str, size: SizeParam = 10, response_format: ResponseFormatParam = "markdown"
 ) -> str:
     """Search UniProt's controlled keyword vocabulary by name or definition.
     Examples: 'acetylation', 'nucleus', 'kinase activity'."""
@@ -576,7 +754,13 @@ async def uniprot_search_keywords(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_subcellular_location(
-    location_id: str, response_format: str = "markdown"
+    location_id: Annotated[
+        str,
+        Field(
+            description="UniProt subcellular-location ID, e.g. 'SL-0039' (Cell membrane). Always starts with 'SL-'."
+        ),
+    ],
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
     """Fetch a UniProt subcellular-location term by ID (e.g. SL-0039 Cell membrane, SL-0086 Cytoplasm, SL-0191 Nucleus).
     Returns name, definition, category, GO cross-refs, and the is-a / part-of hierarchy."""
@@ -595,7 +779,7 @@ async def uniprot_get_subcellular_location(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_search_subcellular_locations(
-    query: str, size: int = 10, response_format: str = "markdown"
+    query: str, size: SizeParam = 10, response_format: ResponseFormatParam = "markdown"
 ) -> str:
     """Search UniProt's controlled subcellular-location vocabulary.
     Examples: 'membrane', 'mitochondrion', 'cytoplasm'."""
@@ -616,7 +800,19 @@ async def uniprot_search_subcellular_locations(
     name="uniprot_get_uniref",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_uniref(uniref_id: str, response_format: str = "markdown") -> str:
+async def uniprot_get_uniref(
+    uniref_id: Annotated[
+        str,
+        Field(
+            description=(
+                "UniRef cluster ID, e.g. 'UniRef90_P04637'. Prefix is "
+                "'UniRef50_'/'UniRef90_'/'UniRef100_' followed by the "
+                "representative member's accession."
+            )
+        ),
+    ],
+    response_format: ResponseFormatParam = "markdown",
+) -> str:
     """Fetch a UniRef cluster by ID. Examples:
     UniRef100_P04637 (100 % identity, only exact-match members),
     UniRef90_P04637 (90 % identity), UniRef50_P04637 (50 %, broadest grouping).
@@ -636,14 +832,25 @@ async def uniprot_get_uniref(uniref_id: str, response_format: str = "markdown") 
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_search_uniref(
-    query: str,
-    identity_tier: str = "",
-    size: int = 10,
-    response_format: str = "markdown",
+    query: QueryParam,
+    identity_tier: Annotated[
+        str,
+        Field(
+            description=(
+                "Cluster identity threshold: '50' (loosest grouping), '90', "
+                "'100' (tightest, only exact-match members), or empty for all "
+                "tiers. Higher values return more, smaller, tighter clusters."
+            )
+        ),
+    ] = "",
+    size: SizeParam = 10,
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Search UniRef clusters. ``identity_tier`` filters by % identity:
-    ``"50"`` (loosest), ``"90"``, ``"100"`` (tightest), or empty for all tiers.
-    Examples: query='kinase' identity_tier='90' returns the 90 % clusters."""
+    """Search for UniRef clusters by content (not by a known cluster ID —
+    for that, use ``uniprot_get_uniref`` directly). Example: query='kinase'
+    identity_tier='90' returns the 90% clusters matching 'kinase'. Use a
+    looser tier (50) to find broad homology groups, a tighter tier (100)
+    to find near-identical sequence sets."""
     try:
         _check_len("query", query, MAX_QUERY_LEN)
         _check_format(response_format)
@@ -686,7 +893,9 @@ _ORTHOLOGY_DATABASES: Final[frozenset[str]] = frozenset(
     name="uniprot_resolve_orthology",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_resolve_orthology(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_resolve_orthology(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """Group every orthology cross-reference in a UniProt entry by source
     database (KEGG / OMA / OrthoDB / eggNOG / HOGENOM / PhylomeDB /
     InParanoid / TreeFam / GeneTree / PAN-GO / PANTHER / OrthoInspector).
@@ -716,7 +925,9 @@ async def uniprot_resolve_orthology(accession: str, response_format: str = "mark
     name="uniprot_target_dossier",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_target_dossier(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_target_dossier(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """One-call comprehensive characterisation of a UniProt entry,
     structured for drug-discovery / clinical workflows. Composes nine
     views over the same entry plus one FASTA fetch (so two upstream
@@ -1016,10 +1227,20 @@ async def uniprot_replay_from_cache(url: str, response_format: str = "markdown")
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_resolve_clinvar(
-    accession: str,
-    change: str = "",
-    size: int = 10,
-    response_format: str = "markdown",
+    accession: AccessionParam,
+    change: Annotated[
+        str,
+        Field(
+            description=(
+                "Optional HGVS-shorthand protein change to filter to, e.g. "
+                "'R175H'. Leave empty to return all ClinVar records for the gene."
+            )
+        ),
+    ] = "",
+    size: Annotated[
+        int, Field(description="Maximum number of ClinVar records to return; capped at 50.")
+    ] = 10,
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
     """Look up ClinVar records for the gene encoded by a UniProt entry.
     First fetches the entry to extract the canonical gene symbol, then
@@ -1076,16 +1297,16 @@ async def uniprot_resolve_clinvar(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_alphafold_confidence(
-    accession: str, response_format: str = "markdown"
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
 ) -> str:
-    """Fetch AlphaFold-DB pLDDT confidence summary for a UniProt accession.
-    Returns the global mean pLDDT score plus the four-band distribution
-    (very high ≥ 90 / confident 70-90 / low 50-70 / very low < 50) so the
-    agent can decide whether to trust the model. Critical for any
-    structural-biology workflow that builds on a predicted model: a
-    target with 95 % residues 'very high' is publication-grade; a target
-    with 40 % 'very low' is largely disordered and structural inference
-    is unsafe.
+    """Fetch the per-residue confidence (pLDDT) summary for an entry's
+    AlphaFold model, not just its existence. Returns the global mean pLDDT
+    score plus the four-band distribution (very high ≥ 90 / confident
+    70-90 / low 50-70 / very low < 50) so the agent can decide whether to
+    trust the model: 95% 'very high' is publication-grade, 40% 'very low'
+    is largely disordered and structural inference is unsafe. Call
+    ``uniprot_resolve_alphafold`` first if you only need the model ID and
+    viewer link, not its confidence.
 
     This tool calls https://alphafold.ebi.ac.uk — declared in PRIVACY.md
     as a third party. Provenance carries source = AlphaFoldDB."""
@@ -1105,7 +1326,9 @@ async def uniprot_get_alphafold_confidence(
     name="uniprot_get_publications",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_publications(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_get_publications(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """List the publications UniProt cites on an entry, with PubMed IDs,
     DOIs, titles, authors, journal, year, and the 'reference position'
     annotation (the experimental work each citation supports — e.g.
@@ -1171,7 +1394,9 @@ def _extract_publications(entry: dict[str, object]) -> list[dict[str, object]]:
     name="uniprot_compute_properties",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_compute_properties(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_compute_properties(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """Derived sequence chemistry for a UniProt entry: molecular weight,
     theoretical pI, GRAVY hydrophobicity, aromaticity, net charge at pH 7,
     extinction coefficient at 280 nm, amino-acid composition. Computed
@@ -1203,7 +1428,11 @@ async def uniprot_compute_properties(accession: str, response_format: str = "mar
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_features_at_position(
-    accession: str, position: int, response_format: str = "markdown"
+    accession: AccessionParam,
+    position: Annotated[
+        int, Field(description="1-indexed residue position within the protein sequence.")
+    ],
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
     """List every UniProt feature that overlaps a residue position
     (1-indexed). Answers the question 'what's at residue 175 of TP53?'
@@ -1255,7 +1484,9 @@ def _filter_features_by_type(
     name="uniprot_get_active_sites",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_active_sites(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_get_active_sites(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """Return the active sites, binding sites, metal-binding residues,
     and DNA-binding regions annotated on a UniProt entry. Filtered view
     over the entry's feature array — this is the residue-level chemistry
@@ -1279,12 +1510,16 @@ async def uniprot_get_active_sites(accession: str, response_format: str = "markd
     name="uniprot_get_processing_features",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_processing_features(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_get_processing_features(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """Return the maturation and processing features (signal peptide,
     propeptide, transit peptide, initiator methionine, chain, peptide).
     These describe how the translated polypeptide is cleaved and
     targeted into its mature form — essential for therapeutic-protein
-    engineering and pathogen-secretion-system analysis."""
+    engineering and pathogen-secretion-system analysis. A pre-filtered
+    view over ``uniprot_get_features``; for post-translational chemical
+    modifications instead of cleavage/targeting, use ``uniprot_get_ptms``."""
     try:
         _check_accession(accession)
         _check_format(response_format)
@@ -1303,14 +1538,18 @@ async def uniprot_get_processing_features(accession: str, response_format: str =
     name="uniprot_get_ptms",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_ptms(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_get_ptms(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """Return the post-translational modification features (modified
     residues, glycosylation sites, lipidation sites, disulfide bonds,
     cross-links). PTMs are functionally critical: they switch enzymes
     on, target proteins for degradation, anchor them to membranes, and
-    fold them via disulfides. The empty case carries an honest pointer
-    to mass-spec databases (PhosphoSitePlus, GlyConnect) for additional
-    evidence."""
+    fold them via disulfides. A pre-filtered view over
+    ``uniprot_get_features``; for cleavage/targeting features instead of
+    chemical modifications, use ``uniprot_get_processing_features``. The
+    empty case carries an honest pointer to mass-spec databases
+    (PhosphoSitePlus, GlyConnect) for additional evidence."""
     try:
         _check_accession(accession)
         _check_format(response_format)
@@ -1328,7 +1567,18 @@ async def uniprot_get_ptms(accession: str, response_format: str = "markdown") ->
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_lookup_variant(
-    accession: str, change: str, response_format: str = "markdown"
+    accession: AccessionParam,
+    change: Annotated[
+        str,
+        Field(
+            description=(
+                "HGVS-shorthand amino-acid change, e.g. 'R175H', 'V600E', "
+                "'R248*' (stop). Format: <original residue><1-indexed "
+                "position><alt residue or '*'>."
+            )
+        ),
+    ],
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
     """Look up an HGVS-shorthand amino-acid change (e.g. ``R175H``,
     ``V600E``, ``R248*``) in the UniProt entry's natural-variant
@@ -1371,7 +1621,7 @@ async def uniprot_lookup_variant(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_get_disease_associations(
-    accession: str, response_format: str = "markdown"
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
 ) -> str:
     """Structured disease associations for a UniProt entry. Returns the
     diseases recorded in DISEASE-type comments with name, acronym,
@@ -1430,12 +1680,21 @@ async def uniprot_get_disease_associations(
     name="uniprot_get_uniparc",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_uniparc(upi: str, response_format: str = "markdown") -> str:
-    """Fetch a UniParc sequence-archive record by UPI (e.g. UPI000002ED67).
-    Returns sequence, MD5/CRC64 checksums, cross-reference counts, linked
+async def uniprot_get_uniparc(
+    upi: Annotated[
+        str,
+        Field(description="UniParc identifier, e.g. 'UPI000002ED67'. Always starts with 'UPI'."),
+    ],
+    response_format: ResponseFormatParam = "markdown",
+) -> str:
+    """Fetch a UniParc sequence-archive record by its known UPI. Returns
+    sequence, MD5/CRC64 checksums, cross-reference counts, linked
     UniProtKB accessions, and the common-taxa list. UniParc is the
     non-redundant sequence archive — every protein sequence ever submitted
-    to a major public database has exactly one UniParc record."""
+    to a major public database has exactly one UniParc record, making this
+    the tool to use when a UniProtKB accession doesn't exist for a
+    sequence you have. Don't have a UPI yet? Use ``uniprot_search_uniparc``
+    to find one first."""
     try:
         _check_uniparc_id(upi)
         _check_format(response_format)
@@ -1451,10 +1710,14 @@ async def uniprot_get_uniparc(upi: str, response_format: str = "markdown") -> st
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_search_uniparc(
-    query: str, size: int = 10, response_format: str = "markdown"
+    query: QueryParam, size: SizeParam = 10, response_format: ResponseFormatParam = "markdown"
 ) -> str:
-    """Search UniParc. Examples: 'taxonomy_id:9606' for human sequences,
-    'database:Ensembl' for Ensembl-derived entries."""
+    """Search the UniParc non-redundant sequence archive by taxonomy,
+    source database, or other UniParc query fields — the entry point when
+    you don't already have a UPI. Examples: 'taxonomy_id:9606' for human
+    sequences, 'database:Ensembl' for Ensembl-derived entries. Once you
+    have a UPI from the results, use ``uniprot_get_uniparc`` for the full
+    record."""
     try:
         _check_len("query", query, MAX_QUERY_LEN)
         _check_format(response_format)
@@ -1470,7 +1733,15 @@ async def uniprot_search_uniparc(
     name="uniprot_get_proteome",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_proteome(proteome_id: str, response_format: str = "markdown") -> str:
+async def uniprot_get_proteome(
+    proteome_id: Annotated[
+        str,
+        Field(
+            description="UniProt proteome ID, e.g. 'UP000005640' (human reference). Always starts with 'UP'."
+        ),
+    ],
+    response_format: ResponseFormatParam = "markdown",
+) -> str:
     """Fetch a UniProt proteome by UP ID (e.g. UP000005640 = human reference).
     Returns organism, taxonomy lineage, protein count, gene count, BUSCO
     completeness score, annotation score, and component breakdown
@@ -1490,7 +1761,7 @@ async def uniprot_get_proteome(proteome_id: str, response_format: str = "markdow
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_search_proteomes(
-    query: str, size: int = 10, response_format: str = "markdown"
+    query: str, size: SizeParam = 10, response_format: ResponseFormatParam = "markdown"
 ) -> str:
     """Search UniProt proteomes. Examples: 'organism_id:9606' for human,
     'proteome_type:1' for reference proteomes only, 'taxonomy_name:bacteria'
@@ -1510,7 +1781,12 @@ async def uniprot_search_proteomes(
     name="uniprot_get_citation",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_citation(citation_id: str, response_format: str = "markdown") -> str:
+async def uniprot_get_citation(
+    citation_id: Annotated[
+        str, Field(description="Citation ID, typically a numeric PubMed ID, e.g. '9840937'.")
+    ],
+    response_format: ResponseFormatParam = "markdown",
+) -> str:
     """Fetch a UniProt citation record by ID (typically a PubMed ID, e.g. 9840937).
     Returns title, authors, journal, year, volume, pages, and cross-references."""
     try:
@@ -1528,7 +1804,7 @@ async def uniprot_get_citation(citation_id: str, response_format: str = "markdow
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_search_citations(
-    query: str, size: int = 10, response_format: str = "markdown"
+    query: str, size: SizeParam = 10, response_format: ResponseFormatParam = "markdown"
 ) -> str:
     """Search the UniProt citations index. Examples: 'p53 AND author:Vogelstein',
     'BRCA1 AND year:[2020 TO 2024]'."""
@@ -1547,7 +1823,9 @@ async def uniprot_search_citations(
     name="uniprot_resolve_pdb",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_resolve_pdb(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_resolve_pdb(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """List every PDB structure cross-referenced from a UniProt entry, with
     method, resolution, and chain coverage. Faster than parsing the raw
     cross-references blob — returns a structured list typed for downstream
@@ -1566,7 +1844,9 @@ async def uniprot_resolve_pdb(accession: str, response_format: str = "markdown")
     name="uniprot_resolve_alphafold",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_resolve_alphafold(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_resolve_alphafold(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """Resolve the AlphaFoldDB cross-reference for a UniProt entry — typically
     one canonical model per accession. Includes a direct EBI viewer link."""
     try:
@@ -1583,7 +1863,9 @@ async def uniprot_resolve_alphafold(accession: str, response_format: str = "mark
     name="uniprot_resolve_interpro",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_resolve_interpro(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_resolve_interpro(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """List InterPro signatures (domain / family classifications) for a
     UniProt entry, with names extracted from the entry's cross-reference
     properties."""
@@ -1601,7 +1883,9 @@ async def uniprot_resolve_interpro(accession: str, response_format: str = "markd
     name="uniprot_resolve_chembl",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_resolve_chembl(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_resolve_chembl(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """Resolve ChEMBL drug-target cross-references for a UniProt entry.
     Returns the ChEMBL target IDs with EBI viewer links — empty if the
     protein has no documented bioactivity data in ChEMBL."""
@@ -1619,7 +1903,9 @@ async def uniprot_resolve_chembl(accession: str, response_format: str = "markdow
     name="uniprot_get_evidence_summary",
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def uniprot_get_evidence_summary(accession: str, response_format: str = "markdown") -> str:
+async def uniprot_get_evidence_summary(
+    accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
+) -> str:
     """Summarise the ECO (Evidence and Conclusion Ontology) codes attached to
     a UniProt entry's annotations. Counts how many features and comments cite
     each evidence code, distinguishing experimental from inferred annotations.
