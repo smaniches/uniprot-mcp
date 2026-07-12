@@ -58,6 +58,18 @@ async def test_taxonomy_search_human(client: UniProtClient) -> None:
 
 
 async def test_id_mapping_gene_to_uniprot(client: UniProtClient) -> None:
-    job = await client.id_mapping_submit("Gene_Name", "UniProtKB", ["BRCA1"])
+    """GeneID (Entrez) -> UniProtKB, using human BRCA1's Entrez Gene ID.
+
+    Not ``Gene_Name`` (UniProt's ``ruleId: 6``): as of 2026-07,
+    ``Gene_Name``-sourced mappings return zero results for common,
+    unambiguous symbols (BRCA1, TP53, INS all verified empty against the
+    live REST API) — an upstream UniProt regression unrelated to this
+    client. GeneID mapping exercises the same submit/poll/redirect code
+    path and reliably returns results.
+    """
+    job = await client.id_mapping_submit("GeneID", "UniProtKB", ["672"])
     data = await client.id_mapping_results(job)
-    assert data.get("results"), "expected at least one mapping"
+    accessions = {r["to"]["primaryAccession"] for r in data.get("results", [])}
+    assert "P38398" in accessions, (
+        f"P38398 not in GeneID 672 mapping results; got {sorted(accessions)}"
+    )
