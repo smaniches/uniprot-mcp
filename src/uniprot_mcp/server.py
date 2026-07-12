@@ -735,9 +735,24 @@ async def uniprot_get_keyword(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_search_keywords(
-    query: str, size: SizeParam = 10, response_format: ResponseFormatParam = "markdown"
+    query: Annotated[
+        str,
+        Field(
+            description=(
+                "Free-text to match against UniProt keyword names, synonyms, and "
+                "definitions, e.g. 'acetylation', 'nucleus', 'kinase activity'. "
+                "Plain words, not a UniProtKB field query."
+            )
+        ),
+    ],
+    size: SizeParam = 10,
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Search UniProt's controlled keyword vocabulary by name or definition.
+    """Search UniProt's controlled keyword vocabulary (the ``KW-####`` terms)
+    by name or definition. Use this to discover a keyword ID from a concept;
+    once you have the ``KW-####`` ID, call ``uniprot_get_keyword`` for its full
+    record (definition, category, hierarchy, GO cross-references). Returns up
+    to ``size`` matches, or an empty list if nothing matches.
     Examples: 'acetylation', 'nucleus', 'kinase activity'."""
     try:
         _check_len("query", query, MAX_QUERY_LEN)
@@ -780,9 +795,25 @@ async def uniprot_get_subcellular_location(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_search_subcellular_locations(
-    query: str, size: SizeParam = 10, response_format: ResponseFormatParam = "markdown"
+    query: Annotated[
+        str,
+        Field(
+            description=(
+                "Free-text to match against UniProt subcellular-location names, "
+                "synonyms, and definitions, e.g. 'membrane', 'mitochondrion', "
+                "'cytoplasm'. Plain words, not a UniProtKB field query."
+            )
+        ),
+    ],
+    size: SizeParam = 10,
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Search UniProt's controlled subcellular-location vocabulary.
+    """Search UniProt's controlled subcellular-location vocabulary (the
+    ``SL-####`` terms) by name or definition. Use this to discover a location
+    ID from a concept; once you have the ``SL-####`` ID, call
+    ``uniprot_get_subcellular_location`` for its full record (definition,
+    category, hierarchy, GO cross-references). Returns up to ``size`` matches,
+    or an empty list if nothing matches.
     Examples: 'membrane', 'mitochondrion', 'cytoplasm'."""
     try:
         _check_len("query", query, MAX_QUERY_LEN)
@@ -1762,11 +1793,27 @@ async def uniprot_get_proteome(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_search_proteomes(
-    query: str, size: SizeParam = 10, response_format: ResponseFormatParam = "markdown"
+    query: Annotated[
+        str,
+        Field(
+            description=(
+                "Proteome query using UniProt proteome fields, e.g. "
+                "'organism_id:9606' (human), 'proteome_type:1' (reference "
+                "proteomes only), or 'taxonomy_name:bacteria'. Plain text also "
+                "matches organism names."
+            )
+        ),
+    ],
+    size: SizeParam = 10,
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Search UniProt proteomes. Examples: 'organism_id:9606' for human,
-    'proteome_type:1' for reference proteomes only, 'taxonomy_name:bacteria'
-    for all bacterial proteomes."""
+    """Search UniProt proteomes (whole-organism protein sets) by organism or
+    proteome field. Use this to find a proteome's ``UP#########`` ID; once you
+    have it, call ``uniprot_get_proteome`` for the full record (protein / gene
+    counts, BUSCO completeness, component breakdown). Returns up to ``size``
+    matches, or an empty list if nothing matches. Examples: 'organism_id:9606'
+    for human, 'proteome_type:1' for reference proteomes only,
+    'taxonomy_name:bacteria' for all bacterial proteomes."""
     try:
         _check_len("query", query, MAX_QUERY_LEN)
         _check_format(response_format)
@@ -1805,9 +1852,25 @@ async def uniprot_get_citation(
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
 async def uniprot_search_citations(
-    query: str, size: SizeParam = 10, response_format: ResponseFormatParam = "markdown"
+    query: Annotated[
+        str,
+        Field(
+            description=(
+                "Citation query using UniProt citation fields, e.g. "
+                "'p53 AND author:Vogelstein' or 'BRCA1 AND year:[2020 TO 2024]'. "
+                "Supports free text plus 'author:', 'title:', and 'year:' ranges."
+            )
+        ),
+    ],
+    size: SizeParam = 10,
+    response_format: ResponseFormatParam = "markdown",
 ) -> str:
-    """Search the UniProt citations index. Examples: 'p53 AND author:Vogelstein',
+    """Search the UniProt citations index (the literature UniProt references)
+    by title, author, or year. Use this to find a citation's ID (typically a
+    PubMed ID); once you have it, call ``uniprot_get_citation`` for the full
+    record. For the publications attached to one specific protein entry, use
+    ``uniprot_get_publications`` instead. Returns up to ``size`` matches, or an
+    empty list if nothing matches. Examples: 'p53 AND author:Vogelstein',
     'BRCA1 AND year:[2020 TO 2024]'."""
     try:
         _check_len("query", query, MAX_QUERY_LEN)
