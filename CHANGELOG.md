@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.0](https://github.com/smaniches/uniprot-mcp/compare/v1.2.6...v1.3.0) (2026-07-13)
+
+
+### Features
+
+* **evidence:** grade ECO codes into a 0-100 evidence-confidence score ([#133](https://github.com/smaniches/uniprot-mcp/issues/133)) ([67b2b27](https://github.com/smaniches/uniprot-mcp/commit/67b2b27718284dc63221816363231ae6d1c26a73))
+* **server:** add per-parameter descriptions and usage guidance to all tools ([#132](https://github.com/smaniches/uniprot-mcp/issues/132)) ([2dcc5ff](https://github.com/smaniches/uniprot-mcp/commit/2dcc5ffb406fda8ae7a62a53b66c51b19fab06dd))
+* **server:** finish per-parameter descriptions on the four search tools ([#134](https://github.com/smaniches/uniprot-mcp/issues/134)) ([e29aa5b](https://github.com/smaniches/uniprot-mcp/commit/e29aa5b5af0a1aba9acc4337f8e830cd3d6d60dd))
+
+
+### Bug Fixes
+
+* list 1.3.x as a supported series in SECURITY.md ([#135](https://github.com/smaniches/uniprot-mcp/issues/135)) ([76ae133](https://github.com/smaniches/uniprot-mcp/commit/76ae1330053e1c874bdb48df9670dc3913ef38c7))
+* **tests:** stop pinning live ID-mapping test to broken Gene_Name field ([#130](https://github.com/smaniches/uniprot-mcp/issues/130)) ([08fbf67](https://github.com/smaniches/uniprot-mcp/commit/08fbf67a290356077a860a79a8e88539de7e06c2))
+
 ## [1.2.6](https://github.com/smaniches/uniprot-mcp/compare/v1.2.5...v1.2.6) (2026-07-06)
 
 
