@@ -11,6 +11,7 @@
 [![Provenance: SHA-256 + verify](https://img.shields.io/badge/provenance-SHA--256_+_verify-blue)](#provenance--verification)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.19817710-3C5A99?logo=zenodo&logoColor=white)](https://doi.org/10.5281/zenodo.19817710)
+[![Listed on awesome-mcp-servers](https://img.shields.io/badge/Listed_on-awesome--mcp--servers-blue?logo=github)](https://github.com/punkpeye/awesome-mcp-servers/pull/10019)
 
 UniProt MCP server — a **Model Context Protocol** server for the
 [UniProt](https://www.uniprot.org) protein knowledgebase with
