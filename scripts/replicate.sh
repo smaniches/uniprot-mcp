@@ -60,8 +60,11 @@ ok "downloaded wheel: $(basename "$WHEEL")"
 echo "    wheel SHA-256: $WHEEL_SHA"
 
 step "2. Cross-check SHA-256 across PyPI / GitHub Release / SLSA attestation"
-PYPI_SHA="$(curl -fsSL "https://pypi.org/pypi/${PKG}/${VERSION}/json" \
-  | python -c "import json,sys;[print(f['digests']['sha256']) for f in json.load(sys.stdin)['urls'] if f['packagetype']=='bdist_wheel']")"
+PYPI_JSON="$(mktemp "${WORK}/pypi-json-XXXXXX")"
+curl --fail --show-error --silent --location \
+  "https://pypi.org/pypi/${PKG}/${VERSION}/json" \
+  --output "$PYPI_JSON"
+PYPI_SHA="$(python -c "import json,sys;[print(f['digests']['sha256']) for f in json.load(open(sys.argv[1]))['urls'] if f['packagetype']=='bdist_wheel']" "$PYPI_JSON")"
 echo "    PyPI registry: $PYPI_SHA"
 [[ "$WHEEL_SHA" == "$PYPI_SHA" ]] && ok "wheel matches PyPI registry record" \
   || fail "wheel SHA-256 disagrees with PyPI registry"

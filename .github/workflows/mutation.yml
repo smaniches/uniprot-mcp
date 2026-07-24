@@ -162,7 +162,6 @@ jobs:
         # 2.5.1 exactly because scripts/mutmut_shard.py couples to its
         # internal parse_run_argument seam.
         run: |
-          python -m pip install --upgrade pip
           pip install -e ".[test,dev]"
           pip install "mutmut==2.5.1"
       - name: Generate coverage data

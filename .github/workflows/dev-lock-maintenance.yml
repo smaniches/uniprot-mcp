@@ -61,7 +61,6 @@ jobs:
         # output stays byte-identical to what the CI `lock` gate regenerates —
         # bump uv here together with ci.yml.
         run: |
-          python -m pip install --upgrade pip
           pip install uv==0.11.20
           uv pip compile pyproject.toml --extra test --extra dev --universal --no-emit-package pip --upgrade --output-file constraints/dev.lock
 
