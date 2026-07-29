@@ -1,5 +1,6 @@
-"""The published ``mcp`` dependency floor must not regress below the fixed
-version that remediates CVE-2026-59950.
+"""The published ``mcp`` dependency range must stay within the versions this
+package actually works against: at or above the CVE-2026-59950 fix, and below
+the 2.x line that removed the API ``server.py`` is built on.
 
 ``constraints/dev.lock`` pins ``mcp==1.28.1`` and CI resolves against that lock,
 so CI is protected. But the lock is a dev/CI-only artefact: it is not shipped in
@@ -32,6 +33,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 # WebSocket server transport lacked Host/Origin validation). The published floor
 # must be at least this; raising it further is welcome.
 MIN_MCP_FLOOR = (1, 28, 1)
+
+# The first ``mcp`` major that ``server.py`` cannot run on. mcp 2.0.0 removed the
+# ``mcp.server.fastmcp`` package (the replacement is ``mcp.server.mcpserver``)
+# and renamed the ``ToolAnnotations`` fields from camelCase to snake_case, so
+# the package raises ``ModuleNotFoundError`` at import under 2.x. The ceiling
+# may only be lifted together with a port of ``server.py`` to the 2.x API.
+FIRST_UNSUPPORTED_MCP_MAJOR = 2
 
 
 def _normalized_name(requirement: str) -> str:
@@ -76,4 +84,46 @@ def test_mcp_floor_not_below_security_baseline() -> None:
         f"the published 'mcp' floor {'.'.join(map(str, floor))} is below the "
         "security baseline 1.28.1 (CVE-2026-59950). Do not lower it: the wheel's "
         "Requires-Dist is the only floor a downstream 'pip install' sees."
+    )
+
+
+def test_mcp_range_excludes_unsupported_major() -> None:
+    """The declared range must exclude mcp 2.x.
+
+    Without a ceiling, a downstream ``pip install uniprot-mcp-server`` — and
+    the CI test matrix, which installs on floors rather than against the lock —
+    resolves the newest ``mcp``. That is 2.x, under which this package does not
+    import at all. A green lock-constrained job does not protect either of them,
+    exactly as with the floor above.
+    """
+    requirement = _mcp_requirement()
+    bound = re.search(r"<(=?)\s*([0-9]+(?:\.[0-9]+)*)", requirement)
+    assert bound, (
+        f"the 'mcp' requirement {requirement!r} declares no upper bound; a "
+        f"downstream install would resolve mcp {FIRST_UNSUPPORTED_MCP_MAJOR}.x, "
+        "which removed the 'mcp.server.fastmcp' API server.py imports. "
+        f"Declare 'mcp>=1.28.1,<{FIRST_UNSUPPORTED_MCP_MAJOR}'."
+    )
+    inclusive = bound.group(1) == "="
+    ceiling = tuple(int(part) for part in bound.group(2).split("."))
+    first_unsupported = (FIRST_UNSUPPORTED_MCP_MAJOR, 0, 0)
+    # Zero-pad so bounds of differing precision compare correctly, e.g. `<2`
+    # must be judged equal to — not below — 2.0.0.
+    width = max(len(ceiling), len(first_unsupported))
+    ceiling_padded = ceiling + (0,) * (width - len(ceiling))
+    first_unsupported_padded = first_unsupported + (0,) * (width - len(first_unsupported))
+    # The operator decides which comparison is correct, and getting this wrong
+    # is not academic: `<=2` and `<2.5` both name a "2" ceiling yet still admit
+    # 2.0.0, the exact release that breaks the import. An exclusive bound may
+    # sit *at* the first unsupported version; an inclusive one must sit below it.
+    admits_unsupported = (
+        ceiling_padded >= first_unsupported_padded
+        if inclusive
+        else ceiling_padded > first_unsupported_padded
+    )
+    assert not admits_unsupported, (
+        f"the declared 'mcp' ceiling '<{'=' if inclusive else ''}{bound.group(2)}' "
+        f"still admits mcp {FIRST_UNSUPPORTED_MCP_MAJOR}.0.0, which this package "
+        f"cannot import. Use '<{FIRST_UNSUPPORTED_MCP_MAJOR}'. Raise the ceiling "
+        "past it only together with a port of server.py to the 2.x API."
     )
