@@ -145,7 +145,7 @@ The plaintext `expected.jsonl` is held local-only per `.gitignore`. Three tests 
 
 ### 4.1 Dependencies
 
-Production runtime: only `httpx >= 0.27` and `mcp >= 1.2`. Test extras: `pytest`, `pytest-asyncio`, `pytest-cov`, `pytest-socket`, `respx`, `hypothesis`, `syrupy`. Dev extras: `ruff`, `mypy`, `bandit`, `pip-audit`, `pre-commit`. Docs extras: `mkdocs`, `mkdocs-material`. All from PyPI-reputable maintainers.
+Production runtime: only `httpx >= 0.27` and `mcp >= 1.28.1, < 2` (floor set by CVE-2026-59950; ceiling because mcp 2.x removes the `mcp.server.fastmcp` API this server is built on). Test extras: `pytest`, `pytest-asyncio`, `pytest-cov`, `pytest-socket`, `respx`, `hypothesis`, `syrupy`. Dev extras: `ruff`, `mypy`, `bandit`, `pip-audit`, `pre-commit`. Docs extras: `mkdocs`, `mkdocs-material`. All from PyPI-reputable maintainers.
 
 Dependabot watches `pip` weekly (per `.github/dependabot.yml`).
 
