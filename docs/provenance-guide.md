@@ -136,7 +136,9 @@ rather than transparently rewrite the request.
 **Scope in v1.1.x — read primitive only.** The cache is a *read*
 surface for offline replay. `uniprot_replay_from_cache(url)` reads
 from `<cache_dir>/<sha256(url)>.json` and returns the record without
-hitting UniProt. **Automatic write-through is a v1.2.0 roadmap item.**
+hitting UniProt. **Automatic cache write-through is not currently wired
+into the request path; cache entries must be populated explicitly or by
+an external capture workflow.**
 Today the cache directory must be populated externally — either by a
 prior export, or by tests that explicitly call `ProvenanceCache.write`.
 This was clarified in v1.1.3 (see `CHANGELOG.md` — the v1.1.2 wording

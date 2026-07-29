@@ -149,9 +149,11 @@ pytest tests/unit/test_cache.py -v
 
 **Limitation.** This is a **read primitive** in v1.1.x. The cache
 directory must be populated externally (e.g., by the benchmark capture
-script or by a user wrapper). Automatic write-through on every
-successful tool call is a v1.2.0 roadmap item. This was explicitly
-retracted in v1.1.3 (see CHANGELOG.md).
+script or by a user wrapper). Automatic cache write-through is not
+currently wired into the request path; cache entries must be populated
+explicitly or by an external capture workflow. The earlier claim that
+every successful response is mirrored to disk was explicitly retracted
+in v1.1.3 (see CHANGELOG.md).
 
 **Last reviewed:** 2026-05-26.
 
