@@ -1179,8 +1179,9 @@ UniProt.</p>
 </code></pre></div></p>
 <p><strong>Limitation.</strong> This is a <strong>read primitive</strong> in v1.1.x. The cache
 directory must be populated externally (e.g., by the benchmark capture
-script or by a user wrapper). Automatic write-through on every
-successful tool call is a v1.2.0 roadmap item. This was explicitly
+script or by a user wrapper). Automatic cache write-through is not
+currently wired into the request path; cache entries must be populated
+explicitly or by an external capture workflow. This was explicitly
 retracted in v1.1.3 (see CHANGELOG.md).</p>
 <p><strong>Last reviewed:</strong> 2026-05-26.</p>
 <hr />
