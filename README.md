@@ -188,7 +188,7 @@ Issues / corrections welcome at https://github.com/smaniches/uniprot-mcp/issues.
 | Per-query auditability | `uniprot_provenance_verify` re-checks any prior response | not possible | not possible |
 | Release pinning | `--pin-release=YYYY_MM` raises on drift | n/a | n/a |
 | Pre-registered benchmark | 30 prompts, SHA-256 committed on `main` + reproducible verifier | n/a | n/a |
-| Local provenance cache | `uniprot_replay_from_cache` read primitive (cache write-through is a v1.2.0 roadmap item — see [§Provenance & verification](#provenance--verification)) | n/a | n/a |
+| Local provenance cache | `uniprot_replay_from_cache` read primitive (automatic cache write-through is not wired into the request path — see [§Provenance & verification](#provenance--verification)) | n/a | n/a |
 | Clinical primitives | sequence chemistry / position-aware features / HGVS variant lookup / disease associations / AlphaFold pLDDT / ClinVar | none | none |
 | Composition tool | `uniprot_target_dossier` — one call, nine sections | n/a | n/a |
 | Input validation | regex + length cap before any HTTP call | none | partial |
@@ -378,9 +378,9 @@ uniprot-mcp
 > process — for example, by the maintainer-provided benchmark capture
 > script, or by you wrapping `httpx` calls and writing to the directory
 > yourself in the documented JSON shape (see `src/uniprot_mcp/cache.py`).
-> Automatic write-through on every successful tool call is a tracked
-> v1.2.0 roadmap item; the production code in v1.1.x does **not**
-> mirror responses to disk by default.
+> Automatic cache write-through is not currently wired into the request
+> path; cache entries must be populated explicitly or by an external
+> capture workflow.
 
 A live end-to-end demonstration is committed at
 [`tests/benchmark/run-2026-04-25-roundtrip/transcript.md`](tests/benchmark/run-2026-04-25-roundtrip/transcript.md)
@@ -475,8 +475,8 @@ For pinned, reproducibility-grade access:
 ```
 
 To enable `uniprot_replay_from_cache` reads against a cache directory
-you have populated yourself (write-through is a v1.2.0 roadmap item —
-see [§Provenance & verification](#provenance--verification)):
+you have populated yourself (automatic write-through is not wired into
+the request path — see [§Provenance & verification](#provenance--verification)):
 
 ```json
 {
@@ -555,9 +555,9 @@ uniprot-mcp --self-test
 ```bash
 # Pre-condition: $UNIPROT_MCP_CACHE_DIR/<sha256(url)>.json already exists,
 # populated by the maintainer benchmark capture script or an external
-# wrapper. Automatic write-through on every successful tool call is a
-# tracked v1.2.0 roadmap item — uniprot-mcp 1.1.x does NOT mirror
-# responses to disk by default.
+# wrapper. Automatic cache write-through is not currently wired into the
+# request path; cache entries must be populated explicitly or by an
+# external capture workflow.
 export UNIPROT_MCP_CACHE_DIR=~/sealed-cache
 > uniprot_replay_from_cache("https://rest.uniprot.org/uniprotkb/P04637")
 ```
@@ -619,7 +619,7 @@ bandit -r src/uniprot_mcp && pip-audit --strict
 
 ## Related MCP servers by the same author
 
-- [`alphafold-sovereign-mcp`](https://github.com/smaniches/alphafold-sovereign-mcp) — Model Context Protocol server for AlphaFold DB and 13 other biomedical data sources, with a local SQLite knowledge graph (`pip install --pre alphafold-sovereign-mcp`).
+- [`alphafold-sovereign-mcp`](https://github.com/smaniches/alphafold-sovereign-mcp) — Model Context Protocol server that integrates AlphaFold DB with eight additional public biomedical data sources, with a local SQLite knowledge graph (`pip install alphafold-sovereign-mcp`).
 - [`semantic-scholar-mcp`](https://github.com/smaniches/semantic-scholar-mcp) — Model Context Protocol server for Semantic Scholar (200M+ academic papers), providing 14 tools for paper search, citation graph traversal, author profiles, and recommendations (`pip install s2-mcp-server`).
 
 ---
