@@ -3,15 +3,19 @@
 # UniProt MCP Server
 
 [![CI](https://github.com/smaniches/uniprot-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/smaniches/uniprot-mcp/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/smaniches/uniprot-mcp/badge)](https://api.securityscorecards.dev/projects/github.com/smaniches/uniprot-mcp)
+[![GitHub Release](https://img.shields.io/github/v/release/smaniches/uniprot-mcp?sort=semver)](https://github.com/smaniches/uniprot-mcp/releases)
+[![PyPI version](https://img.shields.io/pypi/v/uniprot-mcp-server)](https://pypi.org/project/uniprot-mcp-server/)
+[![PyPI downloads/30d](https://img.shields.io/pypi/dm/uniprot-mcp-server?label=downloads%2F30d)](https://pypistats.org/packages/uniprot-mcp-server)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![MCP compatible](https://img.shields.io/badge/MCP-compatible-6e56cf.svg)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-956_offline_%2B_44_live-success)](#testing)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](pyproject.toml)
 [![Provenance: SHA-256 + verify](https://img.shields.io/badge/provenance-SHA--256_+_verify-blue)](#provenance--verification)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0005--6480--1987-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0005-6480-1987)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.19817710-3C5A99?logo=zenodo&logoColor=white)](https://doi.org/10.5281/zenodo.19817710)
-[![Listed on awesome-mcp-servers](https://img.shields.io/badge/Listed_on-awesome--mcp--servers-blue?logo=github)](https://github.com/punkpeye/awesome-mcp-servers/pull/10019)
+[![Glama score](https://glama.ai/mcp/servers/smaniches/uniprot-mcp/badges/score.svg)](https://glama.ai/mcp/servers/smaniches/uniprot-mcp)
+[![Awesome MCP Servers](https://img.shields.io/badge/Awesome_MCP-Listed-blue?logo=github)](https://github.com/punkpeye/awesome-mcp-servers#bio)
 
 UniProt MCP server — a **Model Context Protocol** server for the
 [UniProt](https://www.uniprot.org) protein knowledgebase with
