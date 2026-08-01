@@ -9,13 +9,13 @@ third party can re-check any prior answer.
 
 ```python
 class Provenance(TypedDict):
-    source: str            # "UniProt" / "AlphaFoldDB" / "NCBI ClinVar (eutils)"
-    release: str | None    # e.g. "2026_01"; None when origin doesn't version
+    source: str  # "UniProt" / "AlphaFoldDB" / "NCBI ClinVar (eutils)"
+    release: str | None  # e.g. "2026_01"; None when origin doesn't version
     release_date: str | None
-    retrieved_at: str      # ISO-8601 UTC, second precision
-    url: str               # fully resolved request URL incl. query string
-    response_sha256: str   # SHA-256 of the canonical body
-    accept_header: str     # Accept header used ("application/json" or "text/plain;format=fasta")
+    retrieved_at: str  # ISO-8601 UTC, second precision
+    url: str  # fully resolved request URL incl. query string
+    response_sha256: str  # SHA-256 of the canonical body
+    accept_header: str  # Accept header used ("application/json" or "text/plain;format=fasta")
 ```
 
 `response_sha256` is computed on a **canonical** serialization:
