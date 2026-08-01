@@ -17,18 +17,18 @@ repos:
   # constraints/dev.lock so a contributor's local `pre-commit run` enforces
   # the same versions the CI lint job pins. Bump these together with the lock.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.17
+    rev: v0.16.1
     hooks:
       - id: ruff
         args: ["--fix"]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.1.0
+    rev: v2.3.0
     hooks:
       - id: mypy
         files: ^(client|server|formatters)\.py$
-        additional_dependencies: ["httpx==0.28.1", "mcp==1.27.2"]
+        additional_dependencies: ["httpx==0.28.1", "mcp==1.29.0"]
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.9.4
