@@ -85,6 +85,14 @@ uv pip compile constraints/release.in "$BUILD" "${COMMON[@]}" \
 uv pip compile constraints/mutation.in "${COMMON[@]}" \
   "${UPGRADE[@]}" --output-file constraints/mutation.lock
 
+# Backend for third-party sdists. mutmut and glob2 publish no wheels and
+# no pyproject.toml, so pip builds them with the implicit setuptools
+# backend; without this lock installed first, that backend is downloaded
+# unhashed at build time. mutation.yml installs this, then installs
+# mutation.lock with --no-build-isolation. See constraints/sdist-build.in.
+uv pip compile constraints/sdist-build.in "${COMMON[@]}" \
+  "${UPGRADE[@]}" --output-file constraints/sdist-build.lock
+
 # The uv bootstrap lock is intentionally NOT upgraded: uv is the tool
 # generating every lock above, so its version is what makes the output
 # byte-reproducible. Bump constraints/uv.in deliberately, in its own

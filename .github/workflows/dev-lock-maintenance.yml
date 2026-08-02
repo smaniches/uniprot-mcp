@@ -1,8 +1,9 @@
 name: Lock maintenance
 
 # Refreshes EVERY hash-locked file under constraints/ (dev, test, docs,
-# release, mutation) to the newest versions allowed by their inputs, realigns
-# .pre-commit-config.yaml with the refreshed dev.lock, then opens a single PR.
+# release, mutation, sdist-build) to the newest versions allowed by their
+# inputs, realigns .pre-commit-config.yaml with the refreshed dev.lock, then
+# opens a single PR.
 #
 # constraints/uv-bootstrap.lock is deliberately NOT upgraded: uv is the tool
 # that compiles every other lock, so its pinned version is what makes the
@@ -138,6 +139,13 @@ jobs:
           path: |
             constraints/
             .pre-commit-config.yaml
+          # REQUIRED: .pre-commit-config.yaml is a dotfile, and this action
+          # skips hidden files by default even when they are named
+          # explicitly in `path`. Without this, open-pr would silently
+          # commit the refreshed locks with the STALE config from its own
+          # checkout, breaking the lockstep contract the refresh just
+          # repaired.
+          include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
 
@@ -228,7 +236,11 @@ jobs:
           # `python -m pip install ...`: that is what Scorecard's pinned-
           # dependency parser recognises, so these stay covered by the check.
           export PATH="${RUNNER_TEMP}/v-mut/bin:${PATH}"
-          python -m pip install --require-hashes -r constraints/mutation.lock
+          # sdist-build.lock first, then --no-build-isolation: mutmut and
+          # glob2 are sdist-only, so pip builds them, and plain
+          # --require-hashes would fetch the setuptools backend unhashed.
+          python -m pip install --require-hashes -r constraints/sdist-build.lock
+          python -m pip install --no-build-isolation --require-hashes -r constraints/mutation.lock
           python - <<'PY'
           import importlib.metadata as md
 
@@ -290,7 +302,7 @@ jobs:
           cat > "${RUNNER_TEMP}/pr-body.md" <<'BODY'
           Automated refresh of every hash-locked toolchain under `constraints/` via `uv pip compile --upgrade`.
 
-          Covers `dev.lock`, `test.lock`, `docs.lock`, `release.lock` and `mutation.lock`. `uv-bootstrap.lock` is deliberately not upgraded — it pins the uv that compiles the others, so bumping it is a separate reviewable commit against `constraints/uv.in`.
+          Covers `dev.lock`, `test.lock`, `docs.lock`, `release.lock`, `mutation.lock` and `sdist-build.lock`. `uv-bootstrap.lock` is deliberately not upgraded — it pins the uv that compiles the others, so bumping it is a separate reviewable commit against `constraints/uv.in`.
 
           `.pre-commit-config.yaml` is realigned in the same commit, so the local hook revs keep matching the refreshed `dev.lock`.
 
@@ -302,7 +314,7 @@ jobs:
           | `test.lock` | offline unit / property / client / contract suite |
           | `docs.lock` | `mkdocs build --strict` |
           | `release.lock` | `python -m build --no-isolation` + CycloneDX SBOM |
-          | `mutation.lock` | mutmut pin and the `parse_run_argument` shard seam |
+          | `mutation.lock` + `sdist-build.lock` | mutmut pin and the `parse_run_argument` shard seam, built from sdists with a hash-verified setuptools |
 
           Regeneration was also proven deterministic: recompiling without `--upgrade` reproduced the same bytes.
 

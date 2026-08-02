@@ -45,10 +45,31 @@ command under `PIP_NO_INDEX=1`.
 | `docs.lock` | `pyproject.toml` extra `docs`, `build.in` | `docs.yml` |
 | `release.lock` | `release.in` (`build`, `cyclonedx-bom`), `build.in` | `release.yml` |
 | `mutation.lock` | `mutation.in` (`mutmut==2.5.1`) | `mutation.yml` |
+| `sdist-build.lock` | `sdist-build.in` (`setuptools`, `wheel`) | `mutation.yml`, maintenance validation |
 | `uv-bootstrap.lock` | `uv.in` (`uv==0.11.20`) | `ci.yml` lock gate, `dev-lock-maintenance.yml` |
 
-`mutation.lock` carries no build backend by design: `mutation.yml` always
-installs `dev.lock` alongside it, and that is where the backend comes from.
+`mutation.lock` carries no project build backend by design: `mutation.yml`
+always installs `dev.lock` alongside it, and that is where hatchling comes
+from.
+
+### Two different build backends
+
+`build.in` and `sdist-build.in` solve the same class of problem at opposite
+ends:
+
+* **`build.in`** covers *this project's* backend. `pyproject.toml` declares
+  `hatchling>=1.24`, so installing the local checkout needs hatchling.
+* **`sdist-build.in`** covers *other people's* backends. `mutmut==2.5.1` and
+  `glob2==0.7` publish no wheels and no `pyproject.toml`, so pip builds those
+  sdists with the implicit setuptools backend. Hash-verifying an sdist does
+  not help if the tool that compiles it is fetched unhashed — cold-cache,
+  `pip install --require-hashes -r mutation.lock` emits 12 build events and
+  downloads setuptools from the index. `mutation.yml` therefore installs
+  `sdist-build.lock` first and then passes `--no-build-isolation`.
+
+Both cases need `--no-build-isolation`, because `--require-hashes` and
+`--no-deps` govern *which distributions* are installed, never *how* they are
+built.
 
 `uv-bootstrap.lock` is the root of trust: it installs the exact `uv` that
 compiles every other lock, which is what makes regeneration byte-reproducible.
