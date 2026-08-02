@@ -22,6 +22,12 @@
 #   * a CVE in mutmut's dependency graph needs picking up; or
 #   * constraints/mutation.in changed.
 #
+# The second case is enforced, not left to memory:
+# scripts/check_mutation_lock_sync.py compares the pins in mutation.in
+# against mutation.lock without resolving anything, and runs in the
+# ci.yml `lock` job, a pre-commit hook, and a contract test. Editing the
+# input without running this script fails CI.
+#
 # Not on a schedule. mutmut is pinned to 2.5.1 exactly because
 # scripts/mutmut_shard.py monkeypatches its internal
 # `parse_run_argument` seam, so there is nothing to gain from routine

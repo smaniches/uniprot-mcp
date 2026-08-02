@@ -89,3 +89,19 @@ repos:
             \.pre-commit-config\.yaml
             |constraints/dev\.lock
           )$
+
+      # constraints/mutation.lock is excluded from scripts/regenerate-locks.sh
+      # (resolving it builds sdists), so the CI regenerate-and-diff gate cannot
+      # catch it drifting from its input. Compare them directly instead; this
+      # resolves nothing. Also enforced in CI via the `lock` job and
+      # tests/contract/test_mutation_lock_sync.py.
+      - id: check-mutation-lock-sync
+        name: check-mutation-lock-sync (mutation.in vs mutation.lock)
+        entry: python scripts/check_mutation_lock_sync.py
+        language: system
+        pass_filenames: false
+        files: |
+          (?x)^(
+            constraints/mutation\.in
+            |constraints/mutation\.lock
+          )$

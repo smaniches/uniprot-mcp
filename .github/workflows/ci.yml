@@ -138,3 +138,16 @@ jobs:
           python -m pip install --require-hashes -r constraints/uv-bootstrap.lock
           ./scripts/regenerate-locks.sh
           git diff --exit-code constraints/
+      - name: Verify constraints/mutation.lock satisfies its input
+        # mutation.lock is excluded from the regeneration above on purpose:
+        # resolving it builds mutmut's and glob2's sdists, executing
+        # third-party setup.py code, which must not happen on every PR.
+        #
+        # That exclusion means the `git diff` gate cannot see it drift. Editing
+        # the mutmut pin in constraints/mutation.in without running
+        # scripts/regenerate-mutation-lock.sh would otherwise pass every check
+        # while the weekly mutation run kept using the old version. This
+        # comparison reads the two files and resolves nothing, so it is safe
+        # to run here. Also enforced by
+        # tests/contract/test_mutation_lock_sync.py.
+        run: python scripts/check_mutation_lock_sync.py

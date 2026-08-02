@@ -77,6 +77,15 @@ unfamiliar source. `--no-build` is a security control, not a tuning flag: if a
 newly added dependency makes the routine compile fail, that dependency is
 sdist-only and needs the same treatment rather than the flag being removed.
 
+Excluding the lock from routine regeneration removes the usual safety net: the
+`lock` gate regenerates and diffs, so it cannot notice `mutation.lock` falling
+behind `mutation.in`. Editing the `mutmut==` pin without running the script
+would otherwise pass every check while the weekly mutation run kept using the
+old version. `scripts/check_mutation_lock_sync.py` closes that by comparing the
+two files directly — it resolves nothing, so it is safe on every PR — and is
+wired into the `lock` job, a pre-commit hook, and
+`tests/contract/test_mutation_lock_sync.py`.
+
 ### Two different build backends
 
 `build.in` and `mutation-build.in` solve the same class of problem at opposite
