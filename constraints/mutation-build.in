@@ -1,0 +1,30 @@
+# Build backend for THIRD-PARTY source distributions.
+#
+# Distinct from constraints/build.in, which covers this project's own
+# hatchling backend. This file covers the backend pip needs to build other
+# people's sdists.
+#
+# constraints/mutation.lock pins mutmut==2.5.1 and glob2==0.7. Neither
+# publishes a wheel, so pip must BUILD both from source at install time.
+# Hash-verifying an sdist does not help if the tool that compiles it is
+# unverified.
+#
+# Which compiler pip uses depends on AMBIENT ENVIRONMENT STATE, which is
+# the actual problem:
+#
+#   * `wheel` absent (the default in a fresh venv): pip takes the PEP 517
+#     path, creates an isolated build environment, and downloads setuptools
+#     and wheel from the index OUTSIDE --require-hashes, then executes
+#     them. Measured: `Installing build dependencies` appears in the log
+#     and the build runs as `Building wheel for glob2 (pyproject.toml)`.
+#   * `wheel` present: pip uses the legacy `setup.py bdist_wheel` path with
+#     whatever setuptools is already installed — no download, but also no
+#     guarantee about which setuptools that is.
+#
+# Neither branch is acceptable as a security posture, and which one a
+# given runner takes is not something the workflow controls. Installing
+# this lock first and then passing --no-build-isolation removes the
+# ambiguity: the build tools are pinned, hash-verified, and identical on
+# every runner.
+setuptools
+wheel

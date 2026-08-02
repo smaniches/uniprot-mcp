@@ -17,6 +17,16 @@
 # this script, so the compile flags cannot drift between the job that
 # verifies the locks and the job that regenerates them.
 #
+# SCOPE: this script regenerates every lock whose graph resolves purely
+# from wheels — dev, test, docs, release, mutation-build, uv-bootstrap.
+# It does NOT regenerate constraints/mutation.lock, whose graph is
+# sdist-only and therefore requires executing third-party build code.
+# That one has its own deliberate entry point:
+#     scripts/regenerate-mutation-lock.sh
+# Because of that split, running this script executes no third-party
+# code, which is what lets the maintenance workflow upload the refreshed
+# locks before any untrusted toolchain runs.
+#
 # Usage:
 #   scripts/regenerate-locks.sh              # reuse committed pins as preferences
 #   scripts/regenerate-locks.sh --upgrade    # advance to newest allowed by ranges
@@ -51,9 +61,20 @@ fi
 # on a different Python. Pinning it to the project's floor makes the
 # output byte-identical on any runner and keeps the resolution as wide
 # as requires-python allows.
+# --no-build is a SECURITY control, not an optimisation, and must not be
+# dropped. It forbids uv from building any source distribution during
+# resolution. Building an sdist means executing its setup.py / build
+# backend, and this script runs on every pull request via the ci.yml
+# `lock` gate. With --no-build, resolution reads wheel metadata only, so
+# no third-party code executes on the routine path at all.
+#
+# Every input compiled below resolves cleanly under it. If adding a
+# dependency makes this fail, that dependency is sdist-only: either find
+# a wheel-publishing alternative, or give it its own deliberate,
+# reviewed lock the way constraints/mutation.lock is handled.
 PYTHON_TARGET=3.11
 COMMON=(--universal --generate-hashes --no-emit-package pip
-        --python-version "$PYTHON_TARGET")
+        --python-version "$PYTHON_TARGET" --no-build)
 
 # constraints/build.in carries the PEP 517 build backend (hatchling and
 # the editables hook requirement). It is compiled into every lock whose
@@ -79,19 +100,20 @@ uv pip compile pyproject.toml "$BUILD" --extra docs "${COMMON[@]}" \
 uv pip compile constraints/release.in "$BUILD" "${COMMON[@]}" \
   "${UPGRADE[@]}" --output-file constraints/release.lock
 
-# mutmut is version-locked in constraints/mutation.in (not a range),
-# because scripts/mutmut_shard.py couples to a 2.5.1 internal seam.
-# --upgrade therefore only advances its transitive dependencies.
-uv pip compile constraints/mutation.in "${COMMON[@]}" \
-  "${UPGRADE[@]}" --output-file constraints/mutation.lock
+# Backend used to build third-party sdists. Only the mutation toolchain
+# needs it, but the input itself resolves entirely from wheels, so it is
+# safe to regenerate on the routine path. mutation.yml installs this and
+# then installs mutation.lock with --no-build-isolation.
+uv pip compile constraints/mutation-build.in "${COMMON[@]}" \
+  "${UPGRADE[@]}" --output-file constraints/mutation-build.lock
 
-# Backend for third-party sdists. mutmut and glob2 publish no wheels and
-# no pyproject.toml, so pip builds them with the implicit setuptools
-# backend; without this lock installed first, that backend is downloaded
-# unhashed at build time. mutation.yml installs this, then installs
-# mutation.lock with --no-build-isolation. See constraints/sdist-build.in.
-uv pip compile constraints/sdist-build.in "${COMMON[@]}" \
-  "${UPGRADE[@]}" --output-file constraints/sdist-build.lock
+# constraints/mutation.lock is deliberately NOT regenerated here. mutmut
+# and glob2 publish no wheels, so resolving that graph makes uv BUILD
+# their sdists, executing third-party setup.py code. This script runs on
+# every pull request (the ci.yml `lock` gate) and in the monthly refresh,
+# and neither is an appropriate place to execute arbitrary build code.
+# Regenerating it is a deliberate, reviewed operation:
+#     scripts/regenerate-mutation-lock.sh
 
 # The uv bootstrap lock is intentionally NOT upgraded: uv is the tool
 # generating every lock above, so its version is what makes the output
