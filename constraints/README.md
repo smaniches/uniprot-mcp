@@ -47,6 +47,13 @@ byte-identical to what the CI `lock` gate regenerates without it. That gate runs
 `scripts/regenerate-locks.sh` and then `git diff --exit-code constraints/`, so
 CI fails if a lock is stale relative to its inputs.
 
+The script compiles with an explicit `--python-version 3.11`, the project's
+`requires-python` floor. This is load-bearing: without it uv resolves against
+whatever interpreter is running and that overrides `requires-python`, so
+compiling on 3.12 drops the cp311 wheel hashes and the sync gate fails against
+a lock generated on 3.11. Keep the target at the floor so the resolution stays
+as wide as `requires-python` allows, and move it only when that floor moves.
+
 `.github/workflows/dev-lock-maintenance.yml` runs the `--upgrade` form monthly
 and opens a single PR with the result.
 

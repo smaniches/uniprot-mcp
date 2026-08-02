@@ -38,7 +38,18 @@ fi
 # --generate-hashes is what makes --require-hashes possible downstream;
 # pip is excluded because it is a runner-provided bootstrap component,
 # not a dependency of this project.
-COMMON=(--universal --generate-hashes --no-emit-package pip)
+#
+# --python-version is REQUIRED for reproducibility and must not be
+# dropped. Without it uv resolves against whatever interpreter happens
+# to be running, which overrides pyproject's requires-python: compiling
+# on 3.12 emits a narrower wheel set than compiling on 3.11 (the cp311
+# hashes disappear), so the CI sync gate fails against a lock generated
+# on a different Python. Pinning it to the project's floor makes the
+# output byte-identical on any runner and keeps the resolution as wide
+# as requires-python allows.
+PYTHON_TARGET=3.11
+COMMON=(--universal --generate-hashes --no-emit-package pip
+        --python-version "$PYTHON_TARGET")
 
 # Toolchains resolved from pyproject.toml extras.
 uv pip compile pyproject.toml --extra test --extra dev "${COMMON[@]}" \
