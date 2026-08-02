@@ -25,20 +25,31 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install dev deps
-        # Non-editable install on purpose: pip-audit (below) cannot
-        # audit editable installs (it errors with "distribution marked
-        # as editable"). For CI we don't need the working-tree
-        # symlink anyway — every step reads from src/ via the
-        # installed package metadata. Local dev keeps `-e` via
-        # `pip install -e ".[test,dev]"`.
+        # Two steps on purpose. Every third-party artifact this job
+        # executes comes from constraints/dev.lock under
+        # --require-hashes, so pip refuses anything whose SHA-256 is not
+        # recorded in the lock.
         #
-        # `-c constraints/dev.lock` pins the dev/CI toolchain so this
-        # quality gate is reproducible run-to-run. The pin applies only
-        # to this job — the test matrix below intentionally installs on
-        # floors to keep exercising the supported dependency ranges.
-        # Regenerate the lock with the command in its header.
+        # --no-build-isolation is what makes the second line reach the
+        # index for nothing. --no-deps alone does NOT: it skips the
+        # project's runtime dependencies, but PEP 517 build isolation is
+        # separate and stays on, so pip would build a temporary env and
+        # download hatchling (pyproject's [build-system].requires)
+        # outside --require-hashes. The backend is compiled into
+        # dev.lock from constraints/build.in and installed by the line
+        # above, so isolation can be switched off safely. Verified: with
+        # PIP_NO_INDEX=1 this pair of commands still succeeds.
+        #
+        # The local install is editable because pip's non-editable
+        # local install still resolves through the same code path as a
+        # remote fetch. pip-audit (below) is unaffected: it audits
+        # `pip freeze` output with the project itself excluded, so it
+        # never sees the editable distribution.
+        #
+        # Regenerate the lock with scripts/regenerate-locks.sh.
         run: |
-          pip install -c constraints/dev.lock ".[test,dev]"
+          python -m pip install --require-hashes -r constraints/dev.lock
+          python -m pip install --no-build-isolation --no-deps -e .
       - name: Ruff lint
         run: ruff check .
       - name: Ruff format check
@@ -85,8 +96,18 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: pip
       - name: Install
+        # Hash-verified test toolchain, then the project with build
+        # isolation off so the hatchling in test.lock is used instead of
+        # an unhashed copy fetched from the index (see the lint job).
+        # An unconstrained `pip install -e ".[test]"` resolved to the
+        # newest in-range release at run time, so it never actually
+        # exercised the range floors; constraints/test.lock is refreshed
+        # monthly to the newest in-range versions by
+        # dev-lock-maintenance.yml, which keeps that same coverage while
+        # making each individual run reproducible and hash-verified.
         run: |
-          pip install -e ".[test]"
+          python -m pip install --require-hashes -r constraints/test.lock
+          python -m pip install --no-build-isolation --no-deps -e .
       - name: Run offline test suite
         run: pytest tests/unit tests/property tests/client tests/contract -v --cov --cov-report=xml
       - name: Upload coverage
@@ -105,13 +126,28 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - name: Verify constraints/dev.lock is in sync with pyproject.toml
+      - name: Verify constraints/ locks are in sync with pyproject.toml
         # uv reuses the committed pins as preferences, so recompiling only
-        # changes the file when pyproject's test/dev deps changed without a
-        # lock refresh. uv is pinned so the output is byte-stable across
-        # runners; bump it together with the lock. The compile command must
-        # match the one recorded in the lock's header.
+        # changes a lock when its inputs changed without a refresh. uv is
+        # itself installed from a hash-locked bootstrap file, so the tool
+        # that generates the locks is as verifiable as the locks it emits,
+        # and its pinned version is what keeps the output byte-stable
+        # across runners. dev-lock-maintenance.yml calls the same script,
+        # so the regenerate and verify paths cannot drift.
         run: |
-          pip install uv==0.11.20
-          uv pip compile pyproject.toml --extra test --extra dev --universal --no-emit-package pip --output-file constraints/dev.lock
-          git diff --exit-code constraints/dev.lock
+          python -m pip install --require-hashes -r constraints/uv-bootstrap.lock
+          ./scripts/regenerate-locks.sh
+          git diff --exit-code constraints/
+      - name: Verify constraints/mutation.lock satisfies its input
+        # mutation.lock is excluded from the regeneration above on purpose:
+        # resolving it builds mutmut's and glob2's sdists, executing
+        # third-party setup.py code, which must not happen on every PR.
+        #
+        # That exclusion means the `git diff` gate cannot see it drift. Editing
+        # the mutmut pin in constraints/mutation.in without running
+        # scripts/regenerate-mutation-lock.sh would otherwise pass every check
+        # while the weekly mutation run kept using the old version. This
+        # comparison reads the two files and resolves nothing, so it is safe
+        # to run here. Also enforced by
+        # tests/contract/test_mutation_lock_sync.py.
+        run: python scripts/check_mutation_lock_sync.py

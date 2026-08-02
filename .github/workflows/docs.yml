@@ -25,8 +25,15 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install docs dependencies
+        # --no-build-isolation is required alongside --no-deps: --no-deps
+        # skips runtime dependencies but leaves PEP 517 build isolation
+        # on, which would download and execute an unhashed hatchling from
+        # the index. docs.lock carries the backend (via
+        # constraints/build.in), so nothing is fetched. This matters most
+        # in the deploy job below, which holds `contents: write`.
         run: |
-          pip install -e ".[docs]"
+          python -m pip install --require-hashes -r constraints/docs.lock
+          python -m pip install --no-build-isolation --no-deps -e .
       - name: mkdocs build (strict)
         run: mkdocs build --strict
       - name: Upload site artifact
@@ -52,8 +59,15 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install docs dependencies
+        # --no-build-isolation is required alongside --no-deps: --no-deps
+        # skips runtime dependencies but leaves PEP 517 build isolation
+        # on, which would download and execute an unhashed hatchling from
+        # the index. docs.lock carries the backend (via
+        # constraints/build.in), so nothing is fetched. This matters most
+        # in the deploy job below, which holds `contents: write`.
         run: |
-          pip install -e ".[docs]"
+          python -m pip install --require-hashes -r constraints/docs.lock
+          python -m pip install --no-build-isolation --no-deps -e .
       - name: Deploy via mkdocs gh-deploy
         run: |
           git config user.name "github-actions[bot]"

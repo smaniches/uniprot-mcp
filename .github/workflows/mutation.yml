@@ -160,10 +160,36 @@ jobs:
         # for coverage filtering (`--use-coverage`) to map mutated
         # files back to recorded test executions. mutmut is pinned to
         # 2.5.1 exactly because scripts/mutmut_shard.py couples to its
-        # internal parse_run_argument seam.
+        # internal parse_run_argument seam; that pin now lives in
+        # constraints/mutation.in and is hash-locked with its full
+        # dependency graph in constraints/mutation.lock.
+        #
+        # External dependencies are installed first, hash-verified, and
+        # only then is the project added. Every install below disables
+        # PEP 517 build isolation, for two different reasons:
+        #
+        #  1. mutmut and glob2 publish NO wheels, so pip builds both from
+        #     source here. Hash-verifying an sdist does not help if the tool
+        #     that compiles it is unverified, and which compiler pip picks
+        #     depends on ambient state: with `wheel` absent it takes the
+        #     PEP 517 path and downloads setuptools+wheel from the index
+        #     outside --require-hashes; with `wheel` present it uses the
+        #     legacy setup.py path and whatever setuptools happens to be
+        #     installed. constraints/mutation-build.lock pins both, so the
+        #     build tools are hash-verified and identical on every runner
+        #     instead of depending on runner image contents.
+        #  2. --no-deps on the project install skips runtime dependencies
+        #     but leaves build isolation on, which would download hatchling
+        #     outside --require-hashes. dev.lock carries it via
+        #     constraints/build.in.
+        #
+        # Net effect: the whole mutation toolchain is built and installed
+        # without fetching a single artifact that is not in a lock.
         run: |
-          pip install -e ".[test,dev]"
-          pip install "mutmut==2.5.1"
+          python -m pip install --require-hashes -r constraints/dev.lock
+          python -m pip install --require-hashes -r constraints/mutation-build.lock
+          python -m pip install --no-build-isolation --require-hashes -r constraints/mutation.lock
+          python -m pip install --no-build-isolation --no-deps -e .
       - name: Generate coverage data
         # mutmut --use-coverage reads .coverage to skip mutants in
         # lines that no test executes. We use --cov=src/uniprot_mcp so
