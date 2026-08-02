@@ -54,9 +54,15 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install build tooling
+        # build and cyclonedx-bom produce the released wheel and the SBOM
+        # that is attested below, so they are the highest-value targets in
+        # this workflow. Both, and their full transitive graph, are
+        # installed from constraints/release.lock under --require-hashes:
+        # a substituted artifact on the index cannot reach the build.
+        # Regenerate with scripts/regenerate-locks.sh after editing
+        # constraints/release.in.
         run: |
-          python -m pip install build
-          pip install cyclonedx-bom
+          python -m pip install --require-hashes -r constraints/release.lock
       - name: Build sdist + wheel
         run: python -m build
       - name: Generate CycloneDX SBOM

@@ -53,37 +53,40 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Recompile constraints/dev.lock with --upgrade
-        # Mirrors the `lock` job in ci.yml (same uv pin, same flags) plus
-        # --upgrade, which advances every pin to the newest version allowed by
-        # pyproject's ranges instead of reusing the committed pins as
-        # preferences. --upgrade is NOT recorded in the lock header, so the
-        # output stays byte-identical to what the CI `lock` gate regenerates —
-        # bump uv here together with ci.yml.
+      - name: Recompile constraints/ locks with --upgrade
+        # Calls the same scripts/regenerate-locks.sh as the `lock` gate in
+        # ci.yml, plus --upgrade, which advances every pin to the newest
+        # version allowed by pyproject's ranges instead of reusing the
+        # committed pins as preferences. --upgrade is NOT recorded in the
+        # lock headers, so the output stays byte-identical to what the CI
+        # `lock` gate regenerates. uv comes from the hash-locked bootstrap
+        # file and is deliberately not upgraded here — it is the tool that
+        # makes the output byte-reproducible.
         run: |
-          pip install uv==0.11.20
-          uv pip compile pyproject.toml --extra test --extra dev --universal --no-emit-package pip --upgrade --output-file constraints/dev.lock
+          python -m pip install --require-hashes -r constraints/uv-bootstrap.lock
+          ./scripts/regenerate-locks.sh --upgrade
 
-      - name: Detect whether the lock changed
+      - name: Detect whether any lock changed
         id: diff
         run: |
-          if git diff --quiet constraints/dev.lock; then
+          if git diff --quiet constraints/; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "Lock already current — nothing to refresh."
+            echo "Locks already current — nothing to refresh."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            git --no-pager diff --stat constraints/dev.lock
+            git --no-pager diff --stat constraints/
           fi
 
-      - name: Upload the pristine refreshed lock
+      - name: Upload the pristine refreshed locks
         # Uploaded BEFORE the validate step below installs/runs any upgraded
-        # code, so a compromised tool cannot tamper with the lock that `open-pr`
-        # commits. open-pr consumes this artifact only if `validate` succeeds.
+        # code, so a compromised tool cannot tamper with the locks that
+        # `open-pr` commits. open-pr consumes this artifact only if `validate`
+        # succeeds.
         if: steps.diff.outputs.changed == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: dev-lock
-          path: constraints/dev.lock
+          path: constraints/
           retention-days: 1
           if-no-files-found: error
 
@@ -94,7 +97,8 @@ jobs:
         # fails the job and skips `open-pr`. Keep in sync with ci.yml `lint`.
         if: steps.diff.outputs.changed == 'true'
         run: |
-          pip install -c constraints/dev.lock ".[test,dev]"
+          python -m pip install --require-hashes -r constraints/dev.lock
+          python -m pip install --no-deps -e .
           ruff check .
           ruff format --check .
           mypy src/uniprot_mcp
@@ -134,12 +138,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add constraints/dev.lock
+          git add constraints/
           if git diff --cached --quiet; then
-            echo "Lock on main already carries this refresh; nothing to commit."
+            echo "Locks on main already carry this refresh; nothing to commit."
             exit 0
           fi
-          git commit -m "chore(deps): refresh dev lock to latest compatible pins"
+          git commit -m "chore(deps): refresh dev locks to latest compatible pins"
           # Bot-owned branch; force keeps an existing PR updated in place rather
           # than spawning a new one each month.
           git push --force origin "HEAD:refs/heads/${BRANCH}"

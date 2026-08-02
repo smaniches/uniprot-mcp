@@ -14,18 +14,20 @@ updates:
     open-pull-requests-limit: 5
     # Dependabot manages the DIRECT deps declared in pyproject.toml only.
     #
-    # constraints/dev.lock is a DERIVED uv lock. Dependabot's pip parser would
-    # treat every pinned line in it as a top-level requirement (the `# via`
+    # Everything under constraints/ is a DERIVED uv lock (dev, test, docs,
+    # release, mutation, and the uv bootstrap). Dependabot's pip parser would
+    # treat every pinned line in them as a top-level requirement (the `# via`
     # annotations are comments, not a dependency graph it understands), so it
     # cannot distinguish transitive pins (msgpack, pydantic-core, ...) from real
     # direct deps. `allow: dependency-type: direct` therefore does NOT exclude
     # them — confirmed in production: closed PR #109 still bumped 6 transitive
-    # pins and failed the "Dev lock in sync" gate. Two things keep the lock out
+    # pins and failed the "Dev lock in sync" gate. Two things keep the locks out
     # of Dependabot's reach instead:
-    #   1. it is named *.lock (not *.txt / *.in), so the pip file fetcher does
-    #      not parse it as a requirements file at all; and
+    #   1. they are named *.lock (not *.txt), so the pip file fetcher does
+    #      not parse them as requirements files at all; and
     #   2. exclude-paths skips the constraints/ directory before manifest
-    #      parsing, as a second, explicit layer.
+    #      parsing, as a second, explicit layer. This also covers the *.in
+    #      compile inputs, which pip WOULD otherwise parse.
     # Transitive pins advance via .github/workflows/dev-lock-maintenance.yml.
     # Trade-off: because the lock is hidden from Dependabot, its transitive pins
     # get NO Dependabot security PRs either — they refresh on that workflow's
@@ -35,9 +37,9 @@ updates:
     # fresh at install, so they are never pinned to this lock's versions.
     #
     # Caveat: if Dependabot ever raises a pyproject floor above the pinned
-    # version, it edits pyproject but not the excluded lock, so CI's "Dev lock in
-    # sync" gate goes red. Remedy: regenerate the lock onto that PR (run
-    # dev-lock-maintenance, or `uv pip compile ... --output-file constraints/dev.lock`).
+    # version, it edits pyproject but not the excluded locks, so CI's "Dev lock in
+    # sync" gate goes red. Remedy: regenerate the locks onto that PR (run
+    # dev-lock-maintenance, or `scripts/regenerate-locks.sh`).
     # Rare with the >= floors here, which Dependabot leaves alone.
     exclude-paths:
       - "constraints/**"

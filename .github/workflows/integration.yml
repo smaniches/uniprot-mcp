@@ -21,7 +21,8 @@ jobs:
           cache: pip
       - name: Install
         run: |
-          pip install -e ".[test]"
+          python -m pip install --require-hashes -r constraints/test.lock
+          python -m pip install --no-deps -e .
       - name: Run live integration tests
         id: live
         # ``--override-ini`` strips the offline pytest addopts block

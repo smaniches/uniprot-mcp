@@ -160,10 +160,18 @@ jobs:
         # for coverage filtering (`--use-coverage`) to map mutated
         # files back to recorded test executions. mutmut is pinned to
         # 2.5.1 exactly because scripts/mutmut_shard.py couples to its
-        # internal parse_run_argument seam.
+        # internal parse_run_argument seam; that pin now lives in
+        # constraints/mutation.in and is hash-locked with its full
+        # dependency graph in constraints/mutation.lock.
+        #
+        # External dependencies are installed first, hash-verified, and
+        # only then is the project added with --no-deps -e. The editable
+        # install that mutmut needs therefore cannot itself pull an
+        # unpinned package from the index.
         run: |
-          pip install -e ".[test,dev]"
-          pip install "mutmut==2.5.1"
+          python -m pip install --require-hashes -r constraints/dev.lock
+          python -m pip install --require-hashes -r constraints/mutation.lock
+          python -m pip install --no-deps -e .
       - name: Generate coverage data
         # mutmut --use-coverage reads .coverage to skip mutants in
         # lines that no test executes. We use --cov=src/uniprot_mcp so
