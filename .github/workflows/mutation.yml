@@ -165,13 +165,16 @@ jobs:
         # dependency graph in constraints/mutation.lock.
         #
         # External dependencies are installed first, hash-verified, and
-        # only then is the project added with --no-deps -e. The editable
-        # install that mutmut needs therefore cannot itself pull an
-        # unpinned package from the index.
+        # only then is the project added. --no-build-isolation is
+        # required alongside --no-deps: --no-deps skips runtime
+        # dependencies but leaves PEP 517 build isolation on, which would
+        # download hatchling from the index outside --require-hashes.
+        # dev.lock carries the backend (via constraints/build.in), so the
+        # editable install mutmut needs pulls nothing at all.
         run: |
           python -m pip install --require-hashes -r constraints/dev.lock
           python -m pip install --require-hashes -r constraints/mutation.lock
-          python -m pip install --no-deps -e .
+          python -m pip install --no-build-isolation --no-deps -e .
       - name: Generate coverage data
         # mutmut --use-coverage reads .coverage to skip mutants in
         # lines that no test executes. We use --cov=src/uniprot_mcp so

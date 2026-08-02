@@ -16,6 +16,11 @@ repos:
   # Linter revs AND the mypy type-stub deps are kept in lockstep with
   # constraints/dev.lock so a contributor's local `pre-commit run` enforces
   # the same versions the CI lint job pins. Bump these together with the lock.
+  #
+  # This is ENFORCED, not just documented: the check-precommit-lockstep hook
+  # below and tests/contract/test_precommit_lockstep.py both fail on drift,
+  # and dev-lock-maintenance.yml runs the same script with --fix so a monthly
+  # lock refresh realigns these revs in the same PR.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.1
     hooks:
@@ -68,4 +73,19 @@ repos:
             |server\.json
             |\.well-known/mcp\.json
             |tests/unit/test_client_mutation_killers\.py
+          )$
+
+      # Keep this file's pinned hook versions equal to constraints/dev.lock,
+      # so local `pre-commit run` and the CI lint job execute the same ruff,
+      # mypy, bandit and mypy stub versions. Enforced in CI too, via
+      # tests/contract/test_precommit_lockstep.py.
+      - id: check-precommit-lockstep
+        name: check-precommit-lockstep (dev.lock is canonical)
+        entry: python scripts/check_precommit_lockstep.py
+        language: system
+        pass_filenames: false
+        files: |
+          (?x)^(
+            \.pre-commit-config\.yaml
+            |constraints/dev\.lock
           )$

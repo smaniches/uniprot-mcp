@@ -1,0 +1,26 @@
+# PEP 517 build-system requirements for this project.
+#
+# pyproject.toml declares:
+#     [build-system]
+#     requires = ["hatchling>=1.24"]
+#
+# `pip install --no-deps -e .` does NOT skip these. --no-deps only skips the
+# project's own runtime dependencies; PEP 517 build isolation is separate and
+# stays on. Without --no-build-isolation pip creates a temporary environment
+# and downloads the backend straight from the index, outside --require-hashes,
+# then executes it. `python -m build` isolates by default for the same reason.
+#
+# Compiling this file into every lock whose workflow installs or builds the
+# local project makes the backend hash-verified too, so those workflows can
+# pass --no-build-isolation (pip) / --no-isolation (python -m build) and reach
+# the index for nothing at all. Verified with PIP_NO_INDEX=1.
+#
+# editables is hatchling's get_requires_for_build_editable() hook requirement —
+# it is what the "Installing backend dependencies" line of an editable install
+# is fetching. Needed by dev/test/docs, harmless in release (which builds a
+# wheel + sdist, whose hooks require nothing extra).
+#
+# Deliberately NOT a pyproject extra: this is build tooling, and a user running
+# `pip install uniprot-mcp-server` should not receive it.
+hatchling>=1.24
+editables~=0.3

@@ -54,17 +54,27 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install build tooling
-        # build and cyclonedx-bom produce the released wheel and the SBOM
-        # that is attested below, so they are the highest-value targets in
-        # this workflow. Both, and their full transitive graph, are
-        # installed from constraints/release.lock under --require-hashes:
-        # a substituted artifact on the index cannot reach the build.
+        # build, cyclonedx-bom and the hatchling build backend produce the
+        # released wheel and the SBOM that is attested below, so they are
+        # the highest-value targets in this workflow. All of them, and
+        # their full transitive graph, are installed from
+        # constraints/release.lock under --require-hashes: a substituted
+        # artifact on the index cannot reach the build.
+        #
+        # The backend is in the lock because `python -m build` isolates by
+        # default, which would otherwise download and execute an unhashed
+        # hatchling inside the job that holds OIDC publish rights and
+        # signs the attestations. constraints/build.in supplies it; the
+        # build step below runs --no-isolation to use it.
+        #
         # Regenerate with scripts/regenerate-locks.sh after editing
-        # constraints/release.in.
+        # constraints/release.in or constraints/build.in.
         run: |
           python -m pip install --require-hashes -r constraints/release.lock
       - name: Build sdist + wheel
-        run: python -m build
+        # --no-isolation: use the hash-verified hatchling installed above
+        # instead of letting build fetch its own copy from the index.
+        run: python -m build --no-isolation
       - name: Generate CycloneDX SBOM
         id: sbom
         run: |

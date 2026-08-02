@@ -15,20 +15,40 @@ not recorded in the lock. A substituted or backdoored wheel on the index
 therefore cannot enter a CI, docs, release, or mutation-testing job, even if it
 satisfies the version specifier.
 
-The project itself is installed separately with `python -m pip install
---no-deps -e .`, which downloads nothing: all external dependencies are already
-present from the hash-verified lock above.
+The project itself is then installed with:
+
+```
+python -m pip install --no-build-isolation --no-deps -e .
+```
+
+Both flags are load-bearing, and `--no-deps` alone is **not** enough.
+`--no-deps` skips the project's runtime dependencies, but PEP 517 build
+isolation is a separate mechanism and stays on: pip would build a temporary
+environment and download `hatchling` — `pyproject.toml`'s
+`[build-system].requires` — straight from the index, outside `--require-hashes`,
+and then execute it. `python -m build` isolates by default for the same reason,
+which is why `release.yml` passes `--no-isolation`.
+
+`constraints/build.in` closes that hole. It is compiled into every lock whose
+workflow installs or builds the project, so the backend is hash-verified like
+everything else and isolation can safely be switched off. With it in place the
+install reaches the index for nothing at all — verified by running the same
+command under `PIP_NO_INDEX=1`.
 
 ## The files
 
 | File | Generated from | Consumed by |
 | --- | --- | --- |
-| `dev.lock` | `pyproject.toml` extras `test` + `dev` | `ci.yml` lint, `dev-lock-maintenance.yml` validate, `mutation.yml` |
-| `test.lock` | `pyproject.toml` extra `test` | `ci.yml` test matrix, `integration.yml` |
-| `docs.lock` | `pyproject.toml` extra `docs` | `docs.yml` |
-| `release.lock` | `release.in` (`build`, `cyclonedx-bom`) | `release.yml` |
+| `build.in` | hand-written (`hatchling`, `editables`) | compiled into `dev`, `test`, `docs`, `release` |
+| `dev.lock` | `pyproject.toml` extras `test` + `dev`, `build.in` | `ci.yml` lint, `dev-lock-maintenance.yml` validate, `mutation.yml` |
+| `test.lock` | `pyproject.toml` extra `test`, `build.in` | `ci.yml` test matrix, `integration.yml` |
+| `docs.lock` | `pyproject.toml` extra `docs`, `build.in` | `docs.yml` |
+| `release.lock` | `release.in` (`build`, `cyclonedx-bom`), `build.in` | `release.yml` |
 | `mutation.lock` | `mutation.in` (`mutmut==2.5.1`) | `mutation.yml` |
 | `uv-bootstrap.lock` | `uv.in` (`uv==0.11.20`) | `ci.yml` lock gate, `dev-lock-maintenance.yml` |
+
+`mutation.lock` carries no build backend by design: `mutation.yml` always
+installs `dev.lock` alongside it, and that is where the backend comes from.
 
 `uv-bootstrap.lock` is the root of trust: it installs the exact `uv` that
 compiles every other lock, which is what makes regeneration byte-reproducible.

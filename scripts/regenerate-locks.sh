@@ -8,6 +8,10 @@
 # substituted wheel on the index cannot enter a CI, release, or
 # mutation-testing job.
 #
+# That guarantee only holds if the PEP 517 build backend is covered too.
+# constraints/build.in exists for exactly that reason: see the comment
+# above the compile calls below.
+#
 # Both .github/workflows/ci.yml (the `lock` gate) and
 # .github/workflows/dev-lock-maintenance.yml (the monthly refresh) call
 # this script, so the compile flags cannot drift between the job that
@@ -51,17 +55,28 @@ PYTHON_TARGET=3.11
 COMMON=(--universal --generate-hashes --no-emit-package pip
         --python-version "$PYTHON_TARGET")
 
+# constraints/build.in carries the PEP 517 build backend (hatchling and
+# the editables hook requirement). It is compiled into every lock whose
+# workflow installs or builds the local project, because --no-deps does
+# NOT suppress build isolation: without the backend already present and
+# hash-verified, `pip install -e .` downloads hatchling from the index
+# outside --require-hashes. With it, those workflows pass
+# --no-build-isolation and touch the index for nothing.
+BUILD=constraints/build.in
+
 # Toolchains resolved from pyproject.toml extras.
-uv pip compile pyproject.toml --extra test --extra dev "${COMMON[@]}" \
+uv pip compile pyproject.toml "$BUILD" --extra test --extra dev "${COMMON[@]}" \
   "${UPGRADE[@]}" --output-file constraints/dev.lock
-uv pip compile pyproject.toml --extra test "${COMMON[@]}" \
+uv pip compile pyproject.toml "$BUILD" --extra test "${COMMON[@]}" \
   "${UPGRADE[@]}" --output-file constraints/test.lock
-uv pip compile pyproject.toml --extra docs "${COMMON[@]}" \
+uv pip compile pyproject.toml "$BUILD" --extra docs "${COMMON[@]}" \
   "${UPGRADE[@]}" --output-file constraints/docs.lock
 
 # Toolchains that are not pyproject extras because they are never
 # installed alongside the project: each one runs in its own job.
-uv pip compile constraints/release.in "${COMMON[@]}" \
+# release.lock also carries the build backend so `python -m build` can
+# run with --no-isolation.
+uv pip compile constraints/release.in "$BUILD" "${COMMON[@]}" \
   "${UPGRADE[@]}" --output-file constraints/release.lock
 
 # mutmut is version-locked in constraints/mutation.in (not a range),

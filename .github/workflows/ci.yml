@@ -28,20 +28,28 @@ jobs:
         # Two steps on purpose. Every third-party artifact this job
         # executes comes from constraints/dev.lock under
         # --require-hashes, so pip refuses anything whose SHA-256 is not
-        # recorded in the lock. The project itself is then installed
-        # with --no-deps, which downloads nothing.
+        # recorded in the lock.
+        #
+        # --no-build-isolation is what makes the second line reach the
+        # index for nothing. --no-deps alone does NOT: it skips the
+        # project's runtime dependencies, but PEP 517 build isolation is
+        # separate and stays on, so pip would build a temporary env and
+        # download hatchling (pyproject's [build-system].requires)
+        # outside --require-hashes. The backend is compiled into
+        # dev.lock from constraints/build.in and installed by the line
+        # above, so isolation can be switched off safely. Verified: with
+        # PIP_NO_INDEX=1 this pair of commands still succeeds.
         #
         # The local install is editable because pip's non-editable
         # local install still resolves through the same code path as a
-        # remote fetch. --no-deps -e is the form that provably cannot
-        # pull an external package. pip-audit (below) is unaffected: it
-        # audits `pip freeze` output with the project itself excluded,
-        # so it never sees the editable distribution.
+        # remote fetch. pip-audit (below) is unaffected: it audits
+        # `pip freeze` output with the project itself excluded, so it
+        # never sees the editable distribution.
         #
         # Regenerate the lock with scripts/regenerate-locks.sh.
         run: |
           python -m pip install --require-hashes -r constraints/dev.lock
-          python -m pip install --no-deps -e .
+          python -m pip install --no-build-isolation --no-deps -e .
       - name: Ruff lint
         run: ruff check .
       - name: Ruff format check
@@ -88,7 +96,9 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: pip
       - name: Install
-        # Hash-verified test toolchain, then the project with --no-deps.
+        # Hash-verified test toolchain, then the project with build
+        # isolation off so the hatchling in test.lock is used instead of
+        # an unhashed copy fetched from the index (see the lint job).
         # An unconstrained `pip install -e ".[test]"` resolved to the
         # newest in-range release at run time, so it never actually
         # exercised the range floors; constraints/test.lock is refreshed
@@ -97,7 +107,7 @@ jobs:
         # making each individual run reproducible and hash-verified.
         run: |
           python -m pip install --require-hashes -r constraints/test.lock
-          python -m pip install --no-deps -e .
+          python -m pip install --no-build-isolation --no-deps -e .
       - name: Run offline test suite
         run: pytest tests/unit tests/property tests/client tests/contract -v --cov --cov-report=xml
       - name: Upload coverage
