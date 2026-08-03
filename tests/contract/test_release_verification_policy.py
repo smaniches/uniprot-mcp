@@ -28,10 +28,13 @@ def test_zenodo_failure_is_reported_only_after_a_delayed_gate() -> None:
     assert match is not None
     assert int(match.group(1)) >= 6
 
+    latest_guard = "if (requestedTag && requestedTag !== tag)"
     age_gate = "if (!requestedTag && ageHours < minAgeHours)"
     issue_title = "Zenodo verification failed for ${tag}"
+    assert latest_guard in delayed
     assert age_gate in delayed
     assert issue_title in delayed
+    assert delayed.index(latest_guard) < delayed.index(age_gate)
     assert delayed.index(age_gate) < delayed.index(issue_title)
 
     assert "actualVersion === expectedVersion" in delayed
