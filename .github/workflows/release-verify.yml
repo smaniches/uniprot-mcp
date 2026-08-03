@@ -55,14 +55,13 @@ jobs:
         id: pypi
         run: |
           set -euo pipefail
-          # `pip index versions` lists every published version; grep for an
-          # exact match. Retry up to 5 times with 30s backoff to absorb
-          # PyPI CDN lag. pip is preinstalled on ubuntu-latest; no upgrade
-          # needed (and an unpinned `pip install --upgrade pip` would trip
-          # Scorecard's Pinned-Dependencies check).
+          # `pip index versions` lists every published version. Capture its
+          # complete output before matching so an early-exiting grep cannot
+          # SIGPIPE the producer under `set -o pipefail`.
           for i in 1 2 3 4 5; do
-            if pip index versions "$PYPI_NAME" 2>/dev/null \
-                 | grep -E "(^|[^0-9])${{ steps.version.outputs.version }}([^0-9]|$)"; then
+            versions=$(pip index versions "$PYPI_NAME" 2>/dev/null || true)
+            if grep -E "(^|[^0-9])${{ steps.version.outputs.version }}([^0-9]|$)" \
+                 <<< "$versions"; then
               echo "PyPI: $PYPI_NAME ${{ steps.version.outputs.version }} present"
               exit 0
             fi
@@ -82,10 +81,10 @@ jobs:
           assets=$(gh release view "$TAG" --json assets --jq '.assets[].name')
           echo "Assets:"
           echo "$assets"
-          echo "$assets" | grep -q "sbom.cdx.json" || { echo "missing sbom.cdx.json"; exit 1; }
-          echo "$assets" | grep -qE "\.sigstore(\.json)?$" || { echo "missing sigstore bundle"; exit 1; }
-          echo "$assets" | grep -qE "\.whl$" || { echo "missing wheel"; exit 1; }
-          echo "$assets" | grep -qE "\.tar\.gz$" || { echo "missing sdist"; exit 1; }
+          grep -q "sbom.cdx.json" <<< "$assets" || { echo "missing sbom.cdx.json"; exit 1; }
+          grep -qE "\.sigstore(\.json)?$" <<< "$assets" || { echo "missing sigstore bundle"; exit 1; }
+          grep -qE "\.whl$" <<< "$assets" || { echo "missing wheel"; exit 1; }
+          grep -qE "\.tar\.gz$" <<< "$assets" || { echo "missing sdist"; exit 1; }
 
       - name: Verify SLSA build provenance
         env:
