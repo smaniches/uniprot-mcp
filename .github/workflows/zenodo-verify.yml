@@ -1,0 +1,174 @@
+name: Delayed Zenodo verification
+
+# Zenodo is eventually consistent with GitHub Releases. This workflow checks
+# the latest stable release only after it is at least six hours old. A manual
+# run with an explicit tag bypasses the age gate for operator verification.
+# No workflow mints or edits Zenodo records; the GitHub-Zenodo integration does
+# that automatically.
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to verify immediately (optional)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  verify-zenodo:
+    runs-on: ubuntu-latest
+    env:
+      REQUESTED_TAG: ${{ inputs.tag || '' }}
+      ZENODO_CONCEPT_RECID: "19817710"
+      MIN_RELEASE_AGE_HOURS: "6"
+    steps:
+      - name: Reconcile the GitHub Release with Zenodo
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        with:
+          script: |
+            const requestedTag = process.env.REQUESTED_TAG.trim();
+            const minAgeHours = Number(process.env.MIN_RELEASE_AGE_HOURS);
+            const conceptRecid = process.env.ZENODO_CONCEPT_RECID;
+
+            if (!Number.isFinite(minAgeHours) || minAgeHours <= 0) {
+              throw new Error("MIN_RELEASE_AGE_HOURS must be a positive number");
+            }
+
+            const releaseResponse = requestedTag
+              ? await github.rest.repos.getReleaseByTag({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  tag: requestedTag,
+                })
+              : await github.rest.repos.getLatestRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                });
+            const release = releaseResponse.data;
+            const tag = release.tag_name;
+            const publishedAt = new Date(release.published_at || release.created_at);
+            const ageHours = (Date.now() - publishedAt.getTime()) / 3_600_000;
+
+            if (!requestedTag && ageHours < minAgeHours) {
+              core.notice(
+                `Skipping ${tag}: release age ${ageHours.toFixed(2)}h is below ` +
+                `${minAgeHours}h delayed-verification threshold.`,
+              );
+              return;
+            }
+
+            const expectedVersion = tag.replace(/^v\.?/, "");
+            const recordUrl = `https://zenodo.org/api/records/${conceptRecid}`;
+            let metadata;
+            let lastError;
+
+            for (let attempt = 1; attempt <= 3; attempt += 1) {
+              try {
+                const response = await fetch(recordUrl, {
+                  headers: {
+                    Accept: "application/json",
+                    "User-Agent": "uniprot-mcp-zenodo-verifier/1",
+                  },
+                });
+                if (!response.ok) {
+                  throw new Error(`Zenodo returned HTTP ${response.status}`);
+                }
+                metadata = await response.json();
+                lastError = undefined;
+                break;
+              } catch (error) {
+                lastError = error;
+                core.warning(
+                  `Zenodo request attempt ${attempt}/3 failed: ${error.message}`,
+                );
+                if (attempt < 3) {
+                  await new Promise((resolve) => setTimeout(resolve, 30_000));
+                }
+              }
+            }
+
+            if (!metadata) {
+              throw new Error(
+                `Unable to read Zenodo after three attempts: ${lastError?.message}`,
+              );
+            }
+
+            const actualVersion = String(metadata.metadata?.version || "").replace(/^v/, "");
+            const issueTitle = `Zenodo verification failed for ${tag}`;
+            const runUrl =
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+              `/actions/runs/${context.runId}`;
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "release-drift",
+              per_page: 100,
+            });
+            const existing = openIssues.find((issue) => issue.title === issueTitle);
+
+            if (actualVersion === expectedVersion) {
+              core.info(
+                `Zenodo concept record ${conceptRecid} latest version is ${actualVersion}; ` +
+                `expected ${expectedVersion}.`,
+              );
+              if (existing) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: existing.number,
+                  body: [
+                    `Resolved by delayed verification for \`${tag}\`.`,
+                    ``,
+                    `Zenodo concept record \`${conceptRecid}\` now reports version ` +
+                      `\`${actualVersion}\`.`,
+                    ``,
+                    `Verification run: ${runUrl}`,
+                  ].join("\n"),
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: existing.number,
+                  state: "closed",
+                  state_reason: "completed",
+                });
+              }
+              return;
+            }
+
+            const body = [
+              `Delayed Zenodo verification failed for release \`${tag}\`.`,
+              ``,
+              `GitHub release published: ${publishedAt.toISOString()}`,
+              `Release age at verification: ${ageHours.toFixed(2)} hours`,
+              `Expected Zenodo version: \`${expectedVersion}\``,
+              `Observed Zenodo version: \`${actualVersion || "<empty>"}\``,
+              `Zenodo concept record: https://zenodo.org/records/${conceptRecid}`,
+              `Verification run: ${runUrl}`,
+              ``,
+              `The repository uses the GitHub-Zenodo integration. Do not mint a ` +
+                `manual deposit or change the concept DOI badge. Inspect the integration ` +
+                `delivery and the existing record before taking action.`,
+            ].join("\n");
+
+            if (!existing) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body,
+                labels: ["release-drift"],
+              });
+            }
+
+            core.setFailed(
+              `Zenodo is at ${actualVersion || "<empty>"}; expected ${expectedVersion} ` +
+              `for ${tag} after ${ageHours.toFixed(2)} hours.`,
+            );
