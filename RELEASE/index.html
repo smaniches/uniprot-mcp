@@ -1292,17 +1292,19 @@ this only governs what gets cut going forward.</p>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>       │                       │
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>       │                       ├──►  GitHub Release (assets: dist/*, sbom.cdx.json, *.sigstore.json)
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>       │                       │            │
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>       │                       │            ├──►  release-verify.yml (this PR)
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>       │                       │            ├──►  release-verify.yml (immediate)
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>       │                       │            │            ├── pip index versions uniprot-mcp-server
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>       │                       │            │            ├── gh release view (asset presence)
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>       │                       │            │            ├── gh attestation verify (SLSA)
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>       │                       │            │            └── Zenodo records API (concept DOI lookup)
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>       │                       │            │
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>       │                       │            └──►  Zenodo webhook  ──►  version DOI minted
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>       │                       │
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>       │                       └──►  Sigstore signing (gh-action-sigstore-python)
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>       │
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>       └──►  release-drafter.yml (next-release draft updated on every push to main)
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>       │                       │            │            └── gh attestation verify (SLSA)
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>       │                       │            │
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>       │                       │            └──►  Zenodo webhook  ──►  version DOI minted
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>       │                       │                                      │
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>       │                       │                                      └──►  zenodo-verify.yml
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>       │                       │                                             (scheduled, delayed)
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>       │                       │
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>       │                       └──►  Sigstore signing (gh-action-sigstore-python)
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>       │
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>       └──►  release-drafter.yml (next-release draft updated on every push to main)
 </code></pre></div>
 <h2 id="step-by-step">Step-by-step<a class="headerlink" href="#step-by-step" title="Permanent link">&para;</a></h2>
 <h3 id="1-pre-tag-on-the-release-branch">1. Pre-tag (on the release branch)<a class="headerlink" href="#1-pre-tag-on-the-release-branch" title="Permanent link">&para;</a></h3>
@@ -1363,7 +1365,13 @@ and the duplicate DOI is forever.</p>
 <p>The Zenodo–GitHub integration is enabled per-account. Once flipped
 on for the repo, every new GitHub Release triggers Zenodo to read
 <code>.zenodo.json</code> and mint a new version DOI under the concept DOI
-<code>10.5281/zenodo.19817710</code>. Typical latency: 30 s – 5 min.</p>
+<code>10.5281/zenodo.19817710</code>.</p>
+<p>The synchronization is asynchronous. It often completes within 30 seconds to
+five minutes, but five minutes is not a failure boundary. Release v1.3.2 was
+still represented as v1.3.1 when its original five-minute verification ended
+and later advanced automatically to v1.3.2. Do not create a manual deposit,
+change the concept DOI badge, or move the release tag to compensate for normal
+propagation delay.</p>
 <p><strong>Enabling the webhook (one-time):</strong></p>
 <ol>
 <li>Visit <code>https://zenodo.org/account/settings/github/</code>.</li>
@@ -1389,13 +1397,30 @@ mint duplicate DOIs.</p>
 <code>publish-pypi</code> job will fail with <code>OIDC token verification</code>. Re-add
 the publisher entry with the four fields above.</p>
 <h3 id="6-post-tag-verification-automatic">6. Post-tag verification (automatic)<a class="headerlink" href="#6-post-tag-verification-automatic" title="Permanent link">&para;</a></h3>
-<p><code>release-verify.yml</code> fires on <code>release: [published]</code>. It re-runs
-each link in the chain and opens a <code>release-drift</code> issue if any
-link's artifact is missing after a generous timeout. Greenable in
-~5 min on a healthy release.</p>
-<p>To re-trigger verification manually for an older tag:</p>
+<p>Verification is split by expected consistency window.</p>
+<p><code>release-verify.yml</code> fires immediately on <code>release: [published]</code>. It verifies
+PyPI, the complete GitHub Release asset set, and SLSA provenance. A failure in
+one of those links opens <code>Release verification failed for &lt;tag&gt;</code> with the
+<code>release-drift</code> label. Zenodo is deliberately excluded from this immediate
+gate.</p>
+<p><code>zenodo-verify.yml</code> runs every six hours. For scheduled runs it checks the
+latest stable GitHub Release only after that release is at least six hours old.
+It compares the release tag with <code>metadata.version</code> on Zenodo concept record
+<code>19817710</code>. Only a mismatch after that delayed threshold opens
+<code>Zenodo verification failed for &lt;tag&gt;</code>. When a later delayed run observes the
+expected version, it records the successful run on that Zenodo-specific issue
+and closes it. A transient inability to read the Zenodo API fails the workflow
+without claiming that the deposit itself is missing.</p>
+<p>To re-trigger immediate verification manually for an older tag:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>gh workflow run release-verify.yml --field tag=v1.1.6
 </code></pre></div>
+<p>To verify Zenodo immediately for the latest stable tag, bypassing the scheduled
+age gate explicitly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>gh workflow run zenodo-verify.yml --field tag=v1.3.2
+</code></pre></div>
+<p>The manual Zenodo workflow rejects older tags because the concept-record API
+exposes only the latest-version pointer. Historical version records must be
+verified by their immutable version DOI rather than compared with that pointer.</p>
 <h3 id="7-citationcff-version-doi-append-next-cycle">7. CITATION.cff version-DOI append (next cycle)<a class="headerlink" href="#7-citationcff-version-doi-append-next-cycle" title="Permanent link">&para;</a></h3>
 <p>Each release mints a Zenodo version DOI that is only known <em>after</em>
 the deposit lands. The convention: the v1.1.6 release adds the
@@ -1415,17 +1440,27 @@ work.</p>
 </thead>
 <tbody>
 <tr>
+<td>Immediate <code>release-verify</code> fails</td>
+<td>PyPI, GitHub assets, or SLSA provenance is incomplete</td>
+<td>inspect the named failed step and repair the release chain; Zenodo is not part of this result</td>
+</tr>
+<tr>
+<td>Delayed <code>zenodo-verify</code> opens an issue</td>
+<td>Zenodo still does not expose the release after the six-hour threshold</td>
+<td>inspect the GitHub-Zenodo integration delivery and the existing concept record; do not mint manually or change the DOI badge</td>
+</tr>
+<tr>
+<td><code>zenodo-verify</code> cannot read the API</td>
+<td>Zenodo or the network is temporarily unavailable</td>
+<td>retry later; this condition does not assert that a deposit is missing</td>
+</tr>
+<tr>
 <td><code>publish-pypi</code> fails with <code>Token request error</code></td>
 <td>OIDC publisher entry missing on PyPI</td>
 <td>re-add at <code>pypi.org/manage/account/publishing/</code></td>
 </tr>
 <tr>
-<td><code>release-verify</code> opens an issue saying "Zenodo: no record"</td>
-<td>Webhook never enabled or deposit took &gt;5 min</td>
-<td>check Zenodo dashboard; if record exists, the verify timeout is too tight — bump the loop</td>
-</tr>
-<tr>
-<td><code>release-verify</code> says "missing sigstore bundle"</td>
+<td><code>release-verify</code> says <code>missing sigstore bundle</code></td>
 <td><code>sign-and-release</code> job was skipped (likely a permissions regression)</td>
 <td>re-grant <code>id-token: write</code> on the job, re-run the workflow</td>
 </tr>
