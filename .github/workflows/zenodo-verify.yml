@@ -2,7 +2,7 @@ name: Delayed Zenodo verification
 
 # Zenodo is eventually consistent with GitHub Releases. This workflow checks
 # the latest stable release only after it is at least six hours old. A manual
-# run with an explicit tag bypasses the age gate for operator verification.
+# run naming that latest tag bypasses the age gate for operator verification.
 # No workflow mints or edits Zenodo records; the GitHub-Zenodo integration does
 # that automatically.
 
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing release tag to verify immediately (optional)"
+        description: "Latest release tag to verify immediately (optional)"
         required: false
         type: string
 
@@ -28,7 +28,7 @@ jobs:
       ZENODO_CONCEPT_RECID: "19817710"
       MIN_RELEASE_AGE_HOURS: "6"
     steps:
-      - name: Reconcile the GitHub Release with Zenodo
+      - name: Reconcile the latest GitHub Release with Zenodo
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
         with:
           script: |
@@ -40,18 +40,20 @@ jobs:
               throw new Error("MIN_RELEASE_AGE_HOURS must be a positive number");
             }
 
-            const releaseResponse = requestedTag
-              ? await github.rest.repos.getReleaseByTag({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  tag: requestedTag,
-                })
-              : await github.rest.repos.getLatestRelease({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                });
+            const releaseResponse = await github.rest.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
             const release = releaseResponse.data;
             const tag = release.tag_name;
+
+            if (requestedTag && requestedTag !== tag) {
+              throw new Error(
+                `Requested tag ${requestedTag} is not the latest stable release ${tag}. ` +
+                `This workflow follows the concept record's latest-version pointer.`,
+              );
+            }
+
             const publishedAt = new Date(release.published_at || release.created_at);
             const ageHours = (Date.now() - publishedAt.getTime()) / 3_600_000;
 
