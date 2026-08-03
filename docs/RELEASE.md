@@ -27,13 +27,15 @@ git tag v1.1.6  ──►  release.yml (Actions)  ──►  PyPI (Trusted Publi
        │                       │
        │                       ├──►  GitHub Release (assets: dist/*, sbom.cdx.json, *.sigstore.json)
        │                       │            │
-       │                       │            ├──►  release-verify.yml (this PR)
+       │                       │            ├──►  release-verify.yml (immediate)
        │                       │            │            ├── pip index versions uniprot-mcp-server
        │                       │            │            ├── gh release view (asset presence)
-       │                       │            │            ├── gh attestation verify (SLSA)
-       │                       │            │            └── Zenodo records API (concept DOI lookup)
+       │                       │            │            └── gh attestation verify (SLSA)
        │                       │            │
        │                       │            └──►  Zenodo webhook  ──►  version DOI minted
+       │                       │                                      │
+       │                       │                                      └──►  zenodo-verify.yml
+       │                       │                                             (scheduled, delayed)
        │                       │
        │                       └──►  Sigstore signing (gh-action-sigstore-python)
        │
@@ -89,7 +91,14 @@ and the duplicate DOI is forever.
 The Zenodo–GitHub integration is enabled per-account. Once flipped
 on for the repo, every new GitHub Release triggers Zenodo to read
 `.zenodo.json` and mint a new version DOI under the concept DOI
-`10.5281/zenodo.19817710`. Typical latency: 30 s – 5 min.
+`10.5281/zenodo.19817710`.
+
+The synchronization is asynchronous. It often completes within 30 seconds to
+five minutes, but five minutes is not a failure boundary. Release v1.3.2 was
+still represented as v1.3.1 when its original five-minute verification ended
+and later advanced automatically to v1.3.2. Do not create a manual deposit,
+change the concept DOI badge, or move the release tag to compensate for normal
+propagation delay.
 
 **Enabling the webhook (one-time):**
 
@@ -120,15 +129,34 @@ the publisher entry with the four fields above.
 
 ### 6. Post-tag verification (automatic)
 
-`release-verify.yml` fires on `release: [published]`. It re-runs
-each link in the chain and opens a `release-drift` issue if any
-link's artifact is missing after a generous timeout. Greenable in
-~5 min on a healthy release.
+Verification is split by expected consistency window.
 
-To re-trigger verification manually for an older tag:
+`release-verify.yml` fires immediately on `release: [published]`. It verifies
+PyPI, the complete GitHub Release asset set, and SLSA provenance. A failure in
+one of those links opens `Release verification failed for <tag>` with the
+`release-drift` label. Zenodo is deliberately excluded from this immediate
+gate.
+
+`zenodo-verify.yml` runs every six hours. For scheduled runs it checks the
+latest stable GitHub Release only after that release is at least six hours old.
+It compares the release tag with `metadata.version` on Zenodo concept record
+`19817710`. Only a mismatch after that delayed threshold opens
+`Zenodo verification failed for <tag>`. When a later delayed run observes the
+expected version, it records the successful run on that Zenodo-specific issue
+and closes it. A transient inability to read the Zenodo API fails the workflow
+without claiming that the deposit itself is missing.
+
+To re-trigger immediate verification manually for an older tag:
 
 ```
 gh workflow run release-verify.yml --field tag=v1.1.6
+```
+
+To verify Zenodo immediately for an existing tag, bypassing the scheduled age
+gate explicitly:
+
+```
+gh workflow run zenodo-verify.yml --field tag=v1.1.6
 ```
 
 ### 7. CITATION.cff version-DOI append (next cycle)
@@ -145,9 +173,11 @@ work.
 
 | Symptom | Probable cause | Fix |
 |---|---|---|
+| Immediate `release-verify` fails | PyPI, GitHub assets, or SLSA provenance is incomplete | inspect the named failed step and repair the release chain; Zenodo is not part of this result |
+| Delayed `zenodo-verify` opens an issue | Zenodo still does not expose the release after the six-hour threshold | inspect the GitHub-Zenodo integration delivery and the existing concept record; do not mint manually or change the DOI badge |
+| `zenodo-verify` cannot read the API | Zenodo or the network is temporarily unavailable | retry later; this condition does not assert that a deposit is missing |
 | `publish-pypi` fails with `Token request error` | OIDC publisher entry missing on PyPI | re-add at `pypi.org/manage/account/publishing/` |
-| `release-verify` opens an issue saying "Zenodo: no record" | Webhook never enabled or deposit took >5 min | check Zenodo dashboard; if record exists, the verify timeout is too tight — bump the loop |
-| `release-verify` says "missing sigstore bundle" | `sign-and-release` job was skipped (likely a permissions regression) | re-grant `id-token: write` on the job, re-run the workflow |
+| `release-verify` says `missing sigstore bundle` | `sign-and-release` job was skipped (likely a permissions regression) | re-grant `id-token: write` on the job, re-run the workflow |
 | `pip install uniprot-mcp-server==X` says version not found | PyPI CDN lag, usually clears in 60 s | wait, retry; if persistent, check `pypi.org/project/uniprot-mcp-server/#history` |
 
 ## Rolling forward, not back
