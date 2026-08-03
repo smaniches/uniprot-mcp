@@ -152,12 +152,16 @@ To re-trigger immediate verification manually for an older tag:
 gh workflow run release-verify.yml --field tag=v1.1.6
 ```
 
-To verify Zenodo immediately for an existing tag, bypassing the scheduled age
-gate explicitly:
+To verify Zenodo immediately for the latest stable tag, bypassing the scheduled
+age gate explicitly:
 
 ```
-gh workflow run zenodo-verify.yml --field tag=v1.1.6
+gh workflow run zenodo-verify.yml --field tag=v1.3.2
 ```
+
+The manual Zenodo workflow rejects older tags because the concept-record API
+exposes only the latest-version pointer. Historical version records must be
+verified by their immutable version DOI rather than compared with that pointer.
 
 ### 7. CITATION.cff version-DOI append (next cycle)
 
