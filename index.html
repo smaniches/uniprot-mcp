@@ -451,17 +451,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-it-is" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What it is
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#tool-surface-41" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1041,17 +1030,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-it-is" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What it is
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#tool-surface-41" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1143,39 +1121,9 @@
 
 
 <h1 id="uniprot-mcp">uniprot-mcp<a class="headerlink" href="#uniprot-mcp" title="Permanent link">&para;</a></h1>
-<blockquote>
-<p>A <strong>Model Context Protocol</strong> server for the
-<a href="https://www.uniprot.org">UniProt</a> protein knowledgebase.
-<strong>41 tools.</strong> Every successful response carries a verifiable
-<code>Provenance</code> record (release · timestamp · URL · canonical SHA-256)
-that the agent (or a third party, a year later) can re-check with
-<code>uniprot_provenance_verify</code>.</p>
-</blockquote>
-<h2 id="what-it-is">What it is<a class="headerlink" href="#what-it-is" title="Permanent link">&para;</a></h2>
-<p><code>uniprot-mcp</code> exposes UniProt's REST surface — and a curated set of
-clinical and structural-biology compositions — as <strong>typed, agent-safe
-MCP tools</strong>. Two design choices set it apart:</p>
-<ol>
-<li>
-<p><strong>Provenance on every response.</strong> Markdown footer, JSON envelope,
-   PIR-style FASTA header — pick your format, the same record is
-   embedded. The <code>uniprot_provenance_verify</code> tool re-fetches the URL
-   and compares the recorded release tag and canonical response
-   SHA-256 against today's UniProt; you get one of five distinct
-   verdicts (<code>verified</code> / <code>release_drift</code> / <code>hash_drift</code> /
-   <code>release_and_hash_drift</code> / <code>url_unreachable</code>) with advice strings.</p>
-</li>
-<li>
-<p><strong>Pre-registered, third-party-reproducible benchmark.</strong> 30 prompts
-   (Tier A/B/C × 10) sealed via SHA-256 commitments on <code>main</code>. A
-   reviewer runs <code>python tests/benchmark/verify_answers.py</code> to
-   re-derive every answer from the live UniProt REST API in two
-   commands.</p>
-</li>
-</ol>
-<p>Together these mean a regulated user can take any prior <code>uniprot-mcp</code>
-answer and prove — <strong>without contacting the author</strong> — that UniProt
-still returns the same bytes.</p>
+<p>Produce verifiable, release-aware protein evidence packages from UniProt and linked scientific sources.</p>
+<p>Use <code>uniprot-mcp</code> to find proteins, assemble protein, target, and variant evidence, and retain a checkable record of where each result came from. Every successful response records the UniProt release, retrieval time, resolved source URL, and canonical SHA-256 digest.</p>
+<p>The complete tool catalog remains available for specialized research workflows.</p>
 <h2 id="tool-surface-41">Tool surface (41)<a class="headerlink" href="#tool-surface-41" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
