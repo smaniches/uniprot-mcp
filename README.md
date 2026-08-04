@@ -17,23 +17,11 @@
 [![Glama score](https://glama.ai/mcp/servers/smaniches/uniprot-mcp/badges/score.svg)](https://glama.ai/mcp/servers/smaniches/uniprot-mcp)
 [![Awesome MCP Servers](https://img.shields.io/badge/Awesome_MCP-Listed-blue?logo=github)](https://github.com/punkpeye/awesome-mcp-servers#bio)
 
-UniProt MCP server — a **Model Context Protocol** server for the
-[UniProt](https://www.uniprot.org) protein knowledgebase with
-**per-query provenance verification**. **41 tools** across 8
-families. Apache-2.0. Every successful response carries a verifiable
-`Provenance` record — UniProt release, retrieval timestamp, resolved
-URL, and a SHA-256 of the canonical response body — that the agent
-(or a third party, a year later) can re-check with a single tool
-call: `uniprot_provenance_verify`.
+Produce verifiable, release-aware protein evidence packages from UniProt and linked scientific sources.
 
-The distinguishing capability: **per-response SHA-256 + verify primitive
-+ release pinning + offline replay** is, to the best of my survey of
-public MCPs as of 2026-04-26, absent from every other bio-MCP server I
-could find
-(BioMCP, Augmented-Nature/UniProt-MCP, biothings-mcp, gget-mcp, and
-others). If you are a regulated-bio-pharma user who needs to prove,
-years later, that a UniProt-derived claim still holds, this is the
-mechanism. Comparison and citations: [docs/COMPETITIVE_LANDSCAPE.md](docs/COMPETITIVE_LANDSCAPE.md).
+Use this MCP server to find proteins, assemble protein, target, and variant evidence, and keep a checkable record of where each result came from. Each successful response records the UniProt release, retrieval time, resolved source URL, and a SHA-256 digest. `uniprot_provenance_verify` can later determine whether the upstream record is unchanged or has drifted.
+
+The complete tool catalog remains available for specialized research workflows.
 
 > Author: **Santiago Maniches** · ORCID [0009-0005-6480-1987](https://orcid.org/0009-0005-6480-1987) · TOPOLOGICA LLC
 
