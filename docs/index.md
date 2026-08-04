@@ -1,35 +1,10 @@
 # uniprot-mcp
 
-> A **Model Context Protocol** server for the
-> [UniProt](https://www.uniprot.org) protein knowledgebase.
-> **41 tools.** Every successful response carries a verifiable
-> `Provenance` record (release · timestamp · URL · canonical SHA-256)
-> that the agent (or a third party, a year later) can re-check with
-> `uniprot_provenance_verify`.
+Produce verifiable, release-aware protein evidence packages from UniProt and linked scientific sources.
 
-## What it is
+Use `uniprot-mcp` to find proteins, assemble protein, target, and variant evidence, and retain a checkable record of where each result came from. Every successful response records the UniProt release, retrieval time, resolved source URL, and canonical SHA-256 digest.
 
-`uniprot-mcp` exposes UniProt's REST surface — and a curated set of
-clinical and structural-biology compositions — as **typed, agent-safe
-MCP tools**. Two design choices set it apart:
-
-1. **Provenance on every response.** Markdown footer, JSON envelope,
-   PIR-style FASTA header — pick your format, the same record is
-   embedded. The `uniprot_provenance_verify` tool re-fetches the URL
-   and compares the recorded release tag and canonical response
-   SHA-256 against today's UniProt; you get one of five distinct
-   verdicts (`verified` / `release_drift` / `hash_drift` /
-   `release_and_hash_drift` / `url_unreachable`) with advice strings.
-
-2. **Pre-registered, third-party-reproducible benchmark.** 30 prompts
-   (Tier A/B/C × 10) sealed via SHA-256 commitments on `main`. A
-   reviewer runs `python tests/benchmark/verify_answers.py` to
-   re-derive every answer from the live UniProt REST API in two
-   commands.
-
-Together these mean a regulated user can take any prior `uniprot-mcp`
-answer and prove — **without contacting the author** — that UniProt
-still returns the same bytes.
+The complete tool catalog remains available for specialized research workflows.
 
 ## Tool surface (41)
 
