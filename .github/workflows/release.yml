@@ -55,9 +55,9 @@ jobs:
           cache: pip
       - name: Install build tooling
         # build, cyclonedx-bom and the hatchling build backend produce the
-        # released wheel and the SBOM that is attested below, so they are
-        # the highest-value targets in this workflow. All of them, and
-        # their full transitive graph, are installed from
+        # released wheel and the SBOM that is attested below, so they are the
+        # highest-value targets in this workflow. All of them, and their full
+        # transitive graph, are installed from
         # constraints/release.lock under --require-hashes: a substituted
         # artifact on the index cannot reach the build.
         #
@@ -199,6 +199,14 @@ jobs:
         run: ./mcp-publisher login github-oidc
       - name: Publish server.json to MCP Registry
         run: ./mcp-publisher publish
+      - name: Verify published Official MCP Registry record
+        env:
+          EXPECTED_SERVER_NAME: io.github.smaniches/uniprot-mcp
+          EXPECTED_PACKAGE_ID: uniprot-mcp-server
+          EXPECTED_REPOSITORY_URL: https://github.com/smaniches/uniprot-mcp
+          MCP_REGISTRY_RETRY_ATTEMPTS: "12"
+          MCP_REGISTRY_RETRY_DELAY_SECONDS: "10"
+        run: bash scripts/verify-mcp-registry-record.sh server.json
 
   # Chain release verification AFTER publish + signing have completed, so
   # release-verify reads PyPI / GitHub Release assets / Sigstore bundles
