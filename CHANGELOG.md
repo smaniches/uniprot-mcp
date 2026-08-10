@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.3](https://github.com/smaniches/uniprot-mcp/compare/v1.3.2...v1.3.3) (2026-08-10)
+
+
+### Bug Fixes
+
+* **release:** bind SBOM and registry publisher to immutable artifacts ([#170](https://github.com/smaniches/uniprot-mcp/issues/170)) ([fb86d5f](https://github.com/smaniches/uniprot-mcp/commit/fb86d5fa287b6006d621f1ef4e1a026846d5ae83))
+
 ## [1.3.2](https://github.com/smaniches/uniprot-mcp/compare/v1.3.1...v1.3.2) (2026-07-29)
 
 
