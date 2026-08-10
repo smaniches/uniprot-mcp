@@ -34,7 +34,7 @@ jobs:
       # building github.ref (the branch) and then call action-gh-release
       # with an empty tag_name. Fail fast before anything is built or
       # published. The push:tags fallback (event_name == 'push') is
-      # unaffected — it never reads inputs.tag.
+      # unaffected - it never reads inputs.tag.
       - name: Require a tag on manual dispatch
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.tag == '' }}
         run: |
@@ -75,19 +75,45 @@ jobs:
         # --no-isolation: use the hash-verified hatchling installed above
         # instead of letting build fetch its own copy from the index.
         run: python -m build --no-isolation
-      - name: Generate CycloneDX SBOM
+      - name: Generate CycloneDX SBOM from exact release wheel
         id: sbom
+        shell: bash
         run: |
-          cyclonedx-py requirements -o sbom.cdx.json <(pip freeze)
+          set -euo pipefail
+          shopt -s nullglob
+          wheels=(dist/*.whl)
+          if (( ${#wheels[@]} != 1 )); then
+            echo "::error::expected exactly one release wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          wheel="${wheels[0]}"
+
+          # Keep the analyzed runtime clean: pip/cyclonedx/build tooling stay in
+          # the host environment. pip's --python option installs the exact wheel
+          # and its resolved runtime dependencies into a venv created without pip.
+          python -m venv --without-pip .sbom-runtime
+          python -m pip --python .sbom-runtime install "$wheel"
+
+          # CycloneDX inspects the installed runtime environment; pyproject.toml
+          # supplies metadata.component. The binder then verifies Name/Version
+          # against wheel METADATA and records SHA-256(exact wheel) on that root.
+          cyclonedx-py environment .sbom-runtime/bin/python \
+            --pyproject pyproject.toml \
+            --mc-type library \
+            --output-reproducible \
+            --output-format JSON \
+            --output-file sbom.cdx.json
+          python scripts/bind_release_sbom.py --sbom sbom.cdx.json --wheel "$wheel"
+          python scripts/bind_release_sbom.py --verify-only --sbom sbom.cdx.json --wheel "$wheel"
           echo "path=sbom.cdx.json" >> "$GITHUB_OUTPUT"
       - name: SLSA provenance attestation (dist)
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373  # v4.1.1
         with:
           subject-path: "dist/*"
-      - name: SBOM attestation (CycloneDX)
+      - name: SBOM attestation (exact wheel)
         uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e  # v4.1.0
         with:
-          subject-path: "dist/*"
+          subject-path: "dist/*.whl"
           sbom-path: "sbom.cdx.json"
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -140,7 +166,7 @@ jobs:
       # On the release-please dispatch path (workflow_dispatch with a tag),
       # release-please has ALREADY created the GitHub Release and owns its
       # curated, conventional-commit changelog body. We therefore target that
-      # existing release by tag and DO NOT regenerate notes — we only attach
+      # existing release by tag and DO NOT regenerate notes - we only attach
       # the build artifacts, SBOM, and Sigstore bundles to it. On the
       # push-tag fallback (no inputs.tag), no release exists yet, so we create
       # one with auto-generated notes as before.
@@ -167,7 +193,7 @@ jobs:
   publish-mcp-registry:
     # Publish server.json to the official MCP Registry
     # (registry.modelcontextprotocol.io) so the public listing tracks every
-    # release automatically — closing the last manual link in the chain.
+    # release automatically - closing the last manual link in the chain.
     #
     # Ordering: runs AFTER publish-pypi because the registry's
     # package-ownership check reads the just-published PyPI release. Ownership
@@ -186,15 +212,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ inputs.tag || github.ref }}
-      - name: Install mcp-publisher
-        # Intentionally tracks ``latest`` rather than a SHA/version pin. The
-        # MCP Registry is in preview and rotates its OIDC audience between
-        # deployments; an older binary fails with "invalid audience", and the
-        # official GitHub Actions guide instructs re-installing latest for
-        # exactly this reason. Fetched over HTTPS from the official
-        # modelcontextprotocol/registry releases.
-        run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+      - name: Install authenticated mcp-publisher
+        run: bash scripts/install_mcp_publisher.sh
       - name: Authenticate to MCP Registry (GitHub OIDC)
         run: ./mcp-publisher login github-oidc
       - name: Publish server.json to MCP Registry
