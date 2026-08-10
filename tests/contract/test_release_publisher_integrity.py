@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import os
 import re
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -9,9 +12,27 @@ INSTALLER = ROOT / "scripts" / "install_mcp_publisher.sh"
 WORKFLOW = ROOT / ".github" / "workflows" / "release.yml"
 
 
+def _bash_executable() -> str:
+    """Locate a bash that can actually run the installer.
+
+    On Windows runners the PATH-resolved ``bash`` is the WSL launcher, which
+    exits with an error (and an empty stderr) when no distribution is
+    installed, so prefer the Git Bash that ships with Git for Windows.
+    """
+    if sys.platform == "win32":
+        for base in (os.environ.get("PROGRAMFILES"), r"C:\Program Files"):
+            if base:
+                git_bash = Path(base) / "Git" / "bin" / "bash.exe"
+                if git_bash.exists():
+                    return str(git_bash)
+    bash = shutil.which("bash")
+    assert bash is not None, "bash is required for the installer contract tests"
+    return bash
+
+
 def _run_installer(tmp_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["bash", str(INSTALLER), *args],
+        [_bash_executable(), str(INSTALLER), *args],
         cwd=tmp_path,
         capture_output=True,
         text=True,
