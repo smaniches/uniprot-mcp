@@ -8,6 +8,9 @@ name: Immediate release verification
 #   2. GitHub Release assets — sdist + wheel + sigstore + sbom present
 #   3. Provenance            — `gh attestation verify` passes against the
 #                              wheel with --repo smaniches/uniprot-mcp
+#   4. SBOM binding          — the released sbom.cdx.json root still equals
+#                              SHA-256(released wheel), so a post-release
+#                              asset swap cannot go unnoticed
 #
 # Zenodo publication is asynchronous and is deliberately not part of this
 # immediate gate. `.github/workflows/zenodo-verify.yml` reconciles the latest
@@ -101,6 +104,24 @@ jobs:
             gh attestation verify "$whl" --repo ${{ github.repository }}
           done
 
+      - name: Verify SBOM binds to the released wheel
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          mkdir -p /tmp/sbomverify
+          cd /tmp/sbomverify
+          gh release download "$TAG" --repo ${{ github.repository }} \
+            --pattern '*.whl' --pattern 'sbom.cdx.json'
+          wheels=(*.whl)
+          if (( ${#wheels[@]} != 1 )); then
+            echo "expected exactly one released wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          python "$GITHUB_WORKSPACE/scripts/bind_release_sbom.py" \
+            --verify-only --sbom sbom.cdx.json --wheel "${wheels[0]}"
+
       - name: Open release-drift issue on immediate failure
         if: failure()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
@@ -114,7 +135,7 @@ jobs:
               ``,
               `Run: ${runUrl}`,
               ``,
-              `One or more of {PyPI, GitHub Release assets, SLSA provenance}`,
+              `One or more of {PyPI, GitHub Release assets, SLSA provenance, SBOM binding}`,
               `did not land within the immediate timeout. Inspect the failing step`,
               `and repair the release chain before the next tag. Zenodo is checked`,
               `separately by the delayed reconciliation workflow.`,

@@ -20,13 +20,16 @@ permissions:
 
 jobs:
   build:
+    # Privilege boundary: this job holds OIDC + attestation authority, so its
+    # executable dependency closure is exactly the hash-locked release
+    # toolchain. It builds the distribution artifacts once and attests build
+    # provenance; it performs NO live runtime dependency resolution and no
+    # SBOM work - those run in the unprivileged `sbom` job below.
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write       # SLSA provenance OIDC
-      attestations: write   # actions/attest-build-provenance + attest-sbom
-    outputs:
-      sbom: ${{ steps.sbom.outputs.path }}
+      attestations: write   # actions/attest-build-provenance
     steps:
       # Guard against an accidental manual dispatch with a blank tag. The
       # release-please dispatch ALWAYS passes --field tag, so this only
@@ -34,7 +37,7 @@ jobs:
       # building github.ref (the branch) and then call action-gh-release
       # with an empty tag_name. Fail fast before anything is built or
       # published. The push:tags fallback (event_name == 'push') is
-      # unaffected — it never reads inputs.tag.
+      # unaffected - it never reads inputs.tag.
       - name: Require a tag on manual dispatch
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.tag == '' }}
         run: |
@@ -54,9 +57,8 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install build tooling
-        # build, cyclonedx-bom and the hatchling build backend produce the
-        # released wheel and the SBOM that is attested below, so they are
-        # the highest-value targets in this workflow. All of them, and
+        # build and the hatchling build backend produce the released wheel,
+        # so they are the highest-value targets in this workflow. They, and
         # their full transitive graph, are installed from
         # constraints/release.lock under --require-hashes: a substituted
         # artifact on the index cannot reach the build.
@@ -75,30 +77,114 @@ jobs:
         # --no-isolation: use the hash-verified hatchling installed above
         # instead of letting build fetch its own copy from the index.
         run: python -m build --no-isolation
-      - name: Generate CycloneDX SBOM
-        id: sbom
-        run: |
-          cyclonedx-py requirements -o sbom.cdx.json <(pip freeze)
-          echo "path=sbom.cdx.json" >> "$GITHUB_OUTPUT"
       - name: SLSA provenance attestation (dist)
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373  # v4.1.1
         with:
           subject-path: "dist/*"
-      - name: SBOM attestation (CycloneDX)
-        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e  # v4.1.0
-        with:
-          subject-path: "dist/*"
-          sbom-path: "sbom.cdx.json"
-      - name: Upload artifacts
+      - name: Upload dist artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: release-artifacts
-          path: |
-            dist/*
-            sbom.cdx.json
+          path: dist/*
+
+  sbom:
+    # Privilege separation: generating the runtime SBOM requires installing
+    # the release wheel and resolving its runtime dependency graph live from
+    # the index, so that resolution must not run beside OIDC or attestation
+    # authority. This job is read-only. It consumes the exact dist artifact
+    # produced by `build`, generates CycloneDX from an installed copy of the
+    # exact wheel, binds the root component to SHA-256(exact wheel), and
+    # emits sbom.cdx.json for the dedicated attestation job below.
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # Same tag semantics as the build job: the SBOM describes the
+          # released commit's pyproject/root metadata and binder script.
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install SBOM tooling
+        # Same hash-locked toolchain as the build job: cyclonedx-bom and its
+        # full transitive graph install under --require-hashes.
+        run: |
+          python -m pip install --require-hashes -r constraints/release.lock
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: release-artifacts
+          path: dist
+      - name: Generate CycloneDX SBOM from exact release wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          wheels=(dist/*.whl)
+          if (( ${#wheels[@]} != 1 )); then
+            echo "::error::expected exactly one release wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          wheel="${wheels[0]}"
+
+          # Keep the analyzed runtime clean: pip/cyclonedx tooling stay in
+          # the host environment. pip's --python option installs the exact
+          # wheel and its resolved runtime dependencies into a venv created
+          # without pip.
+          python -m venv --without-pip .sbom-runtime
+          python -m pip --python .sbom-runtime install "$wheel"
+
+          # CycloneDX inspects the installed runtime environment; pyproject.toml
+          # supplies metadata.component. The binder then verifies Name/Version
+          # against wheel METADATA and records SHA-256(exact wheel) on that root.
+          cyclonedx-py environment .sbom-runtime/bin/python \
+            --pyproject pyproject.toml \
+            --mc-type library \
+            --output-reproducible \
+            --output-format JSON \
+            --output-file sbom.cdx.json
+          python scripts/bind_release_sbom.py --sbom sbom.cdx.json --wheel "$wheel"
+          python scripts/bind_release_sbom.py --verify-only --sbom sbom.cdx.json --wheel "$wheel"
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: release-sbom
+          path: sbom.cdx.json
+
+  attest-sbom:
+    # The only job that holds attestation authority over the SBOM, and it
+    # runs nothing but the attestation itself: no checkout, no package
+    # installs, no runtime environment, no network dependency resolution.
+    # It attests the generated SBOM against the exact released wheel only.
+    needs: [build, sbom]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write       # Sigstore OIDC for actions/attest-sbom
+      attestations: write   # actions/attest-sbom
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: release-artifacts
+          path: dist
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: release-sbom
+          path: .
+      - name: SBOM attestation (exact wheel)
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e  # v4.1.0
+        with:
+          subject-path: "dist/*.whl"
+          sbom-path: "sbom.cdx.json"
 
   publish-pypi:
-    needs: build
+    # Publication starts only after the whole integrity chain has succeeded:
+    # build provenance (build) and SBOM generation + attestation
+    # (sbom, via attest-sbom's own needs).
+    needs: [build, attest-sbom]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -110,7 +196,7 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: release-artifacts
-          path: .
+          path: dist
       - name: Publish to PyPI (Trusted Publishing, OIDC)
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
         with:
@@ -118,7 +204,7 @@ jobs:
           print-hash: true
 
   sign-and-release:
-    needs: build
+    needs: [build, attest-sbom]
     runs-on: ubuntu-latest
     permissions:
       contents: write       # create GitHub Release
@@ -130,6 +216,10 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: release-artifacts
+          path: dist
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: release-sbom
           path: .
       - name: Sign artifacts with Sigstore
         uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9  # v3.5.0
@@ -140,7 +230,7 @@ jobs:
       # On the release-please dispatch path (workflow_dispatch with a tag),
       # release-please has ALREADY created the GitHub Release and owns its
       # curated, conventional-commit changelog body. We therefore target that
-      # existing release by tag and DO NOT regenerate notes — we only attach
+      # existing release by tag and DO NOT regenerate notes - we only attach
       # the build artifacts, SBOM, and Sigstore bundles to it. On the
       # push-tag fallback (no inputs.tag), no release exists yet, so we create
       # one with auto-generated notes as before.
@@ -167,7 +257,7 @@ jobs:
   publish-mcp-registry:
     # Publish server.json to the official MCP Registry
     # (registry.modelcontextprotocol.io) so the public listing tracks every
-    # release automatically — closing the last manual link in the chain.
+    # release automatically - closing the last manual link in the chain.
     #
     # Ordering: runs AFTER publish-pypi because the registry's
     # package-ownership check reads the just-published PyPI release. Ownership
@@ -186,15 +276,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ inputs.tag || github.ref }}
-      - name: Install mcp-publisher
-        # Intentionally tracks ``latest`` rather than a SHA/version pin. The
-        # MCP Registry is in preview and rotates its OIDC audience between
-        # deployments; an older binary fails with "invalid audience", and the
-        # official GitHub Actions guide instructs re-installing latest for
-        # exactly this reason. Fetched over HTTPS from the official
-        # modelcontextprotocol/registry releases.
-        run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+      - name: Install authenticated mcp-publisher
+        run: bash scripts/install_mcp_publisher.sh
       - name: Authenticate to MCP Registry (GitHub OIDC)
         run: ./mcp-publisher login github-oidc
       - name: Publish server.json to MCP Registry
