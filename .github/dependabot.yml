@@ -46,6 +46,11 @@ updates:
     groups:
       runtime:
         patterns: ["httpx", "mcp"]
+        # Runtime major upgrades are architectural changes, not routine
+        # maintenance. In particular, mcp 2.x removes APIs used by server.py.
+        update-types:
+          - "minor"
+          - "patch"
       dev:
         patterns:
           - "pytest*"
@@ -64,6 +69,12 @@ updates:
       # rather than a standalone one.
       other:
         patterns: ["*"]
+    ignore:
+      # pyproject.toml and contract tests deliberately enforce mcp<2. A 2.x
+      # migration requires a coordinated server API port and must never arrive
+      # as routine dependency maintenance that widens the compatibility ceiling.
+      - dependency-name: "mcp"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
