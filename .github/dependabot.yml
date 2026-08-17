@@ -65,10 +65,13 @@ updates:
           - "interrogate"
       docs:
         patterns: ["mkdocs*"]
-      # Catch-all so a direct dep not matched above still lands in one PR
-      # rather than a standalone one.
+      # Catch unmatched routine updates without absorbing major upgrades that
+      # require explicit compatibility review into an unrelated grouped PR.
       other:
         patterns: ["*"]
+        update-types:
+          - "minor"
+          - "patch"
     ignore:
       # pyproject.toml and contract tests deliberately enforce mcp<2. A 2.x
       # migration requires a coordinated server API port and must never arrive
