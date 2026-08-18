@@ -1447,7 +1447,7 @@
 <ol>
 <li><strong>Upstream content controller</strong> — anyone can submit a TrEMBL entry; some UniProt cross-reference targets accept community edits. Hostile content reaches us in plain text.</li>
 <li><strong>MCP client controller</strong> — a malicious or compromised LLM agent calls our tools with arbitrary arguments.</li>
-<li><strong>Network adversary</strong> — TLS-level interception. We only speak HTTPS to one origin (<code>rest.uniprot.org</code>) and rely on system trust roots; full PKI compromise is out of scope.</li>
+<li><strong>Network adversary</strong> — TLS-level interception. Outbound clients speak HTTPS only and are restricted to the three origins declared below (<code>rest.uniprot.org</code>, <code>alphafold.ebi.ac.uk</code>, and <code>eutils.ncbi.nlm.nih.gov</code>); we rely on system trust roots, and full PKI compromise is out of scope.</li>
 <li><strong>Supply-chain adversary</strong> — typosquatted PyPI dependency, tampered or replaced GitHub Action.</li>
 <li><strong>Insider</strong> — a developer with write access to <code>smaniches/uniprot-mcp</code>.</li>
 </ol>
@@ -1471,21 +1471,21 @@
 - <code>aspect</code> parameter on <code>uniprot_get_go_terms</code> allowlisted to <code>{"F", "P", "C"}</code>.
 - <code>_check_accession</code> runs <strong>before</strong> the network call; offline tests assert with <code>respx</code> that no HTTP request is issued for an invalid accession.</p>
 <h3 id="t3-ssrf-via-redirect-abuse">T3 — SSRF via redirect abuse<a class="headerlink" href="#t3-ssrf-via-redirect-abuse" title="Permanent link">&para;</a></h3>
-<p><strong>Scenario.</strong> <code>id_mapping_results</code> follows a <code>redirectURL</code> from the UniProt response (<code>src/uniprot_mcp/client.py:163-165</code>). A compromised UniProt response could point that URL at internal hosts (<code>http://169.254.169.254/...</code> AWS metadata, <code>file:///</code>, etc.).</p>
-<p><strong>Mitigations (precise; what <code>httpx</code> does and does not do).</strong>
-- The <code>httpx.AsyncClient</code> is constructed with <code>base_url="https://rest.uniprot.org"</code> and <code>follow_redirects=True</code> (see <code>src/uniprot_mcp/client.py:296-300</code>).
-- <strong>What <code>base_url</code> does:</strong> when the request URL is a <em>relative</em> path, httpx resolves it against <code>base_url</code>. So a <code>redirectURL</code> of <code>"/uniprotkb/P04637"</code> is dispatched to <code>https://rest.uniprot.org/uniprotkb/P04637</code>. Empirically every <code>redirectURL</code> UniProt returns is same-origin (typically a relative path under <code>/idmapping/results/</code>).
-- <strong>What <code>base_url</code> does <em>not</em> do:</strong> it does not constrain <em>absolute</em> URLs in the <code>redirectURL</code> field. If UniProt's <code>redirectURL</code> were <code>"https://attacker.example.com/x"</code>, <code>httpx</code> with <code>follow_redirects=True</code> would dispatch the request to that origin — <code>base_url</code> is not an allowlist. The only same-origin behaviour <code>httpx</code> enforces by default is dropping the <code>Authorization</code> header on cross-origin redirects (and we don't send one).
-- <strong>What actually limits the blast radius today:</strong> (a) UniProt is the trust anchor; (b) the surface is one JSON-extracted field in one polling code path (<code>id_mapping_results</code>); (c) the <code>User-Agent</code> we send carries no secrets and no <code>Authorization</code> header is ever set, so a malicious cross-origin destination cannot exfiltrate anything from our side.</p>
-<p><strong>Residual risk.</strong> A compromise of <code>rest.uniprot.org</code> (or a same-network MITM with TLS bypass) that injects a hostile <code>redirectURL</code> would steer one HTTP request to that destination. The MCP server makes no follow-up actions based on the response body, so the worst-case outcome is a leaked request fingerprint (UA + IP) to the attacker-controlled host.</p>
-<p><strong>Deferred hardening.</strong> Add an explicit allowlist (<code>url.startswith("https://rest.uniprot.org/")</code> or <code>not url.startswith(("http://", "https://"))</code> — i.e. relative-path-only) before the <code>redirectURL</code> is dispatched. <strong>Still tracked at v1.1.6 — not yet shipped.</strong> Target window: v1.2.0. Until then the security boundary is the trustworthiness of UniProt as an upstream, not client-side enforcement.</p>
-<h3 id="t3b-cross-origin-allowlist-for-non-uniprot-endpoints">T3b — Cross-origin allowlist for non-UniProt endpoints<a class="headerlink" href="#t3b-cross-origin-allowlist-for-non-uniprot-endpoints" title="Permanent link">&para;</a></h3>
-<p><strong>Scenario.</strong> <code>uniprot_get_alphafold_confidence</code> consults <code>https://alphafold.ebi.ac.uk</code> — the only origin outside <code>rest.uniprot.org</code> that uniprot-mcp calls. A future tool could be tempted to widen the allowlist further (NCBI eutils for ClinVar, PDB REST, etc.), and a careless addition would expand the SSRF surface beyond what the threat model accounts for.</p>
+<p><strong>Scenario.</strong> Any trusted upstream can return an HTTP 3xx <code>Location</code>, and UniProt's ID-mapping status payload can additionally return a JSON <code>redirectURL</code>. Without an origin check on every outbound hop, a compromised upstream could redirect the client to an internal host such as <code>http://169.254.169.254/</code> or to an attacker-controlled service.</p>
 <p><strong>Mitigations.</strong>
-- The set of permissible cross-origin endpoints is enumerated in <code>src/uniprot_mcp/client.py</code> as named constants (<code>ALPHAFOLD_API_BASE</code>, <code>NCBI_EUTILS_BASE</code>, …). Adding a new origin requires modifying that file <em>and</em> this threat-model entry <em>and</em> <code>PRIVACY.md</code> in the same commit; reviewers reject any cross-origin call that does not appear in all three.
-- Each cross-origin call uses a fresh <code>httpx.AsyncClient</code> with <code>follow_redirects=True</code> and a hardcoded base URL — redirects to a different origin are accepted by httpx but mitigated by the fact that the URL we construct is built from a literal accession that has already passed <code>_check_accession</code>.
-- Neither AlphaFold-DB nor NCBI eutils require API keys for the volume of queries we make; we are not at risk of credential exfiltration on either origin.</p>
-<p><strong>Residual risk.</strong> A compromise of <code>alphafold.ebi.ac.uk</code> or <code>eutils.ncbi.nlm.nih.gov</code> itself (e.g. infrastructure breach) would let an attacker return malicious metadata. The provenance subsystem records the source URL + canonical SHA-256 of the response, so a poisoned answer is <em>detectable</em> by <code>uniprot_provenance_verify</code>, but not <em>prevented</em>.</p>
+- The UniProt client is rooted at <code>https://rest.uniprot.org</code>; NCBI eutils and AlphaFold-DB use their separately declared HTTPS origins.
+- Every <code>httpx.AsyncClient</code> registers an async request hook that runs after HTTPX has prepared the request but before network dispatch. The hook executes again for automatic redirect hops and requires HTTPS, the exact declared hostname, and the standard HTTPS port.
+- <code>id_mapping_results</code> also validates the JSON <code>redirectURL</code> before passing it to the client. Only <code>https://rest.uniprot.org[:443]/...</code> is accepted; bare <code>uniprot.org</code>, sibling subdomains, HTTP downgrade, non-standard ports, relative URLs, and foreign hosts fail closed with <code>UntrustedRedirectError</code>.
+- Same-origin redirects remain enabled so legitimate upstream behavior is preserved; only origin escape is blocked.
+- Regression tests cover direct hostile URLs plus end-to-end automatic redirects for UniProt, NCBI eutils, and AlphaFold-DB, and assert the off-origin route is never dispatched.</p>
+<p><strong>Residual risk.</strong> A compromised allowed origin can still return malicious or incorrect content from that origin. Origin enforcement prevents redirect-based SSRF; it does not authenticate the scientific truth of an upstream response. Provenance records the resolved source URL and response hash for later audit and drift comparison.</p>
+<h3 id="t3b-cross-origin-allowlist-for-non-uniprot-endpoints">T3b — Cross-origin allowlist for non-UniProt endpoints<a class="headerlink" href="#t3b-cross-origin-allowlist-for-non-uniprot-endpoints" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario.</strong> <code>uniprot_get_alphafold_confidence</code> and <code>uniprot_resolve_clinvar</code> deliberately consult origins outside <code>rest.uniprot.org</code>. A future tool could widen that egress surface without updating the security and privacy model.</p>
+<p><strong>Mitigations.</strong>
+- The permissible external endpoints are enumerated in <code>src/uniprot_mcp/client.py</code> as named constants (<code>ALPHAFOLD_API_BASE</code>, <code>NCBI_EUTILS_BASE</code>). Adding an origin requires modifying that file, this threat-model entry, and <code>PRIVACY.md</code> in the same review.
+- Each external client has an origin-specific request hook. Automatic redirects may continue only within that exact HTTPS origin; a redirect to any other host, scheme, or non-standard port is rejected before dispatch.
+- Neither AlphaFold-DB nor the NCBI eutils calls made here use API credentials.</p>
+<p><strong>Residual risk.</strong> A compromise of <code>alphafold.ebi.ac.uk</code> or <code>eutils.ncbi.nlm.nih.gov</code> itself could still return malicious metadata from the allowed origin. The provenance subsystem records the resolved source URL and canonical SHA-256 of the response for later audit; it does not make a compromised upstream trustworthy.</p>
 <p><strong>Active cross-origin allowlist (ratchet by review):</strong></p>
 <table>
 <thead>
@@ -1517,7 +1517,7 @@
 <h3 id="t5-resource-exhaustion">T5 — Resource exhaustion<a class="headerlink" href="#t5-resource-exhaustion" title="Permanent link">&para;</a></h3>
 <p><strong>Scenario.</strong> Caller invokes <code>batch_entries</code> with 10 000 accessions, or chains <code>id_mapping</code> calls in parallel.</p>
 <p><strong>Mitigations.</strong>
-- <code>batch_entries</code> caps the valid-ID list at <strong>100</strong> <strong>before</strong> the HTTP request (<code>src/uniprot_mcp/client.py:181-182</code>); excess IDs are silently dropped with a server-side log entry.
+- <code>batch_entries</code> caps the valid-ID list at <strong>100</strong> <strong>before</strong> the HTTP request; excess IDs are silently dropped with a server-side log entry.
 - <code>uniprot_id_mapping</code> rejects &gt; 100 IDs with <code>_InputError</code>.
 - Retry budget is bounded: <code>MAX_RETRIES=3</code>, <code>MAX_RETRY_AFTER_SECONDS=120</code> (cap on server-dictated waits).
 - <code>id_mapping_results</code> polling capped at <strong>30 iterations</strong> (≈ 30 seconds total wall-clock at 1 s spacing); <code>TimeoutError</code> raised after.
@@ -1525,7 +1525,7 @@
 <h3 id="t6-error-channel-exfiltration">T6 — Error-channel exfiltration<a class="headerlink" href="#t6-error-channel-exfiltration" title="Permanent link">&para;</a></h3>
 <p><strong>Scenario.</strong> Upstream returns an error containing user-identifying detail (an API key, a session token, a stack trace from UniProt's internal services). Our tool returns that string to the LLM, which logs it.</p>
 <p><strong>Mitigations.</strong>
-- <code>_safe_error</code> (<code>src/uniprot_mcp/server.py:91-97</code>) <strong>never</strong> echoes upstream exception text. Only a stable string: <code>"Error in &lt;tool&gt;: upstream request failed; see server logs for details."</code>.
+- <code>_safe_error</code> in <code>src/uniprot_mcp/server.py</code> <strong>never</strong> echoes upstream exception text. Only a stable string: <code>"Error in &lt;tool&gt;: upstream request failed; see server logs for details."</code>.
 - <code>_InputError</code> is forwarded because it is our own validation output — agent-actionable, not upstream-controllable.
 - Full detail is <code>logger.exception</code>-ed to stderr; the LLM sees only the sanitised version.
 - Pinned by <code>tests/unit/test_server_validation.py::test_safe_error_hides_internal_exception_text</code>.</p>
@@ -1553,12 +1553,12 @@
 <p><strong>Scenario.</strong> An attacker probes whether a particular UniProt accession exists via response timing.</p>
 <p><strong>Position (deliberate non-enforcement).</strong> UniProt is a public knowledgebase; existence of an accession is not secret. We treat upstream content as public. Rate-limit politeness is the only operational concern; see T5.</p>
 <h3 id="t12-unicode-confusables">T12 — Unicode confusables<a class="headerlink" href="#t12-unicode-confusables" title="Permanent link">&para;</a></h3>
-<p><strong>Scenario.</strong> A query string with a Cyrillic <code>а</code> instead of Latin <code>a</code> bypasses an allowlist comparison.</p>
+<p><strong>Scenario.</strong> Unicode lookalikes can change search semantics or make free-text input visually misleading. Canonical identifiers and enum-like tool parameters, by contrast, must never accept confusable substitutions for their ASCII grammar.</p>
 <p><strong>Mitigations.</strong>
-- Validation regexes use ASCII subsets (<code>[A-Za-z0-9]</code>).
-- Canonical-ID regexes use <code>\A...\Z</code> anchors so Unicode characters can't slip past line-end matching.
-- Allowlist comparisons (<code>{"markdown", "json"}</code>, <code>{"F", "P", "C"}</code>) are exact-string against ASCII-only literals.</p>
-<p><strong>Deferred hardening.</strong> Apply NFKC Unicode normalisation to free-text inputs (currently relevant only for <code>query</code> and <code>organism</code>). <strong>Still tracked at v1.1.6 — not yet shipped.</strong> Target window: v1.2.0.</p>
+- Canonical-ID validation regexes use ASCII character classes and <code>\A...\Z</code> anchors, so Unicode confusables cannot enter identifier positions.
+- Allowlist comparisons (<code>{"markdown", "json"}</code>, <code>{"F", "P", "C"}</code>) are exact-string checks against ASCII-only literals.
+- Free-text <code>query</code> and organism-name inputs are length-bounded and remain Unicode by design. Applying NFKC globally would alter legitimate scientific text and does not constitute a general Unicode-confusable defense, so the server does not normalize those fields indiscriminately.</p>
+<p><strong>Residual risk.</strong> Visually confusable characters in legitimate free-text can produce a different upstream query than a human intended. If a future field requires canonicalization, it should get a field-specific normalization/confusable policy and regression tests rather than a global text transform.</p>
 <hr />
 <h2 id="reporting-a-finding">Reporting a finding<a class="headerlink" href="#reporting-a-finding" title="Permanent link">&para;</a></h2>
 <p>See <a href="https://github.com/smaniches/uniprot-mcp/blob/main/SECURITY.md"><code>SECURITY.md</code></a>. Encrypted contact (PGP / Signal) on request.</p>
