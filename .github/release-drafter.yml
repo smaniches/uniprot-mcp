@@ -3,25 +3,35 @@ tag-template: "v$RESOLVED_VERSION"
 change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
 categories:
   - title: "Added"
-    labels: ["feature", "enhancement"]
+    semver-increment: minor
+    when:
+      labels: ["feature", "enhancement"]
   - title: "Fixed"
-    labels: ["bug", "fix"]
+    semver-increment: patch
+    when:
+      labels: ["bug", "fix"]
   - title: "Changed"
-    labels: ["change", "refactor"]
+    semver-increment: patch
+    when:
+      labels: ["change", "refactor"]
   - title: "Security"
-    labels: ["security"]
+    semver-increment: patch
+    when:
+      label: "security"
   - title: "Documentation"
-    labels: ["docs", "documentation"]
+    semver-increment: patch
+    when:
+      labels: ["docs", "documentation"]
   - title: "Dependencies"
-    labels: ["dependencies"]
-version-resolver:
-  major:
-    labels: ["breaking"]
-  minor:
-    labels: ["feature", "enhancement"]
-  patch:
-    labels: ["bug", "fix", "security", "docs", "dependencies"]
-  default: patch
+    semver-increment: patch
+    when:
+      label: "dependencies"
+  - type: version-resolver
+    semver-increment: major
+    when:
+      label: "breaking"
+  - type: version-resolver
+    semver-increment: patch
 template: |
   ## What's changed
 
