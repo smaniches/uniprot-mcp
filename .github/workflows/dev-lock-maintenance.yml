@@ -151,7 +151,7 @@ jobs:
         # compile is --no-build and the pre-commit realign is first-party
         # stdlib code.
         if: steps.diff.outputs.changed == 'true'
-        uses: actions/upload-artifact@043fb46d1a93e64a875d1fc6a0a  # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: refreshed-locks
           path: |
