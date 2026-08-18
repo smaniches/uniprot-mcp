@@ -130,9 +130,7 @@ def _assert_trusted_origin(url: str, trusted_base: str) -> None:
     except ValueError as exc:
         raise UntrustedRedirectError(f"outbound URL has an invalid port: {url!r}") from exc
     trusted_request = (
-        parsed.scheme == "https"
-        and parsed.hostname == trusted.hostname
-        and port in (None, 443)
+        parsed.scheme == "https" and parsed.hostname == trusted.hostname and port in (None, 443)
     )
     if not trusted_request:
         raise UntrustedRedirectError(
