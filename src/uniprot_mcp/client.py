@@ -118,36 +118,44 @@ PIN_RELEASE_ENV = "UNIPROT_PIN_RELEASE"
 
 
 class UntrustedRedirectError(RuntimeError):
-    """An id-mapping redirectURL pointed outside the trusted UniProt origin.
+    """An outbound request or redirect targeted an untrusted origin."""
 
-    The id-mapping poll loop follows the server-supplied ``redirectURL`` as
-    an *absolute* URL. ``httpx`` does not constrain absolute URLs to the
-    client's ``base_url``, so a malicious or MITM'd ``redirectURL`` would be
-    fetched verbatim. The client therefore validates the host against a
-    suffix allowlist (``*.uniprot.org`` / ``uniprot.org``) and raises this
-    error rather than dispatching a request to an untrusted origin.
-    """
+
+def _assert_trusted_origin(url: str, trusted_base: str) -> None:
+    """Raise unless ``url`` is HTTPS on the exact origin of ``trusted_base``."""
+    parsed = urllib.parse.urlparse(url)
+    trusted = urllib.parse.urlparse(trusted_base)
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise UntrustedRedirectError(f"outbound URL has an invalid port: {url!r}") from exc
+    trusted_request = (
+        parsed.scheme == "https" and parsed.hostname == trusted.hostname and port in (None, 443)
+    )
+    if not trusted_request:
+        raise UntrustedRedirectError(
+            f"outbound request points outside trusted HTTPS origin {trusted.hostname!r}: {url!r}"
+        )
 
 
 def _assert_trusted_redirect(url: str) -> None:
-    """Raise :class:`UntrustedRedirectError` unless ``url`` targets UniProt.
+    """Raise unless an id-mapping ``redirectURL`` targets the UniProt API origin."""
+    _assert_trusted_origin(url, BASE_URL)
 
-    The legitimate id-mapping redirect target is ``rest.uniprot.org``. We
-    accept only ``http``/``https`` URLs whose host is ``uniprot.org`` or a
-    subdomain of it. The check is a hostname *suffix* match on
-    ``.uniprot.org`` (not ``netloc.endswith("uniprot.org")``, which would
-    also match a hostile ``evil-uniprot.org`` or ``uniprot.org.evil.com``).
-    """
-    parsed = urllib.parse.urlparse(url)
-    host = parsed.hostname
-    if parsed.scheme not in ("http", "https") or host is None:
-        raise UntrustedRedirectError(
-            f"id-mapping redirectURL is not an absolute http(s) URL: {url!r}"
-        )
-    if host != "uniprot.org" and not host.endswith(".uniprot.org"):
-        raise UntrustedRedirectError(
-            f"id-mapping redirectURL points outside the trusted UniProt origin: {url!r}"
-        )
+
+async def _enforce_uniprot_origin(request: httpx.Request) -> None:
+    """Reject a prepared UniProt request outside the canonical API origin."""
+    _assert_trusted_origin(str(request.url), BASE_URL)
+
+
+async def _enforce_ncbi_origin(request: httpx.Request) -> None:
+    """Reject a prepared NCBI eutils request outside its declared origin."""
+    _assert_trusted_origin(str(request.url), NCBI_EUTILS_BASE)
+
+
+async def _enforce_alphafold_origin(request: httpx.Request) -> None:
+    """Reject a prepared AlphaFold-DB request outside its declared origin."""
+    _assert_trusted_origin(str(request.url), ALPHAFOLD_API_BASE)
 
 
 class ReleaseMismatchError(RuntimeError):
@@ -413,6 +421,7 @@ class UniProtClient:
                 timeout=httpx.Timeout(TIMEOUT),
                 headers={"User-Agent": UA, "Accept": "application/json"},
                 follow_redirects=True,
+                event_hooks={"request": [_enforce_uniprot_origin]},
             )
         return self._client
 
@@ -655,6 +664,7 @@ class UniProtClient:
             timeout=httpx.Timeout(TIMEOUT),
             headers={"User-Agent": UA, "Accept": "application/json"},
             follow_redirects=True,
+            event_hooks={"request": [_enforce_ncbi_origin]},
         ) as ext:
             r_search = await _get_with_retry(
                 ext, f"{NCBI_EUTILS_BASE}/esearch.fcgi", params=params_search
@@ -707,7 +717,7 @@ class UniProtClient:
         """Fetch AlphaFold-DB prediction metadata for a UniProt accession.
 
         This is a *cross-origin* call to ``https://alphafold.ebi.ac.uk`` —
-        the only origin uniprot-mcp consults outside ``rest.uniprot.org``.
+        one of the two declared external origins used by uniprot-mcp.
         The endpoint returns global pLDDT statistics
         (``globalMetricValue`` plus four ``fractionPlddt*`` bands) without
         needing to download the full structure file. Provenance carries
@@ -717,6 +727,7 @@ class UniProtClient:
             timeout=httpx.Timeout(TIMEOUT),
             headers={"User-Agent": UA, "Accept": "application/json"},
             follow_redirects=True,
+            event_hooks={"request": [_enforce_alphafold_origin]},
         ) as ext:
             resp = await _get_with_retry(ext, f"{ALPHAFOLD_API_BASE}/api/prediction/{accession}")
             # The prediction endpoint returns 404 for accessions with no
