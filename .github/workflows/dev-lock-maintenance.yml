@@ -192,7 +192,7 @@ jobs:
           interrogate -c pyproject.toml src/uniprot_mcp
           bandit -r src/uniprot_mcp
           python -m pip freeze --exclude uniprot-mcp-server > "${RUNNER_TEMP}/audit-deps.txt"
-          pip-audit --strict --ignore-vuln CVE-2026-3219 -r "${RUNNER_TEMP}/audit-deps.txt"
+          pip-audit --strict -r "${RUNNER_TEMP}/audit-deps.txt"
 
       - name: Validate test.lock (offline test suite)
         if: steps.diff.outputs.changed == 'true'
