@@ -1,0 +1,55 @@
+name: Apply provenance redirect security fix
+
+on:
+  push:
+    branches:
+      - security/provenance-redirect-origin-lock
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply security patch
+        shell: bash
+        run: git apply --check .github/patches/provenance-redirect-origin.patch && git apply .github/patches/provenance-redirect-origin.patch
+
+      - name: Install development dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Canonicalize touched Python files
+        shell: bash
+        run: |
+          ruff check --fix src/uniprot_mcp/server.py tests/unit/test_provenance_redirect_origin.py
+          ruff format src/uniprot_mcp/server.py tests/unit/test_provenance_redirect_origin.py
+
+      - name: Run focused security regression tests
+        run: pytest tests/unit/test_provenance_verify.py tests/unit/test_provenance_redirect_origin.py -q
+
+      - name: Run static checks on touched Python files
+        shell: bash
+        run: |
+          ruff check src/uniprot_mcp/server.py tests/unit/test_provenance_redirect_origin.py
+          ruff format --check src/uniprot_mcp/server.py tests/unit/test_provenance_redirect_origin.py
+
+      - name: Commit validated fix
+        shell: bash
+        run: |
+          rm .github/workflows/apply-provenance-redirect-fix.yml
+          rm .github/patches/provenance-redirect-origin.patch
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(security): lock provenance redirects to UniProt origin"
+          git push origin HEAD:security/provenance-redirect-origin-lock
