@@ -26,8 +26,12 @@ jobs:
       - name: Apply assertion-based security mutation
         run: python .github/patches/provenance-redirect-origin.patch
 
-      - name: Install development and test dependencies
-        run: pip install -e ".[dev,test]"
+      - name: Install canonical locked development and test toolchains
+        shell: bash
+        run: |
+          python -m pip install --require-hashes -r constraints/dev.lock
+          python -m pip install --require-hashes -r constraints/test.lock
+          python -m pip install --no-build-isolation --no-deps -e .
 
       - name: Canonicalize touched Python files
         shell: bash
