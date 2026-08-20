@@ -26,8 +26,8 @@ jobs:
       - name: Apply assertion-based security mutation
         run: python .github/patches/provenance-redirect-origin.patch
 
-      - name: Install development dependencies
-        run: pip install -e ".[dev]"
+      - name: Install development and test dependencies
+        run: pip install -e ".[dev,test]"
 
       - name: Canonicalize touched Python files
         shell: bash
