@@ -1,0 +1,91 @@
+"""Regression tests for provenance-verifier redirect origin enforcement."""
+
+from __future__ import annotations
+
+import json
+
+import httpx
+import respx
+
+from uniprot_mcp.client import canonical_response_hash
+from uniprot_mcp.server import uniprot_provenance_verify
+
+_START_URL = "https://rest.uniprot.org/uniprotkb/P04637"
+
+
+async def test_verify_allows_same_origin_redirect() -> None:
+    body = {"primaryAccession": "P04637"}
+    final_response = httpx.Response(
+        200,
+        json=body,
+        headers={
+            "content-type": "application/json",
+            "X-UniProt-Release": "2026_02",
+        },
+    )
+    recorded_hash = canonical_response_hash(final_response)
+
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        source = router.get("/uniprotkb/P04637").mock(
+            return_value=httpx.Response(
+                302,
+                headers={"location": "/uniprotkb/P04637/redirected"},
+            )
+        )
+        destination = router.get("/uniprotkb/P04637/redirected").mock(return_value=final_response)
+        out = await uniprot_provenance_verify(
+            _START_URL,
+            release="2026_02",
+            response_sha256=recorded_hash,
+            response_format="json",
+        )
+        assert source.called
+        assert destination.called
+        assert len(router.calls) == 2
+
+    payload = json.loads(out)
+    assert payload["status"] == "verified"
+    assert payload["url_resolves"] is True
+    assert payload["release_match"] is True
+    assert payload["hash_match"] is True
+
+
+async def test_verify_blocks_cross_origin_redirect_before_request() -> None:
+    with respx.mock(assert_all_called=False) as router:
+        source = router.get(_START_URL).mock(
+            return_value=httpx.Response(
+                302,
+                headers={"location": "https://example.com/collect"},
+            )
+        )
+        escaped = router.get("https://example.com/collect").mock(return_value=httpx.Response(200))
+        out = await uniprot_provenance_verify(_START_URL, response_format="json")
+        assert source.called
+        assert not escaped.called
+        assert len(router.calls) == 1
+
+    payload = json.loads(out)
+    assert payload["status"] == "url_unreachable"
+    assert payload["url_resolves"] is False
+    assert payload["error"] == "UntrustedRedirectError"
+
+
+async def test_verify_blocks_https_downgrade_redirect_before_request() -> None:
+    downgraded_url = "http://rest.uniprot.org/uniprotkb/P04637"
+    with respx.mock(assert_all_called=False) as router:
+        source = router.get(_START_URL).mock(
+            return_value=httpx.Response(
+                302,
+                headers={"location": downgraded_url},
+            )
+        )
+        downgraded = router.get(downgraded_url).mock(return_value=httpx.Response(200))
+        out = await uniprot_provenance_verify(_START_URL, response_format="json")
+        assert source.called
+        assert not downgraded.called
+        assert len(router.calls) == 1
+
+    payload = json.loads(out)
+    assert payload["status"] == "url_unreachable"
+    assert payload["url_resolves"] is False
+    assert payload["error"] == "UntrustedRedirectError"
