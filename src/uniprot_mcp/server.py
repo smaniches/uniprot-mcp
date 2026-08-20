@@ -60,6 +60,8 @@ from uniprot_mcp.client import (
     UNIREF_IDENTITY_TIERS,
     ReleaseMismatchError,
     UniProtClient,
+    UntrustedRedirectError,
+    _enforce_uniprot_origin,
     canonical_response_hash,
 )
 from uniprot_mcp.eco import ECO_HUMAN_LABELS, confidence_markdown_lines, score_evidence
@@ -2108,7 +2110,9 @@ async def _provenance_verify_impl(
     """Worker for ``uniprot_provenance_verify``. Re-fetches ``url`` with
     a fresh httpx client (bypasses the singleton's pin-release config)
     and produces a structured verdict. Uses the supplied ``accept_header``
-    to replicate the content negotiation of the original request.
+    to replicate the content negotiation of the original request. Redirects
+    may be followed only while every hop remains on the canonical UniProt
+    HTTPS origin.
     """
     report: dict[str, object] = {
         "url": url,
@@ -2119,10 +2123,11 @@ async def _provenance_verify_impl(
         timeout=httpx.Timeout(30.0),
         headers={"User-Agent": UA, "Accept": accept_header},
         follow_redirects=True,
+        event_hooks={"request": [_enforce_uniprot_origin]},
     ) as client:
         try:
             resp = await client.get(url)
-        except httpx.HTTPError as exc:
+        except (httpx.HTTPError, UntrustedRedirectError) as exc:
             report["status"] = "url_unreachable"
             report["url_resolves"] = False
             report["error"] = type(exc).__name__

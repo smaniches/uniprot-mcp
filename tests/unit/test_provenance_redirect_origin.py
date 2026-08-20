@@ -1,46 +1,4 @@
-from pathlib import Path
-
-SERVER = Path("src/uniprot_mcp/server.py")
-TEST = Path("tests/unit/test_provenance_redirect_origin.py")
-
-
-def replace_once(text: str, old: str, new: str, label: str) -> str:
-    count = text.count(old)
-    if count != 1:
-        raise SystemExit(f"expected exactly one {label} fragment, found {count}")
-    return text.replace(old, new, 1)
-
-
-server = SERVER.read_text(encoding="utf-8")
-
-server = replace_once(
-    server,
-    """    ReleaseMismatchError,\n    UniProtClient,\n    canonical_response_hash,\n)\n""",
-    """    ReleaseMismatchError,\n    UniProtClient,\n    UntrustedRedirectError,\n    _enforce_uniprot_origin,\n    canonical_response_hash,\n)\n""",
-    "client import block",
-)
-
-server = replace_once(
-    server,
-    """    and produces a structured verdict. Uses the supplied ``accept_header``\n    to replicate the content negotiation of the original request.\n    \"\"\"\n""",
-    """    and produces a structured verdict. Uses the supplied ``accept_header``\n    to replicate the content negotiation of the original request. Redirects\n    may be followed only while every hop remains on the canonical UniProt\n    HTTPS origin.\n    \"\"\"\n""",
-    "provenance worker docstring",
-)
-
-server = replace_once(
-    server,
-    """        headers={\"User-Agent\": UA, \"Accept\": accept_header},\n        follow_redirects=True,\n    ) as client:\n        try:\n            resp = await client.get(url)\n        except httpx.HTTPError as exc:\n""",
-    """        headers={\"User-Agent\": UA, \"Accept\": accept_header},\n        follow_redirects=True,\n        event_hooks={\"request\": [_enforce_uniprot_origin]},\n    ) as client:\n        try:\n            resp = await client.get(url)\n        except (httpx.HTTPError, UntrustedRedirectError) as exc:\n""",
-    "provenance redirect client",
-)
-
-SERVER.write_text(server, encoding="utf-8")
-
-if TEST.exists():
-    raise SystemExit(f"refusing to overwrite existing {TEST}")
-
-TEST.write_text(
-    '''"""Regression tests for provenance-verifier redirect origin enforcement."""
+"""Regression tests for provenance-verifier redirect origin enforcement."""
 
 from __future__ import annotations
 
@@ -51,7 +9,6 @@ import respx
 
 from uniprot_mcp.client import canonical_response_hash
 from uniprot_mcp.server import uniprot_provenance_verify
-
 
 _START_URL = "https://rest.uniprot.org/uniprotkb/P04637"
 
@@ -75,9 +32,7 @@ async def test_verify_allows_same_origin_redirect() -> None:
                 headers={"location": "/uniprotkb/P04637/redirected"},
             )
         )
-        destination = router.get("/uniprotkb/P04637/redirected").mock(
-            return_value=final_response
-        )
+        destination = router.get("/uniprotkb/P04637/redirected").mock(return_value=final_response)
         out = await uniprot_provenance_verify(
             _START_URL,
             release="2026_02",
@@ -134,6 +89,3 @@ async def test_verify_blocks_https_downgrade_redirect_before_request() -> None:
     assert payload["status"] == "url_unreachable"
     assert payload["url_resolves"] is False
     assert payload["error"] == "UntrustedRedirectError"
-''',
-    encoding="utf-8",
-)
