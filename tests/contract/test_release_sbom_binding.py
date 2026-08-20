@@ -224,7 +224,14 @@ def test_attest_sbom_job_has_only_attestation_authority() -> None:
     assert "name: release-sbom" in attest
     assert 'subject-path: "dist/*.whl"' in attest
     assert 'subject-path: "dist/*"' not in attest
-    assert 'sbom-path: "sbom.cdx.json"' in attest
+    # Direct custom-predicate mode bypasses the action's stricter-than-spec
+    # SBOM detector while attesting the exact parsed CycloneDX document.
+    assert "uses: actions/attest@" in attest
+    assert "actions/attest-sbom@" not in attest
+    assert "NODE_OPTIONS: '--max-http-header-size=32768'" in attest
+    assert 'predicate-type: "https://cyclonedx.org/bom"' in attest
+    assert 'predicate-path: "sbom.cdx.json"' in attest
+    assert "sbom-path:" not in attest
 
 
 def test_publication_waits_for_the_completed_integrity_chain() -> None:
