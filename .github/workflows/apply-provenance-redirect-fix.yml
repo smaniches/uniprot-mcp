@@ -1,19 +1,22 @@
 name: Apply provenance redirect security fix
 
 on:
-  push:
+  pull_request:
     branches:
-      - security/provenance-redirect-origin-lock
+      - main
+    types: [opened, reopened, synchronize]
 
 permissions:
   contents: write
 
 jobs:
   apply-and-validate:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: security/provenance-redirect-origin-lock
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -33,20 +36,25 @@ jobs:
           ruff check --fix src/uniprot_mcp/server.py tests/unit/test_provenance_redirect_origin.py
           ruff format src/uniprot_mcp/server.py tests/unit/test_provenance_redirect_origin.py
 
-      - name: Run focused security regression tests
-        run: pytest tests/unit/test_provenance_verify.py tests/unit/test_provenance_redirect_origin.py -q
-
-      - name: Run static checks on touched Python files
-        shell: bash
-        run: |
-          ruff check src/uniprot_mcp/server.py tests/unit/test_provenance_redirect_origin.py
-          ruff format --check src/uniprot_mcp/server.py tests/unit/test_provenance_redirect_origin.py
-
-      - name: Commit validated fix
+      - name: Remove one-shot helper files
         shell: bash
         run: |
           rm .github/workflows/apply-provenance-redirect-fix.yml
           rm .github/patches/provenance-redirect-origin.patch
+
+      - name: Run focused security regression tests on final tree
+        run: pytest tests/unit/test_provenance_verify.py tests/unit/test_provenance_redirect_origin.py -q
+
+      - name: Run static checks on final tree
+        shell: bash
+        run: |
+          ruff check src/uniprot_mcp/server.py tests/unit/test_provenance_redirect_origin.py
+          ruff format --check src/uniprot_mcp/server.py tests/unit/test_provenance_redirect_origin.py
+          git diff --check
+
+      - name: Commit validated final tree
+        shell: bash
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
