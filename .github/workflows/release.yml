@@ -163,8 +163,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write       # Sigstore OIDC for actions/attest-sbom
-      attestations: write   # actions/attest-sbom
+      id-token: write       # Sigstore OIDC for actions/attest
+      attestations: write   # actions/attest
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
@@ -175,10 +175,16 @@ jobs:
           name: release-sbom
           path: .
       - name: SBOM attestation (exact wheel)
-        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e  # v4.1.0
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6  # v4.2.2
+        env:
+          NODE_OPTIONS: '--max-http-header-size=32768'
         with:
           subject-path: "dist/*.whl"
-          sbom-path: "sbom.cdx.json"
+          # Custom predicate mode preserves the native CycloneDX predicate
+          # while bypassing the action's stricter-than-CycloneDX detector,
+          # which rejects valid reproducible documents without serialNumber.
+          predicate-type: "https://cyclonedx.org/bom"
+          predicate-path: "sbom.cdx.json"
 
   publish-pypi:
     # Publication starts only after the whole integrity chain has succeeded:
