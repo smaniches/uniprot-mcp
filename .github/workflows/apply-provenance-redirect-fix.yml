@@ -23,9 +23,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Apply security patch
-        shell: bash
-        run: git apply --check .github/patches/provenance-redirect-origin.patch && git apply .github/patches/provenance-redirect-origin.patch
+      - name: Apply assertion-based security mutation
+        run: python .github/patches/provenance-redirect-origin.patch
 
       - name: Install development dependencies
         run: pip install -e ".[dev]"
