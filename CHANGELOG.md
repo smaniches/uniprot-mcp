@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.5](https://github.com/smaniches/uniprot-mcp/compare/v1.3.4...v1.3.5) (2026-08-20)
+
+
+### Bug Fixes
+
+* **release:** attest reproducible CycloneDX via custom predicate ([b4ef0df](https://github.com/smaniches/uniprot-mcp/commit/b4ef0df1094a753b4432939cd6da36f0c94a5e50))
+* **release:** attest reproducible CycloneDX without detector mismatch ([a410393](https://github.com/smaniches/uniprot-mcp/commit/a410393794201239d6f0c7f3e5e4de5af6a3b569))
+
 ## [1.3.4](https://github.com/smaniches/uniprot-mcp/compare/v1.3.3...v1.3.4) (2026-08-20)
 
 
