@@ -22,20 +22,20 @@ repos:
   # and dev-lock-maintenance.yml runs the same script with --fix so a monthly
   # lock refresh realigns these revs in the same PR.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.1
+    rev: v0.16.5
     hooks:
       - id: ruff
         args: ["--fix"]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.0
+    rev: v2.3.1
     hooks:
       - id: mypy
         files: ^src/uniprot_mcp/.*\.py$
         args: ["src/uniprot_mcp"]
         pass_filenames: false
-        additional_dependencies: ["httpx==0.28.1", "mcp==1.29.0"]
+        additional_dependencies: ["httpx==0.28.1", "mcp==1.29.1"]
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.9.4
