@@ -1,6 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.smaniches/uniprot-mcp",
+  "title": "UniProt MCP",
   "description": "Verifiable, release-aware protein evidence workflows over UniProt and linked scientific sources.",
   "repository": {
     "url": "https://github.com/smaniches/uniprot-mcp",
