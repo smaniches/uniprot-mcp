@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.6](https://github.com/smaniches/uniprot-mcp/compare/v1.3.5...v1.3.6) (2026-09-03)
+
+
+### chore
+
+* **registry:** add a human-readable title for registry display ([bf668c9](https://github.com/smaniches/uniprot-mcp/commit/bf668c95025d14a1c7cf81ef35656118fe28c45e))
+
 ## [1.3.5](https://github.com/smaniches/uniprot-mcp/compare/v1.3.4...v1.3.5) (2026-08-20)
 
 
