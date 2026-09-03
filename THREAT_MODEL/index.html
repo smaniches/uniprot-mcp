@@ -1547,8 +1547,7 @@
 <p><strong>Scenario.</strong> A fork PR triggers a workflow with elevated permissions, exfiltrating secrets or pushing to the repo.</p>
 <p><strong>Mitigations.</strong>
 - Workflow <code>permissions:</code> blocks declare <code>contents: read</code> at job level by default.
-- <code>release.yml</code> is gated on tag pushes (<code>tags: ["v*"]</code>) or <code>workflow_dispatch</code> only — never <code>pull_request</code>.
-- <code>release-drafter.yml</code> runs on pushes to <code>main</code> and PR sync events; its only side-effect is creating a draft release on the upstream repo (no fork can write).</p>
+- <code>release.yml</code> is gated on tag pushes (<code>tags: ["v*"]</code>) or <code>workflow_dispatch</code> only — never <code>pull_request</code>.</p>
 <h3 id="t11-timing-side-channel-leak">T11 — Timing / side-channel leak<a class="headerlink" href="#t11-timing-side-channel-leak" title="Permanent link">&para;</a></h3>
 <p><strong>Scenario.</strong> An attacker probes whether a particular UniProt accession exists via response timing.</p>
 <p><strong>Position (deliberate non-enforcement).</strong> UniProt is a public knowledgebase; existence of an accession is not secret. We treat upstream content as public. Rate-limit politeness is the only operational concern; see T5.</p>
