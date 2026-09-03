@@ -150,7 +150,6 @@ We **do not** defend against full host compromise (root on the user's machine). 
 **Mitigations.**
 - Workflow `permissions:` blocks declare `contents: read` at job level by default.
 - `release.yml` is gated on tag pushes (`tags: ["v*"]`) or `workflow_dispatch` only — never `pull_request`.
-- `release-drafter.yml` runs on pushes to `main` and PR sync events; its only side-effect is creating a draft release on the upstream repo (no fork can write).
 
 ### T11 — Timing / side-channel leak
 
