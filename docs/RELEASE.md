@@ -22,24 +22,22 @@ this only governs what gets cut going forward.
 
 ```
 git tag v1.1.6  ──►  release.yml (Actions)  ──►  PyPI (Trusted Publishing, OIDC)
-       │                       │                       │
-       │                       │                       └──►  MCP Registry (registry.modelcontextprotocol.io, GitHub OIDC)
-       │                       │
-       │                       ├──►  GitHub Release (assets: dist/*, sbom.cdx.json, *.sigstore.json)
-       │                       │            │
-       │                       │            ├──►  release-verify.yml (immediate)
-       │                       │            │            ├── pip index versions uniprot-mcp-server
-       │                       │            │            ├── gh release view (asset presence)
-       │                       │            │            └── gh attestation verify (SLSA)
-       │                       │            │
-       │                       │            └──►  Zenodo webhook  ──►  version DOI minted
-       │                       │                                      │
-       │                       │                                      └──►  zenodo-verify.yml
-       │                       │                                             (scheduled, delayed)
-       │                       │
-       │                       └──►  Sigstore signing (gh-action-sigstore-python)
-       │
-       └──►  release-drafter.yml (next-release draft updated on every push to main)
+                               │                       │
+                               │                       └──►  MCP Registry (registry.modelcontextprotocol.io, GitHub OIDC)
+                               │
+                               ├──►  GitHub Release (assets: dist/*, sbom.cdx.json, *.sigstore.json)
+                               │            │
+                               │            ├──►  release-verify.yml (immediate)
+                               │            │            ├── pip index versions uniprot-mcp-server
+                               │            │            ├── gh release view (asset presence)
+                               │            │            └── gh attestation verify (SLSA)
+                               │            │
+                               │            └──►  Zenodo webhook  ──►  version DOI minted
+                               │                                      │
+                               │                                      └──►  zenodo-verify.yml
+                               │                                             (scheduled, delayed)
+                               │
+                               └──►  Sigstore signing (gh-action-sigstore-python)
 ```
 
 ## Step-by-step
