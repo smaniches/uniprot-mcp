@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### chore
 
-* **registry:** `server.json` now sets `"title": "UniProt MCP"`, the optional human-readable display name the MCP server schema defines for subregistries and clients. Without it the official MCP Registry record carried `title: null` and subregistries derived a name from the reverse-DNS `name` instead. Registry records are immutable per version, so the field reaches the registry only through a release. Registry-display metadata only: no runtime, source, dependency, or packaging change, and the published wheel is identical to 1.3.5 apart from the version string ([#189](https://github.com/smaniches/uniprot-mcp/pull/189))
+* **registry:** `server.json` now sets `"title": "UniProt MCP"`, the optional human-readable display name the MCP server schema defines for subregistries and clients. Without it the official MCP Registry record carried `title: null` and subregistries derived a name from the reverse-DNS `name` instead. Registry records are immutable per version, so the field reaches the registry only through a release. Registry-display metadata only: no functional runtime implementation or dependency change; package and release version metadata advance normally for the new release ([#189](https://github.com/smaniches/uniprot-mcp/pull/189))
 
 ## [1.3.5](https://github.com/smaniches/uniprot-mcp/compare/v1.3.4...v1.3.5) (2026-08-20)
 
