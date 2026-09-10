@@ -5,6 +5,18 @@ name: Delayed Zenodo verification
 # run naming that latest tag bypasses the age gate for operator verification.
 # No workflow mints or edits Zenodo records; the GitHub-Zenodo integration does
 # that automatically.
+#
+# The job separates two outcomes that must never share a signal:
+#
+#   * "verification failed" — Zenodo answered, and the answer contradicts the
+#     GitHub release (or the concept record is gone). That is a release-integrity
+#     problem. It fails loudly and opens a release-drift issue.
+#   * "verification could not be performed" — Zenodo did not answer at all
+#     (429, 5xx, timeout, a body that is not JSON). No observation was
+#     obtained, so nothing is implied about the release. On the schedule this
+#     is recorded as inconclusive and left green: the next run re-checks six
+#     hours later. On a manual run it still fails, because an operator asked
+#     for a reading and did not get one.
 
 on:
   schedule:
@@ -36,9 +48,39 @@ jobs:
             const minAgeHours = Number(process.env.MIN_RELEASE_AGE_HOURS);
             const conceptRecid = process.env.ZENODO_CONCEPT_RECID;
 
+            // A scheduled run is an unattended sample of an eventually
+            // consistent system; anything else is an operator asking a
+            // question and waiting for the answer.
+            const isScheduled = context.eventName === "schedule";
+
+            // Statuses that describe Zenodo's availability rather than the
+            // record. Retrying these is meaningful; retrying anything else
+            // just repeats the same wrong request.
+            const isTransientStatus = (status) =>
+              status === 408 ||
+              status === 425 ||
+              status === 429 ||
+              (status >= 500 && status <= 599);
+            const BACKOFF_SECONDS = [30, 60, 120];
+            const MAX_ATTEMPTS = BACKOFF_SECONDS.length + 1;
+            // Zenodo's edge emits its own 504 at roughly 30s. Give each read a
+            // little more than that so a real gateway timeout is recorded as
+            // `HTTP 504` rather than as a client-side abort, while still
+            // bounding a hung connection.
+            const REQUEST_TIMEOUT_MS = 45_000;
+
             if (!Number.isFinite(minAgeHours) || minAgeHours <= 0) {
-              throw new Error("MIN_RELEASE_AGE_HOURS must be a positive number");
+              core.setFailed("MIN_RELEASE_AGE_HOURS must be a positive number");
+              return;
             }
+
+            const writeSummary = async (heading, lines) => {
+              await core.summary
+                .addHeading(heading, 3)
+                .addRaw(lines.map((line) => `- ${line}`).join("\n"))
+                .addEOL()
+                .write();
+            };
 
             const releaseResponse = await github.rest.repos.getLatestRelease({
               owner: context.repo.owner,
@@ -48,10 +90,11 @@ jobs:
             const tag = release.tag_name;
 
             if (requestedTag && requestedTag !== tag) {
-              throw new Error(
+              core.setFailed(
                 `Requested tag ${requestedTag} is not the latest stable release ${tag}. ` +
                 `This workflow follows the concept record's latest-version pointer.`,
               );
+              return;
             }
 
             const publishedAt = new Date(release.published_at || release.created_at);
@@ -67,38 +110,115 @@ jobs:
 
             const expectedVersion = tag.replace(/^v\.?/, "");
             const recordUrl = `https://zenodo.org/api/records/${conceptRecid}`;
-            let metadata;
-            let lastError;
 
-            for (let attempt = 1; attempt <= 3; attempt += 1) {
+            // One read. Either the record, or a failure classified as
+            // permanent (the record or the request is wrong; retrying cannot
+            // help) or transient (Zenodo is unavailable; retrying can).
+            const readZenodo = async () => {
+              let response;
               try {
-                const response = await fetch(recordUrl, {
+                response = await fetch(recordUrl, {
                   headers: {
                     Accept: "application/json",
                     "User-Agent": "uniprot-mcp-zenodo-verifier/1",
                   },
+                  signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
                 });
-                if (!response.ok) {
-                  throw new Error(`Zenodo returned HTTP ${response.status}`);
-                }
-                metadata = await response.json();
-                lastError = undefined;
-                break;
               } catch (error) {
-                lastError = error;
-                core.warning(
-                  `Zenodo request attempt ${attempt}/3 failed: ${error.message}`,
+                return {
+                  transient: `network error or timeout (${error.message})`,
+                };
+              }
+
+              if (response.status === 404 || response.status === 410) {
+                return {
+                  permanent:
+                    `HTTP ${response.status}: concept record ${conceptRecid} is ` +
+                    `missing or withdrawn`,
+                };
+              }
+              if (!response.ok) {
+                return isTransientStatus(response.status)
+                  ? { transient: `HTTP ${response.status}` }
+                  : { permanent: `HTTP ${response.status}` };
+              }
+
+              try {
+                return { metadata: await response.json() };
+              } catch (error) {
+                // A 200 carrying a non-JSON body is an edge proxy serving an
+                // error page, which is an availability symptom.
+                return { transient: `body was not JSON (${error.message})` };
+              }
+            };
+
+            let metadata;
+            let lastTransient;
+
+            for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+              const result = await readZenodo();
+
+              if (result.metadata) {
+                metadata = result.metadata;
+                break;
+              }
+
+              if (result.permanent) {
+                await writeSummary("Zenodo verification failed", [
+                  `Release: \`${tag}\``,
+                  `Concept record: \`${conceptRecid}\``,
+                  `Zenodo response: ${result.permanent}`,
+                ]);
+                core.setFailed(
+                  `Zenodo rejected the request for concept record ${conceptRecid} ` +
+                  `(${result.permanent}). This is not an availability problem; ` +
+                  `inspect the record before taking any action.`,
                 );
-                if (attempt < 3) {
-                  await new Promise((resolve) => setTimeout(resolve, 30_000));
-                }
+                return;
+              }
+
+              lastTransient = result.transient;
+              core.warning(
+                `Zenodo request attempt ${attempt}/${MAX_ATTEMPTS} failed: ${lastTransient}`,
+              );
+              if (attempt < MAX_ATTEMPTS) {
+                await new Promise((resolve) =>
+                  setTimeout(resolve, BACKOFF_SECONDS[attempt - 1] * 1_000),
+                );
               }
             }
 
             if (!metadata) {
-              throw new Error(
-                `Unable to read Zenodo after three attempts: ${lastError?.message}`,
+              // No observation was obtained. This says nothing about the
+              // release, so it must not look like drift and must not open a
+              // release-drift issue.
+              const lines = [
+                `Release: \`${tag}\``,
+                `Concept record: \`${conceptRecid}\``,
+                `Attempts: ${MAX_ATTEMPTS}`,
+                `Last upstream failure: ${lastTransient}`,
+                `No Zenodo version was observed, so no drift is implied.`,
+              ];
+
+              if (!isScheduled) {
+                await writeSummary("Zenodo verification could not be performed", lines);
+                core.setFailed(
+                  `Requested verification of ${tag} could not be performed: Zenodo was ` +
+                  `unavailable after ${MAX_ATTEMPTS} attempts (${lastTransient}).`,
+                );
+                return;
+              }
+
+              await writeSummary(
+                "Zenodo verification inconclusive (upstream unavailable)",
+                lines,
               );
+              core.warning(
+                `Zenodo verification inconclusive for ${tag}: unavailable after ` +
+                `${MAX_ATTEMPTS} attempts (${lastTransient}). The release is unaffected; ` +
+                `the next scheduled run re-checks.`,
+              );
+              return;
             }
 
             const actualVersion = String(metadata.metadata?.version || "").replace(/^v/, "");
@@ -120,6 +240,11 @@ jobs:
                 `Zenodo concept record ${conceptRecid} latest version is ${actualVersion}; ` +
                 `expected ${expectedVersion}.`,
               );
+              await writeSummary("Zenodo verification passed", [
+                `Release: \`${tag}\``,
+                `Concept record: \`${conceptRecid}\``,
+                `Observed Zenodo version: \`${actualVersion}\``,
+              ]);
               if (existing) {
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
@@ -155,6 +280,9 @@ jobs:
               `Zenodo concept record: https://zenodo.org/records/${conceptRecid}`,
               `Verification run: ${runUrl}`,
               ``,
+              `Zenodo answered, so this is an observed mismatch rather than an ` +
+                `availability problem.`,
+              ``,
               `The repository uses the GitHub-Zenodo integration. Do not mint a ` +
                 `manual deposit or change the concept DOI badge. Inspect the integration ` +
                 `delivery and the existing record before taking action.`,
@@ -169,6 +297,13 @@ jobs:
                 labels: ["release-drift"],
               });
             }
+
+            await writeSummary("Zenodo verification failed (observed mismatch)", [
+              `Release: \`${tag}\``,
+              `Concept record: \`${conceptRecid}\``,
+              `Expected version: \`${expectedVersion}\``,
+              `Observed Zenodo version: \`${actualVersion || "<empty>"}\``,
+            ]);
 
             core.setFailed(
               `Zenodo is at ${actualVersion || "<empty>"}; expected ${expectedVersion} ` +
