@@ -56,7 +56,11 @@ jobs:
             // Statuses that describe Zenodo's availability rather than the
             // record. Retrying these is meaningful; retrying anything else
             // just repeats the same wrong request.
-            const TRANSIENT_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+            const isTransientStatus = (status) =>
+              status === 408 ||
+              status === 425 ||
+              status === 429 ||
+              (status >= 500 && status <= 599);
             const BACKOFF_SECONDS = [30, 60, 120];
             const MAX_ATTEMPTS = BACKOFF_SECONDS.length + 1;
             // Zenodo's edge emits its own 504 at roughly 30s. Give each read a
@@ -134,7 +138,7 @@ jobs:
                 };
               }
               if (!response.ok) {
-                return TRANSIENT_STATUSES.has(response.status)
+                return isTransientStatus(response.status)
                   ? { transient: `HTTP ${response.status}` }
                   : { permanent: `HTTP ${response.status}` };
               }
