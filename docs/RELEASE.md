@@ -7,16 +7,17 @@ provenance attestation, an SBOM, and a Zenodo DOI.
 
 ## Release policy — releases are deliberate
 
-release-please opens a release PR **only** for `feat:` (minor) and
-`fix:` (patch) commits. Housekeeping types — `ci`, `docs`, `test`,
+release-please opens a release PR for `feat:` (minor), `fix:` (patch),
+and `security:` (patch) commits. Security commits are rendered in a dedicated
+Security changelog section. Housekeeping types — `ci`, `docs`, `test`,
 `refactor`, `perf`, `deps` — are marked `hidden: true` in
 `release-please-config.json`, so merging them lands silently on `main`
 **without** proposing a version bump. This stops a steady stream of
-`ci:`/`docs:` merges from each cutting their own patch release. A
-housekeeping change that genuinely warrants a release (e.g. a
-security-relevant dependency bump) should be committed as `fix:` so it
-triggers one. Past releases are immutable on PyPI/Zenodo regardless;
-this only governs what gets cut going forward.
+`ci:`/`docs:` merges from each cutting their own patch release. Use
+`security:` for security-relevant dependency or hardening changes that must
+ship to users; use `fix:` for ordinary user-visible bug fixes. Past releases
+are immutable on PyPI/Zenodo regardless; this only governs what gets cut going
+forward.
 
 ## The chain
 
