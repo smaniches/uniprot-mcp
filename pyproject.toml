@@ -46,8 +46,10 @@ dependencies = [
     # are hard: the package fails at import under 2.x. Raise the ceiling
     # only together with a port of `server.py` to the 2.x API.
     "mcp>=1.28.1,<2",
-    # mcp permits older PyJWT releases; keep the published wheel from resolving
-    # the September 2026 advisory-affected 2.13.x line in constrained environments.
+    # mcp permits older PyJWT releases. CI's September 2026 audit found the
+    # 2.13.x line advisory-affected, including a finding fixed only in 2.15.0.
+    # Keep the floor in published Requires-Dist so constrained downstream
+    # environments cannot legally resolve the vulnerable line.
     "pyjwt[crypto]>=2.15.0",
 ]
 
