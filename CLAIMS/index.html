@@ -1087,7 +1087,7 @@ tools organised into eight endpoint families.</p>
 - <code>tests/contract/test_manifest_consistency.py</code> — contract test
   enforcing equality between code and manifest.</p>
 <p><strong>Verify.</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;@mcp.tool&quot;</span><span class="w"> </span>src/uniprot_mcp/server.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">"@mcp.tool"</span><span class="w"> </span>src/uniprot_mcp/server.py
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># expected: 41</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>pytest<span class="w"> </span>tests/contract/test_manifest_consistency.py<span class="w"> </span>-v
 </code></pre></div></p>

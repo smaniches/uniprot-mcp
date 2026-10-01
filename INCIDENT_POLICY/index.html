@@ -1131,7 +1131,7 @@ release on <code>main</code> from <code>v1.0.1</code> onward.</p>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a># … fix, tests, docs ...
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>cp docs/POSTMORTEM_TEMPLATE.md docs/incidents/$(date -u +%Y-%m-%d)-&lt;slug&gt;.md
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a># fill in the template
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>echo &quot;- $(date -u +%Y-%m-%d) · S&lt;n&gt; · &lt;summary&gt; ([postmortem](incidents/&lt;slug&gt;.md))&quot; &gt;&gt; docs/INCIDENT_LOG.md
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>echo "- $(date -u +%Y-%m-%d) · S&lt;n&gt; · &lt;summary&gt; ([postmortem](incidents/&lt;slug&gt;.md))" &gt;&gt; docs/INCIDENT_LOG.md
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>git add -A &amp;&amp; git commit
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>gh pr create
 </code></pre></div>
