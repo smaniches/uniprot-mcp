@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.7](https://github.com/smaniches/uniprot-mcp/compare/v1.3.6...v1.3.7) (2026-10-01)
+
+
+### Bug Fixes
+
+* **deps:** publish patched PyJWT security floor ([#195](https://github.com/smaniches/uniprot-mcp/issues/195)) ([70599b0](https://github.com/smaniches/uniprot-mcp/commit/70599b064ee30564a735351c44cc297825587ae9))
+* **release:** recognize security commits ([#196](https://github.com/smaniches/uniprot-mcp/issues/196)) ([fdd130e](https://github.com/smaniches/uniprot-mcp/commit/fdd130ee1af1969695e0cc906d809763028571e0))
+
+
+### Security
+
+* refresh vulnerable lock closure and publish PyJWT floor ([#194](https://github.com/smaniches/uniprot-mcp/issues/194)) ([005ecb1](https://github.com/smaniches/uniprot-mcp/commit/005ecb1630fef4b3df9b09c337a45f68cfd347a0))
+
 ## [1.3.6](https://github.com/smaniches/uniprot-mcp/compare/v1.3.5...v1.3.6) (2026-09-03)
 
 
