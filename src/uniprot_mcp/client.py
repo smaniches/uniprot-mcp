@@ -760,8 +760,7 @@ class UniProtClient:
         # UniProt accessions can resolve to predictions for multiple isoforms.
         # Never attribute another isoform's model to the requested accession.
         matches = [
-            prediction for prediction in payload
-            if prediction.get("uniprotAccession") == accession
+            prediction for prediction in payload if prediction.get("uniprotAccession") == accession
         ]
         if not matches:
             raise ValueError("AlphaFoldDB returned no prediction for the requested accession")
