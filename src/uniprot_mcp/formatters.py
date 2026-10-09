@@ -1530,7 +1530,9 @@ def fmt_alphafold_confidence(
             model_id = model.get("modelEntityId") or "unknown"
             start = model.get("sequenceStart")
             end = model.get("sequenceEnd")
-            residue_range = f" (residues {start}-{end})" if start is not None and end is not None else ""
+            residue_range = (
+                f" (residues {start}-{end})" if start is not None and end is not None else ""
+            )
             lines.append(f"- {model_id}{residue_range}")
     lines.append(
         "_Mean pLDDT summarizes local model confidence, not per-residue "
