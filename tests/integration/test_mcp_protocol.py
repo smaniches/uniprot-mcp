@@ -127,6 +127,9 @@ async def test_mcp_alphafold_confidence_live() -> None:
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        # TP53's full UniProt JSON can exceed asyncio's 64 KiB stream
+        # line limit; MCP stdio sends each JSON-RPC response on one line.
+        limit=4 * 1024 * 1024,
     )
     try:
         initialized = await asyncio.wait_for(
