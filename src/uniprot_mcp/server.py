@@ -1333,14 +1333,16 @@ async def uniprot_resolve_clinvar(
 async def uniprot_get_alphafold_confidence(
     accession: AccessionParam, response_format: ResponseFormatParam = "markdown"
 ) -> str:
-    """Fetch the per-residue confidence (pLDDT) summary for an entry's
-    AlphaFold model, not just its existence. Returns the global mean pLDDT
-    score plus the four-band distribution (very high ≥ 90 / confident
-    70-90 / low 50-70 / very low < 50) so the agent can decide whether to
-    trust the model: 95% 'very high' is publication-grade, 40% 'very low'
-    is largely disordered and structural inference is unsafe. Call
-    ``uniprot_resolve_alphafold`` first if you only need the model ID and
-    viewer link, not its confidence.
+    """Fetch model-level AlphaFold DB confidence metadata for an accession.
+
+    Returns mean pLDDT and the four-band distribution of local model
+    confidence, not individual residue scores. Checks the exact UniProt
+    accession so an isoform's prediction cannot be substituted for the
+    canonical protein. For multiple same-accession models or fragments,
+    JSON output includes additionalModelSummaries with separate ranges.
+    Global pLDDT does not prove experimental accuracy or validate
+    confidence at a particular residue or between domains. Call
+    ``uniprot_resolve_alphafold`` for the UniProt cross-reference.
 
     This tool calls https://alphafold.ebi.ac.uk — declared in PRIVACY.md
     as a third party. Provenance carries source = AlphaFoldDB."""
