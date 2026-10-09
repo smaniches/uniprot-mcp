@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.8](https://github.com/smaniches/uniprot-mcp/compare/v1.3.7...v1.3.8) (2026-10-09)
+
+
+### Bug Fixes
+
+* **alphafold:** handle current prediction schema and exact isoform identity ([#200](https://github.com/smaniches/uniprot-mcp/issues/200)) ([ec79098](https://github.com/smaniches/uniprot-mcp/commit/ec790989fb0cafe5d908d96fd61e5fa8818e4100))
+
 ## [1.3.7](https://github.com/smaniches/uniprot-mcp/compare/v1.3.6...v1.3.7) (2026-10-01)
 
 
