@@ -740,6 +740,10 @@ class UniProtClient:
             else:
                 resp.raise_for_status()
                 payload = resp.json()
+        if not isinstance(payload, list) or any(
+            not isinstance(prediction, dict) for prediction in payload
+        ):
+            raise ValueError("AlphaFoldDB returned an invalid prediction list")
         if not payload:
             _request_provenance.set(
                 Provenance(
@@ -753,7 +757,29 @@ class UniProtClient:
                 )
             )
             return {}
-        record: dict[str, Any] = payload[0]
+        # UniProt accessions can resolve to predictions for multiple isoforms.
+        # Never attribute another isoform's model to the requested accession.
+        matches = [
+            prediction for prediction in payload
+            if prediction.get("uniprotAccession") == accession
+        ]
+        if not matches:
+            raise ValueError("AlphaFoldDB returned no prediction for the requested accession")
+        record: dict[str, Any] = dict(matches[0])
+        # Large proteins can also have multiple overlapping fragments for
+        # the *same* accession. Keep a bounded per-model summary rather than
+        # embedding duplicate sequences and large raw records in MCP output.
+        if len(matches) > 1:
+            record["additionalModelSummaries"] = [
+                {
+                    "modelEntityId": item.get("modelEntityId") or item.get("entryId"),
+                    "sequenceStart": item.get("sequenceStart") or item.get("uniprotStart"),
+                    "sequenceEnd": item.get("sequenceEnd") or item.get("uniprotEnd"),
+                    "globalMetricValue": item.get("globalMetricValue"),
+                    "latestVersion": item.get("latestVersion"),
+                }
+                for item in matches[1:]
+            ]
         version_value = record.get("latestVersion")
         version = f"v{version_value}" if version_value is not None else None
         _request_provenance.set(
