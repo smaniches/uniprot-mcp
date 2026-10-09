@@ -178,6 +178,34 @@ async def test_mcp_alphafold_confidence_live() -> None:
         assert model["uniprotAccession"] == "P04637"
         assert model.get("modelEntityId") or model.get("entryId")
         assert payload["provenance"]["source"] == "AlphaFoldDB"
+
+        # Exercise the other side of the UniProt + AlphaFold boundary in
+        # the *same live MCP session*, rather than assuming that successful
+        # AlphaFold calls establish UniProt API connectivity.
+        entry_result = await asyncio.wait_for(
+            _rpc(
+                proc,
+                {
+                    "jsonrpc": "2.0",
+                    "id": 3,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "uniprot_get_entry",
+                        "arguments": {
+                            "accession": "P04637",
+                            "response_format": "json",
+                        },
+                    },
+                },
+            ),
+            timeout=150.0,
+        )
+        entry_output = entry_result["result"]
+        assert entry_output.get("isError") is not True, entry_output
+        entry = json.loads(entry_output["content"][0]["text"])
+        assert entry["data"]["primaryAccession"] == model["uniprotAccession"]
+        assert entry["provenance"]["source"] == "UniProt"
+        assert entry["provenance"]["response_sha256"]
     finally:
         if proc.returncode is None:
             proc.terminate()
@@ -186,4 +214,3 @@ async def test_mcp_alphafold_confidence_live() -> None:
         except TimeoutError:
             proc.kill()
             await proc.wait()
-
