@@ -112,3 +112,108 @@ async def test_mcp_handshake_and_tool_inventory() -> None:
             await asyncio.wait_for(proc.wait(), timeout=5.0)
         except TimeoutError:
             proc.kill()
+
+
+async def test_mcp_alphafold_confidence_live() -> None:
+    """Verify an actual MCP tool invocation against the live AlphaFold DB.
+
+    This is deliberately separate from the inventory test: listing a tool
+    does not prove that its JSON-RPC call path, upstream schema, or returned
+    provenance work together. Runs only with --integration.
+    """
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        str(SERVER_PATH),
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        # TP53's full UniProt JSON can exceed asyncio's 64 KiB stream
+        # line limit; MCP stdio sends each JSON-RPC response on one line.
+        limit=4 * 1024 * 1024,
+    )
+    try:
+        initialized = await asyncio.wait_for(
+            _rpc(
+                proc,
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "live-protocol-smoke", "version": "0.0.0"},
+                    },
+                },
+            ),
+            timeout=20.0,
+        )
+        assert "result" in initialized
+        assert proc.stdin is not None
+        proc.stdin.write(b'{"jsonrpc":"2.0","method":"notifications/initialized"}\n')
+        await proc.stdin.drain()
+
+        result = await asyncio.wait_for(
+            _rpc(
+                proc,
+                {
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "uniprot_get_alphafold_confidence",
+                        "arguments": {
+                            "accession": "P04637",
+                            "response_format": "json",
+                        },
+                    },
+                },
+            ),
+            timeout=150.0,
+        )
+        output = result["result"]
+        assert output.get("isError") is not True, output
+        content = output["content"]
+        assert content and content[0]["type"] == "text"
+        payload = json.loads(content[0]["text"])
+        assert payload["data"]["accession"] == "P04637"
+        model = payload["data"]["alphafold"]
+        assert model["uniprotAccession"] == "P04637"
+        assert model.get("modelEntityId") or model.get("entryId")
+        assert payload["provenance"]["source"] == "AlphaFoldDB"
+
+        # Exercise the other side of the UniProt + AlphaFold boundary in
+        # the *same live MCP session*, rather than assuming that successful
+        # AlphaFold calls establish UniProt API connectivity.
+        entry_result = await asyncio.wait_for(
+            _rpc(
+                proc,
+                {
+                    "jsonrpc": "2.0",
+                    "id": 3,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "uniprot_get_entry",
+                        "arguments": {
+                            "accession": "P04637",
+                            "response_format": "json",
+                        },
+                    },
+                },
+            ),
+            timeout=150.0,
+        )
+        entry_output = entry_result["result"]
+        assert entry_output.get("isError") is not True, entry_output
+        entry = json.loads(entry_output["content"][0]["text"])
+        assert entry["data"]["primaryAccession"] == model["uniprotAccession"]
+        assert entry["provenance"]["source"] == "UniProt"
+        assert entry["provenance"]["response_sha256"]
+    finally:
+        if proc.returncode is None:
+            proc.terminate()
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=5.0)
+        except TimeoutError:
+            proc.kill()
+            await proc.wait()

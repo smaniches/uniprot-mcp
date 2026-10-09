@@ -1,0 +1,44 @@
+name: AlphaFold live MCP contract
+
+# The general PR CI is hermetic. Changes to this boundary additionally
+# deserve an actual upstream/API+stdio smoke test before release.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/uniprot_mcp/client.py"
+      - "src/uniprot_mcp/formatters.py"
+      - "src/uniprot_mcp/server.py"
+      - "tests/integration/test_clinical_layer_live.py"
+      - "tests/integration/test_mcp_protocol.py"
+      - ".github/workflows/alphafold-pr-live.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphafold-live-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-api-and-mcp:
+    name: Live AlphaFold API + MCP JSON-RPC
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install reviewed, hash-pinned test dependencies
+        run: |
+          python -m pip install --require-hashes -r constraints/test.lock
+          python -m pip install --no-build-isolation --no-deps -e .
+      - name: Exercise live AlphaFold and MCP tool invocation
+        run: |
+          pytest --integration -v \
+            tests/integration/test_clinical_layer_live.py::test_get_alphafold_confidence_for_p04637_live \
+            tests/integration/test_mcp_protocol.py::test_mcp_alphafold_confidence_live \
+            --override-ini="addopts=--strict-markers --strict-config -ra"

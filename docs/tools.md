@@ -89,7 +89,7 @@ and in [the threat model](THREAT_MODEL.md#t3b-cross-origin-allowlist-for-non-uni
 
 | Tool | Origin | Purpose |
 |---|---|---|
-| `uniprot_get_alphafold_confidence` | alphafold.ebi.ac.uk | pLDDT mean + four-band distribution; lets the agent decide whether to trust the model. |
+| `uniprot_get_alphafold_confidence` | alphafold.ebi.ac.uk | Model-level mean pLDDT + four-band distribution. Exact accession matching, fragment ranges, and additional model summaries; not a per-residue confidence score. |
 | `uniprot_resolve_clinvar` | eutils.ncbi.nlm.nih.gov | ClinVar significance + condition + review status by gene + optional HGVS shorthand. |
 | `uniprot_get_publications` | rest.uniprot.org | Pure-Python over the entry's references — listed here because it complements the cross-origin enrichment. |
 
