@@ -115,7 +115,6 @@ def test_fmt_alphafold_confidence_minimal_record() -> None:
     assert "AlphaFold confidence — AF-X-F1" in out
 
 
-
 # ---------------------------------------------------------------------------
 # Post-2026-06-25 AlphaFold DB metadata contract and protein identity
 # ---------------------------------------------------------------------------
@@ -132,9 +131,7 @@ async def test_alphafold_current_schema_model_id_and_coordinates() -> None:
         "globalMetricValue": 85.0,
     }
     with respx.mock(base_url=ALPHAFOLD_API_BASE) as router:
-        router.get("/api/prediction/P04637").mock(
-            return_value=httpx.Response(200, json=[model])
-        )
+        router.get("/api/prediction/P04637").mock(return_value=httpx.Response(200, json=[model]))
         markdown = await uniprot_get_alphafold_confidence("P04637", "markdown")
     assert "AlphaFold confidence — AF-P04637-F2" in markdown
     assert "Residues modelled:** 201-393" in markdown
@@ -189,7 +186,9 @@ async def test_alphafold_multiple_fragments_of_same_accession() -> None:
     }
     with respx.mock(base_url=ALPHAFOLD_API_BASE) as router:
         router.get("/api/prediction/P04637").mock(
-            return_value=httpx.Response(200, json=[canonical, second, legacy, {"uniprotAccession": "P04637-3"}])
+            return_value=httpx.Response(
+                200, json=[canonical, second, legacy, {"uniprotAccession": "P04637-3"}]
+            )
         )
         payload = json.loads(await uniprot_get_alphafold_confidence("P04637", "json"))
     extras = payload["data"]["alphafold"]["additionalModelSummaries"]
@@ -245,7 +244,6 @@ def test_alphafold_additional_prediction_with_missing_metadata() -> None:
     record = {"entryId": "AF-OLD-F1", "additionalModelSummaries": [{"modelEntityId": None}]}
     markdown = fmt_alphafold_confidence(record, "P04637")
     assert "- unknown" in markdown
-
 
 
 # ---------------------------------------------------------------------------
