@@ -817,7 +817,13 @@ async def test_get_alphafold_summary_calls_prediction_path() -> None:
     route = respx.get(f"{ALPHAFOLD_API_BASE}/api/prediction/P04637").mock(
         return_value=httpx.Response(
             200,
-            json=[{"latestVersion": 4, "modelCreatedDate": "2024-09-15"}],
+            json=[
+                {
+                    "uniprotAccession": "P04637",
+                    "latestVersion": 4,
+                    "modelCreatedDate": "2024-09-15",
+                }
+            ],
         )
     )
     c = UniProtClient()
@@ -856,7 +862,9 @@ async def test_get_alphafold_summary_returns_empty_when_no_payload() -> None:
 async def test_get_alphafold_summary_handles_missing_latest_version() -> None:
     """If latestVersion is absent, release falls through to None."""
     respx.get(f"{ALPHAFOLD_API_BASE}/api/prediction/X").mock(
-        return_value=httpx.Response(200, json=[{"modelCreatedDate": "2024-09-15"}])
+        return_value=httpx.Response(
+            200, json=[{"uniprotAccession": "X", "modelCreatedDate": "2024-09-15"}]
+        )
     )
     c = UniProtClient()
     try:

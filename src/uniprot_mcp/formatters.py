@@ -1467,11 +1467,12 @@ def fmt_alphafold_confidence(
             lines.extend(_provenance_md_footer(provenance))
         return "\n".join(lines)
 
-    entry_id = str(record.get("entryId", "?") or "?")
+    entry_id = str(record.get("modelEntityId") or record.get("entryId") or "?")
     organism = str(record.get("organismScientificName", "") or "")
     gene = str(record.get("gene", "") or "")
     version = record.get("latestVersion")
-    seq_end = record.get("uniprotEnd") or record.get("sequenceEnd")
+    seq_start = record.get("sequenceStart") or record.get("uniprotStart") or 1
+    seq_end = record.get("sequenceEnd") or record.get("uniprotEnd")
     global_mean = record.get("globalMetricValue")
     f_very_high = record.get("fractionPlddtVeryHigh")
     f_confident = record.get("fractionPlddtConfident")
@@ -1486,7 +1487,7 @@ def fmt_alphafold_confidence(
     if gene:
         lines.append(f"**Gene:** {gene}")
     if seq_end is not None:
-        lines.append(f"**Residues modelled:** 1-{seq_end}")
+        lines.append(f"**Residues modelled:** {seq_start}-{seq_end}")
     if version is not None:
         lines.append(f"**Model version:** v{version}")
 
@@ -1521,6 +1522,22 @@ def fmt_alphafold_confidence(
         lines.append(f"**PDB:** {pdb_url}")
     if pae_image_url:
         lines.append(f"**PAE image:** {pae_image_url}")
+
+    additional = record.get("additionalModelSummaries") or []
+    if additional:
+        lines.append(f"**Additional predictions for this accession:** {len(additional)}")
+        for model in additional:
+            model_id = model.get("modelEntityId") or "unknown"
+            start = model.get("sequenceStart")
+            end = model.get("sequenceEnd")
+            residue_range = (
+                f" (residues {start}-{end})" if start is not None and end is not None else ""
+            )
+            lines.append(f"- {model_id}{residue_range}")
+    lines.append(
+        "_Mean pLDDT summarizes local model confidence, not per-residue "
+        "confidence or experimental validation._"
+    )
 
     if provenance is not None:
         lines.extend(_provenance_md_footer(provenance))
