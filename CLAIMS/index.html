@@ -968,10 +968,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#c6-956-offline-44-live-integration-tests" class="md-nav__link">
+  <a href="#c6-1005-offline-45-live-integration-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        C6. 956 offline + 44 live integration tests
+        C6. 1005 offline + 45 live integration tests
       
     </span>
   </a>
@@ -1186,9 +1186,9 @@ every successful response is mirrored to disk was explicitly retracted
 in v1.1.3 (see CHANGELOG.md).</p>
 <p><strong>Last reviewed:</strong> 2026-05-26.</p>
 <hr />
-<h2 id="c6-956-offline-44-live-integration-tests">C6. 956 offline + 44 live integration tests<a class="headerlink" href="#c6-956-offline-44-live-integration-tests" title="Permanent link">&para;</a></h2>
+<h2 id="c6-1005-offline-45-live-integration-tests">C6. 1005 offline + 45 live integration tests<a class="headerlink" href="#c6-1005-offline-45-live-integration-tests" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README badge, testing section).</strong> The offline test suite
-contains 956 tests; the live integration suite contains 44 tests.</p>
+contains 1005 tests; the live integration suite contains 45 tests.</p>
 <p><strong>Evidence.</strong>
 - <code>pytest --collect-only --ignore=tests/integration -q</code> — offline
   count.
@@ -1215,13 +1215,15 @@ branch across all seven source files, with the gate set to enforce it.</p>
   shows 100% for <code>__init__</code>, <code>cache</code>, <code>client</code>, <code>eco</code>, <code>formatters</code>,
   <code>proteinchem</code>, and <code>server</code>.
 - Two branches carry a justified <code># pragma: no cover</code> for
-  genuinely-unreachable code: the client.py import-time version-lookup
-  fallback (exercising it needs a module reload that breaks
-  exception-class identity) and the server.py target-dossier
-  FASTA-fetch fallback (non-fatal). Each is annotated inline with its
-  justification. (<code>_extract_provenance</code> reads the accept header directly
-  from <code>response.request</code>, which is always present because the function
-  also reads <code>response.url</code>; no guard or pragma is needed.)</p>
+  genuinely-unreachable code: the client.py and <code>__init__.py</code>
+  import-time version-lookup fallbacks (exercising them needs a module
+  reload that breaks exception-class identity). Each is annotated
+  inline with its justification. The server.py target-dossier
+  FASTA-fetch fallback is covered by a regression test and logs a
+  warning rather than carrying a pragma. (<code>_extract_provenance</code> reads
+  the accept header directly from <code>response.request</code>, which is always
+  present because the function also reads <code>response.url</code>; no guard or
+  pragma is needed.)</p>
 <p><strong>Verify.</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pytest<span class="w"> </span>tests/unit<span class="w"> </span>tests/property<span class="w"> </span>tests/client<span class="w"> </span>tests/contract<span class="w"> </span>--cov<span class="w"> </span>--cov-branch<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 </code></pre></div></p>
@@ -1229,7 +1231,7 @@ branch across all seven source files, with the gate set to enforce it.</p>
 mark to 92.20% across the v1.1.x clinical/biomedical work; it has been
 restored to 100% with assertion-bearing tests for every previously
 -uncovered arc, and the gate now enforces 100% so a future regression
-fails CI. The three <code># pragma: no cover</code> branches are unreachable in
+fails CI. The two <code># pragma: no cover</code> branches are unreachable in
 normal operation, not untested behaviour.</p>
 <p><strong>Last reviewed:</strong> 2026-07-12.</p>
 <hr />
