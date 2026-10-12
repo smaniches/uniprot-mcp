@@ -71,6 +71,7 @@ class ProvenanceCache:
         self.base_dir = base_dir.expanduser().resolve()
 
     def _path_for(self, url: str) -> Path:
+        """Return the on-disk path for ``url`` (``<base_dir>/<sha256(url)>.json``)."""
         return self.base_dir / f"{key_for(url)}.json"
 
     def write(self, url: str, body_text: str, provenance: Provenance) -> Path:
@@ -128,6 +129,7 @@ class ProvenanceCache:
         return decoded
 
     def has(self, url: str) -> bool:
+        """Return ``True`` if a cache file exists for ``url`` (no content validation)."""
         return self._path_for(url).exists()
 
 

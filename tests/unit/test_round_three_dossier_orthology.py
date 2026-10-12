@@ -330,3 +330,38 @@ async def test_target_dossier_json_shape() -> None:
     assert dossier["identity"]["gene"] == "TP53"
     assert dossier["structure"]["pdb_count"] == 2
     assert dossier["drug_target"]["chembl_ids"] == ["CHEMBL3712"]
+
+
+async def test_target_dossier_tolerates_fasta_failure(caplog: pytest.LogCaptureFixture) -> None:
+    """A failed FASTA fetch must degrade gracefully: the dossier is still
+    produced (minus the chemistry section), keeps the *entry* provenance,
+    and the cause is logged rather than silently swallowed."""
+    json_resp = httpx.Response(200, json=_TP53_RICH_ENTRY, headers={"X-UniProt-Release": "2026_01"})
+    fasta_resp = httpx.Response(404, text="not found")
+    seq = iter([json_resp, fasta_resp])
+
+    def _handler(request: httpx.Request) -> httpx.Response:
+        return next(seq)
+
+    with (
+        caplog.at_level("WARNING", logger="topologica.uniprot"),
+        respx.mock(base_url="https://rest.uniprot.org") as router,
+    ):
+        router.get("/uniprotkb/P04637").mock(side_effect=_handler)
+        md = await uniprot_target_dossier("P04637", "markdown")
+        assert len(router.calls) == 2
+    assert "# Target dossier: P04637" in md
+    assert "## Sequence chemistry (derived)" not in md
+    assert "## Structural evidence" in md
+    assert "2026_01" in md
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert len(warnings) == 1
+    assert "FASTA fetch for P04637 failed (HTTPStatusError)" in warnings[0].getMessage()
+
+    # JSON shape: chemistry is an empty object, every other section intact.
+    seq = iter([json_resp, fasta_resp])
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/P04637").mock(side_effect=_handler)
+        payload = json.loads(await uniprot_target_dossier("P04637", "json"))
+    assert payload["data"]["dossier"]["chemistry"] == {}
+    assert payload["data"]["dossier"]["identity"]["gene"] == "TP53"

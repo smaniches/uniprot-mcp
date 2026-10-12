@@ -29,6 +29,7 @@ License: Apache-2.0
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -54,10 +55,12 @@ from uniprot_mcp.client import (
     PIN_RELEASE_ENV,
     PROTEOME_ID_RE,
     SUBCELLULAR_LOCATION_ID_RE,
+    TIMEOUT,
     UA,
     UNIPARC_ID_RE,
     UNIREF_ID_RE,
     UNIREF_IDENTITY_TIERS,
+    Provenance,
     ReleaseMismatchError,
     UniProtClient,
     UntrustedRedirectError,
@@ -69,6 +72,8 @@ from uniprot_mcp.formatters import (
     ACTIVE_SITE_FEATURE_TYPES,
     PROCESSING_FEATURE_TYPES,
     PTM_FEATURE_TYPES,
+    _json_envelope,
+    _provenance_md_footer,
     fmt_active_sites,
     fmt_alphafold,
     fmt_alphafold_confidence,
@@ -202,6 +207,7 @@ _uniprot: UniProtClient | None = None
 
 
 def _client() -> UniProtClient:
+    """Return the process-wide :class:`UniProtClient`, creating it on first use."""
     global _uniprot
     if _uniprot is None:
         _uniprot = UniProtClient()
@@ -213,34 +219,40 @@ class _InputError(ValueError):
 
 
 def _check_len(name: str, value: str, limit: int) -> None:
+    """Reject ``value`` longer than ``limit`` characters (DoS guard on free-text inputs)."""
     if len(value) > limit:
         raise _InputError(f"{name} exceeds {limit}-character limit")
 
 
 def _check_accession(value: str) -> None:
+    """Validate a UniProtKB accession (length-capped, then regex-matched case-insensitively)."""
     _check_len("accession", value, MAX_ACCESSION_LEN)
     if not ACCESSION_RE.match(value.upper()):
         raise _InputError("accession must match the UniProt format (e.g. P04637, A0A1B2C3D4)")
 
 
 def _check_format(value: str) -> None:
+    """Validate the ``response_format`` argument against the allowed set."""
     if value not in ALLOWED_RESPONSE_FORMATS:
         raise _InputError(f"response_format must be one of {sorted(ALLOWED_RESPONSE_FORMATS)}")
 
 
 def _check_keyword_id(value: str) -> None:
+    """Validate a ``KW-nnnn`` keyword identifier."""
     _check_len("keyword_id", value, MAX_VOCAB_ID_LEN)
     if not KEYWORD_ID_RE.match(value):
         raise _InputError("keyword_id must match the UniProt format (e.g. KW-0007)")
 
 
 def _check_subcellular_location_id(value: str) -> None:
+    """Validate an ``SL-nnnn`` subcellular-location identifier."""
     _check_len("location_id", value, MAX_VOCAB_ID_LEN)
     if not SUBCELLULAR_LOCATION_ID_RE.match(value):
         raise _InputError("location_id must match the UniProt format (e.g. SL-0086)")
 
 
 def _check_uniref_id(value: str) -> None:
+    """Validate a ``UniRef{50,90,100}_<accession>`` cluster identifier."""
     _check_len("uniref_id", value, MAX_UNIREF_ID_LEN)
     if not UNIREF_ID_RE.match(value):
         raise _InputError(
@@ -249,18 +261,21 @@ def _check_uniref_id(value: str) -> None:
 
 
 def _check_uniparc_id(value: str) -> None:
+    """Validate a UniParc ``UPI...`` identifier."""
     _check_len("upi", value, MAX_UNIPARC_ID_LEN)
     if not UNIPARC_ID_RE.match(value):
         raise _InputError("upi must match the UniParc format (e.g. UPI000002ED67)")
 
 
 def _check_proteome_id(value: str) -> None:
+    """Validate a ``UP000000000``-style proteome identifier."""
     _check_len("proteome_id", value, MAX_PROTEOME_ID_LEN)
     if not PROTEOME_ID_RE.match(value):
         raise _InputError("proteome_id must match the UniProt format (e.g. UP000005640)")
 
 
 def _check_citation_id(value: str) -> None:
+    """Validate a numeric citation identifier (typically a PubMed ID)."""
     _check_len("citation_id", value, MAX_CITATION_ID_LEN)
     if not CITATION_ID_RE.match(value):
         raise _InputError(
@@ -269,6 +284,7 @@ def _check_citation_id(value: str) -> None:
 
 
 def _check_position(value: int) -> None:
+    """Validate a 1-indexed residue position (rejects bools, non-ints, < 1, > titin)."""
     if not isinstance(value, int) or isinstance(value, bool):
         raise _InputError("position must be a positive integer")
     if value < 1:
@@ -997,7 +1013,15 @@ async def uniprot_target_dossier(
             )
             chemistry = dict(compute_protein_properties(sequence))
             chemistry.pop("amino_acid_counts", None)  # too verbose for the dossier
-        except Exception:  # pragma: no cover — fasta-fetch failure is non-fatal
+        except Exception as exc:
+            # Non-fatal: the dossier degrades to an empty chemistry section
+            # rather than failing outright, but the cause must not vanish.
+            logger.warning(
+                "uniprot_target_dossier: FASTA fetch for %s failed (%s); "
+                "omitting sequence chemistry",
+                accession,
+                type(exc).__name__,
+            )
             chemistry = {}
         dossier = _assemble_target_dossier(data, chemistry)
         return fmt_target_dossier(dossier, accession, response_format, provenance=entry_provenance)
@@ -1997,7 +2021,7 @@ async def uniprot_get_evidence_summary(
 
 
 def _format_evidence_summary(
-    data: dict[str, object], accession: str, fmt: str, provenance: object
+    data: dict[str, object], accession: str, fmt: str, provenance: Provenance | None
 ) -> str:
     """Aggregate every evidence code referenced in features and comments."""
     counts: dict[str, int] = {}
@@ -2022,18 +2046,14 @@ def _format_evidence_summary(
     confidence = score_evidence(counts)
 
     if fmt == "json":
-        from uniprot_mcp.formatters import _json_envelope
-
         return _json_envelope(
             {
                 "accession": accession,
                 "evidence_counts": counts,
                 "evidence_confidence": confidence,
             },
-            provenance,  # type: ignore[arg-type]
+            provenance,
         )
-
-    from uniprot_mcp.formatters import _provenance_md_footer  # local import — cheap
 
     lines: list[str] = [f"## Evidence summary: {accession} ({len(counts)} distinct ECO codes)", ""]
     if not counts:
@@ -2046,7 +2066,7 @@ def _format_evidence_summary(
             suffix = f"  —  {description}" if description else ""
             lines.append(f"- **{code}**: {n} occurrence(s){suffix}")
     if provenance is not None:
-        lines.extend(_provenance_md_footer(provenance))  # type: ignore[arg-type]
+        lines.extend(_provenance_md_footer(provenance))
     return "\n".join(lines)
 
 
@@ -2122,7 +2142,7 @@ async def _provenance_verify_impl(
         "recorded_sha256": recorded_sha256,
     }
     async with httpx.AsyncClient(
-        timeout=httpx.Timeout(30.0),
+        timeout=httpx.Timeout(TIMEOUT),
         headers={"User-Agent": UA, "Accept": accept_header},
         follow_redirects=True,
         event_hooks={"request": [_enforce_uniprot_origin]},
@@ -2168,6 +2188,7 @@ async def _provenance_verify_impl(
 
 
 def _format_verify_report(report: dict[str, object], fmt: str) -> str:
+    """Render a provenance-verification report as JSON or Markdown with advice."""
     if fmt == "json":
         return json.dumps(report, indent=2, ensure_ascii=False, default=str)
     status = report.get("status", "?")
@@ -2200,6 +2221,12 @@ def _format_verify_report(report: dict[str, object], fmt: str) -> str:
 
 
 def _verify_advice(status: str, checks_run: int = 2) -> str:
+    """Return the human-readable advice string for a verification ``status``.
+
+    ``checks_run`` (0-2) is how many of release / hash were actually
+    compared, so a ``verified`` verdict with nothing to compare is not
+    oversold.
+    """
     if status == "verified":
         if checks_run == 0:
             return (
@@ -2242,8 +2269,6 @@ def _verify_advice(status: str, checks_run: int = 2) -> str:
 
 def _self_test() -> int:
     """Quick end-to-end smoke check without needing an MCP client."""
-    import asyncio
-
     expected = {
         "uniprot_get_entry",
         "uniprot_search",
@@ -2302,6 +2327,7 @@ def _self_test() -> int:
         print(f"[WARN] unexpected tools: {sorted(extra)}", file=sys.stderr)
 
     async def _live() -> int:
+        """Fetch P04637 live and print the provenance footer; return a process exit code."""
         client = _client()
         try:
             data = await client.get_entry("P04637")
@@ -2329,6 +2355,7 @@ def _self_test() -> int:
 
 
 def main() -> None:
+    """Console-script entry point: parse ``--pin-release`` / ``--self-test`` and run the server."""
     args = sys.argv[1:]
     # ``--pin-release=YYYY_MM`` opts into strict release pinning. The flag
     # is consumed here and forwarded as an environment variable so the

@@ -110,7 +110,7 @@ class ProteinProperties(TypedDict):
 def _count_amino_acids(sequence: str) -> dict[str, int]:
     """Count each standard amino acid + an 'other' bucket for non-standard
     letters (X, B, Z, U, O, gaps, whitespace, …)."""
-    counts: dict[str, int] = {aa: 0 for aa in STANDARD_AA}
+    counts: dict[str, int] = dict.fromkeys(STANDARD_AA, 0)
     counts["other"] = 0
     for ch in sequence:
         up = ch.upper()

@@ -131,6 +131,7 @@ def is_swissprot(entry: Entry) -> bool:
 
 
 def _protein_name(entry: Entry) -> str:
+    """Return the recommended (or first submitted) protein full name, else ``"Unknown"``."""
     pd: dict[str, Any] = entry.get("proteinDescription", {}) or {}
     rec: dict[str, Any] = pd.get("recommendedName", {}) or {}
     if rec:
@@ -142,6 +143,7 @@ def _protein_name(entry: Entry) -> str:
 
 
 def _gene_name(entry: Entry) -> str:
+    """Return the primary gene symbol, or ``""`` when the entry has no gene."""
     genes = entry.get("genes", []) or []
     if not genes:
         return ""
@@ -149,6 +151,7 @@ def _gene_name(entry: Entry) -> str:
 
 
 def _organism(entry: Entry) -> str:
+    """Return the organism scientific name, else ``"Unknown"``."""
     org = entry.get("organism", {}) or {}
     return str(org.get("scientificName", "Unknown"))
 
@@ -241,6 +244,7 @@ def _loc_pos(loc: dict[str, Any], boundary: str) -> Any:
 
 
 def fmt_entry(data: Entry, fmt: str = "markdown", *, provenance: Provenance | None = None) -> str:
+    """Render a full UniProtKB entry as a Markdown summary or JSON envelope."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     acc = data.get("primaryAccession", "?")
@@ -298,6 +302,7 @@ def fmt_entry(data: Entry, fmt: str = "markdown", *, provenance: Provenance | No
 def fmt_search(
     data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
 ) -> str:
+    """Render a UniProtKB search result page (accession / name / gene / organism per hit)."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     results: list[Entry] = data.get("results", []) or []
@@ -325,6 +330,7 @@ def fmt_features(
     *,
     provenance: Provenance | None = None,
 ) -> str:
+    """Render sequence features grouped by type, with location ranges and descriptions."""
     if fmt == "json":
         return _json_envelope(features, provenance)
     by_type: dict[str, list[Feature]] = {}
@@ -369,6 +375,7 @@ def fmt_go(
     *,
     provenance: Provenance | None = None,
 ) -> str:
+    """Render GO cross-references grouped by aspect (F / P / C), optionally filtered to one aspect."""
     go_refs: list[Xref] = [x for x in xrefs if x.get("database") == "GO"]
     if aspect_filter:
         go_refs = [x for x in go_refs if _go_aspect_of(x) == aspect_filter]
@@ -409,6 +416,7 @@ def fmt_crossrefs(
     *,
     provenance: Provenance | None = None,
 ) -> str:
+    """Render raw cross-references grouped by database, optionally filtered to one database."""
     if db_filter:
         xrefs = [x for x in xrefs if str(x.get("database", "")).lower() == db_filter.lower()]
     if fmt == "json":
@@ -437,6 +445,7 @@ def fmt_variants(
     *,
     provenance: Provenance | None = None,
 ) -> str:
+    """Render the entry's ``Natural variant`` features with position, change and description."""
     variants: list[Feature] = [f for f in features if f.get("type") == "Natural variant"]
     if fmt == "json":
         return _json_envelope(variants, provenance)
@@ -460,6 +469,7 @@ def fmt_variants(
 def fmt_idmapping(
     data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
 ) -> str:
+    """Render an ID-mapping result (from → to pairs, plus any failed IDs)."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     results: list[dict[str, Any]] = data.get("results", []) or []
@@ -485,6 +495,7 @@ def fmt_idmapping(
 def fmt_taxonomy(
     data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
 ) -> str:
+    """Render a taxonomy search result (taxon ID / scientific & common name / rank)."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     results: list[dict[str, Any]] = data.get("results", []) or []
@@ -514,6 +525,7 @@ def _kw_id(record: dict[str, Any]) -> str:
 
 
 def _kw_name(record: dict[str, Any]) -> str:
+    """Return a keyword's display name from either the nested or flat UniProt shape."""
     kw = record.get("keyword")
     if isinstance(kw, dict):
         return str(kw.get("name", record.get("name", "?")))
@@ -566,6 +578,7 @@ def fmt_keyword(
 def fmt_keyword_search(
     data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
 ) -> str:
+    """Render a keyword search result page."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     results: list[dict[str, Any]] = data.get("results", []) or []
@@ -639,6 +652,7 @@ def fmt_subcellular_location(
 def fmt_subcellular_location_search(
     data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
 ) -> str:
+    """Render a subcellular-location search result page."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     results: list[dict[str, Any]] = data.get("results", []) or []
@@ -735,6 +749,7 @@ def fmt_uniref(
 def fmt_uniref_search(
     data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
 ) -> str:
+    """Render a UniRef cluster search result page."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     results: list[dict[str, Any]] = data.get("results", []) or []
@@ -813,6 +828,7 @@ def fmt_uniparc(
 def fmt_uniparc_search(
     data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
 ) -> str:
+    """Render a UniParc search result page."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     results: list[dict[str, Any]] = data.get("results", []) or []
@@ -884,6 +900,7 @@ def fmt_proteome(
 def fmt_proteome_search(
     data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
 ) -> str:
+    """Render a proteome search result page."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     results: list[dict[str, Any]] = data.get("results", []) or []
@@ -960,6 +977,7 @@ def fmt_citation(
 def fmt_citation_search(
     data: dict[str, Any], fmt: str = "markdown", *, provenance: Provenance | None = None
 ) -> str:
+    """Render a citation search result page."""
     if fmt == "json":
         return _json_envelope(data, provenance)
     results: list[dict[str, Any]] = data.get("results", []) or []
@@ -985,12 +1003,14 @@ def fmt_citation_search(
 
 
 def _xrefs_for_db(data: dict[str, Any], database: str) -> list[Xref]:
+    """Return the entry's cross-references whose ``database`` equals ``database``."""
     return [
         x for x in (data.get("uniProtKBCrossReferences") or []) if x.get("database") == database
     ]
 
 
 def _xref_props(xref: Xref) -> dict[str, str]:
+    """Flatten an xref's ``properties`` list of ``{key, value}`` pairs into a dict."""
     return {str(p.get("key", "")): str(p.get("value", "")) for p in (xref.get("properties") or [])}
 
 

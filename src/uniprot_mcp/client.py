@@ -36,6 +36,7 @@ import re
 import urllib.parse
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
+from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 from typing import Any, TypedDict
 
@@ -52,7 +53,7 @@ MAX_RETRIES = 3
 MAX_RETRY_AFTER_SECONDS = 120.0  # cap server-dictated waits
 try:
     _v = _pkg_version("uniprot-mcp-server") or "dev"
-except Exception:  # pragma: no cover  # import-time fallback when running uninstalled from source (PackageNotFoundError); cannot be exercised without an import-time reload that breaks exception-class identity across the package
+except PackageNotFoundError:  # pragma: no cover  # import-time fallback when running uninstalled from source; cannot be exercised without an import-time reload that breaks exception-class identity across the package
     _v = "dev"
 UA = f"uniprot-mcp/{_v} (+https://github.com/smaniches/uniprot-mcp)"
 
@@ -415,6 +416,7 @@ class UniProtClient:
         return _request_provenance.get()
 
     async def _get_client(self) -> httpx.AsyncClient:
+        """Return the lazily-created shared :class:`httpx.AsyncClient`, recreating it if closed."""
         if self._client is None or self._client.is_closed:
             self._client = httpx.AsyncClient(
                 base_url=BASE_URL,
@@ -426,6 +428,7 @@ class UniProtClient:
         return self._client
 
     async def close(self) -> None:
+        """Close the underlying HTTP client if it was ever opened."""
         if self._client is not None and not self._client.is_closed:
             await self._client.aclose()
 
@@ -436,6 +439,11 @@ class UniProtClient:
         params: dict[str, Any] | None = None,
         accept: str = "application/json",
     ) -> httpx.Response:
+        """Issue one UniProt-origin request with retry on 429 / 5xx / timeout.
+
+        On success the response provenance is recorded for
+        :attr:`last_provenance` and the pinned release (if any) is enforced.
+        """
         client = await self._get_client()
         headers = {"Accept": accept} if accept else {}
         last_detail = "no response"
@@ -466,12 +474,14 @@ class UniProtClient:
         raise RuntimeError(f"Request failed after {MAX_RETRIES + 1} attempts ({last_detail})")
 
     async def get_entry(self, accession: str) -> dict[str, Any]:
+        """Fetch a full UniProtKB entry as JSON."""
         data: dict[str, Any] = (await self._req("GET", f"/uniprotkb/{accession}")).json()
         return data
 
     async def search(
         self, query: str, size: int = 10, fields: list[str] | None = None
     ) -> dict[str, Any]:
+        """Run a UniProtKB query (``size`` capped at 500; optional ``fields`` projection)."""
         params: dict[str, Any] = {"query": query, "size": min(size, 500)}
         if fields:
             params["fields"] = ",".join(fields)
@@ -479,6 +489,7 @@ class UniProtClient:
         return data
 
     async def get_fasta(self, accession: str) -> str:
+        """Fetch the canonical FASTA record for ``accession`` as raw text."""
         resp = await self._req("GET", f"/uniprotkb/{accession}", accept="text/plain;format=fasta")
         return resp.text
 
@@ -519,6 +530,7 @@ class UniProtClient:
         )
 
     async def id_mapping_results(self, job_id: str, size: int = 500) -> dict[str, Any]:
+        """Poll an ID-mapping job (up to 30 attempts, 1 s apart) and return its results page."""
         for _ in range(30):
             status = (await self._req("GET", f"/idmapping/status/{job_id}")).json()
             if "results" in status or "failedIds" in status:
@@ -583,16 +595,19 @@ class UniProtClient:
         return {"results": results, "invalid": invalid, "truncated": truncated, "n_valid": n_valid}
 
     async def taxonomy_search(self, query: str, size: int = 10) -> dict[str, Any]:
+        """Search the UniProt taxonomy index."""
         data: dict[str, Any] = (
             await self._req("GET", "/taxonomy/search", params={"query": query, "size": size})
         ).json()
         return data
 
     async def get_keyword(self, keyword_id: str) -> dict[str, Any]:
+        """Fetch a UniProt keyword record (``KW-nnnn``)."""
         data: dict[str, Any] = (await self._req("GET", f"/keywords/{keyword_id}")).json()
         return data
 
     async def search_keywords(self, query: str, size: int = 10) -> dict[str, Any]:
+        """Search UniProt keywords by free text."""
         data: dict[str, Any] = (
             await self._req(
                 "GET", "/keywords/search", params={"query": query, "size": min(size, 500)}
@@ -601,10 +616,12 @@ class UniProtClient:
         return data
 
     async def get_subcellular_location(self, location_id: str) -> dict[str, Any]:
+        """Fetch a subcellular-location vocabulary term (``SL-nnnn``)."""
         data: dict[str, Any] = (await self._req("GET", f"/locations/{location_id}")).json()
         return data
 
     async def search_subcellular_locations(self, query: str, size: int = 10) -> dict[str, Any]:
+        """Search subcellular-location terms by free text."""
         data: dict[str, Any] = (
             await self._req(
                 "GET", "/locations/search", params={"query": query, "size": min(size, 500)}
@@ -613,10 +630,12 @@ class UniProtClient:
         return data
 
     async def get_uniparc(self, upi: str) -> dict[str, Any]:
+        """Fetch a UniParc sequence-archive record by UPI."""
         data: dict[str, Any] = (await self._req("GET", f"/uniparc/{upi}")).json()
         return data
 
     async def search_uniparc(self, query: str, size: int = 10) -> dict[str, Any]:
+        """Search UniParc by free text."""
         data: dict[str, Any] = (
             await self._req(
                 "GET", "/uniparc/search", params={"query": query, "size": min(size, 500)}
@@ -625,10 +644,12 @@ class UniProtClient:
         return data
 
     async def get_proteome(self, upid: str) -> dict[str, Any]:
+        """Fetch a proteome record by UP ID."""
         data: dict[str, Any] = (await self._req("GET", f"/proteomes/{upid}")).json()
         return data
 
     async def search_proteomes(self, query: str, size: int = 10) -> dict[str, Any]:
+        """Search proteomes by free text / query syntax."""
         data: dict[str, Any] = (
             await self._req(
                 "GET", "/proteomes/search", params={"query": query, "size": min(size, 500)}
@@ -637,6 +658,7 @@ class UniProtClient:
         return data
 
     async def get_citation(self, citation_id: str) -> dict[str, Any]:
+        """Fetch a citation record (typically keyed by PubMed ID)."""
         data: dict[str, Any] = (await self._req("GET", f"/citations/{citation_id}")).json()
         return data
 
@@ -795,6 +817,7 @@ class UniProtClient:
         return record
 
     async def search_citations(self, query: str, size: int = 10) -> dict[str, Any]:
+        """Search the UniProt citation index."""
         data: dict[str, Any] = (
             await self._req(
                 "GET", "/citations/search", params={"query": query, "size": min(size, 500)}
@@ -803,6 +826,7 @@ class UniProtClient:
         return data
 
     async def get_uniref(self, uniref_id: str) -> dict[str, Any]:
+        """Fetch a UniRef cluster record (``UniRef50_``/``90_``/``100_`` prefix)."""
         data: dict[str, Any] = (await self._req("GET", f"/uniref/{uniref_id}")).json()
         return data
 
