@@ -118,7 +118,7 @@ call. The regexes are defined once in
 | UniParc UPI | `\AUPI[A-F0-9]{10}\Z` |
 | Proteome UP | `\AUP[0-9]{9,11}\Z` |
 | Citation | `\A[0-9]{1,12}\Z` |
-| HGVS shorthand | `\A[A-Z][1-9][0-9]{0,4}[A-Z*]\Z` |
+| HGVS shorthand | `\A[ACDEFGHIKLMNPQRSTVWY][1-9][0-9]{0,4}[ACDEFGHIKLMNPQRSTVWY*]\Z` (20 standard residues; `*` = stop; defined in `server.py`) |
 
 Length caps are also applied; see `src/uniprot_mcp/server.py` for the
 exact constants.

@@ -159,10 +159,10 @@ in v1.1.3 (see CHANGELOG.md).
 
 ---
 
-## C6. 956 offline + 44 live integration tests
+## C6. 1005 offline + 45 live integration tests
 
 **Claim (README badge, testing section).** The offline test suite
-contains 956 tests; the live integration suite contains 44 tests.
+contains 1005 tests; the live integration suite contains 45 tests.
 
 **Evidence.**
 - `pytest --collect-only --ignore=tests/integration -q` — offline
@@ -198,13 +198,15 @@ branch across all seven source files, with the gate set to enforce it.
   shows 100% for `__init__`, `cache`, `client`, `eco`, `formatters`,
   `proteinchem`, and `server`.
 - Two branches carry a justified `# pragma: no cover` for
-  genuinely-unreachable code: the client.py import-time version-lookup
-  fallback (exercising it needs a module reload that breaks
-  exception-class identity) and the server.py target-dossier
-  FASTA-fetch fallback (non-fatal). Each is annotated inline with its
-  justification. (`_extract_provenance` reads the accept header directly
-  from `response.request`, which is always present because the function
-  also reads `response.url`; no guard or pragma is needed.)
+  genuinely-unreachable code: the client.py and `__init__.py`
+  import-time version-lookup fallbacks (exercising them needs a module
+  reload that breaks exception-class identity). Each is annotated
+  inline with its justification. The server.py target-dossier
+  FASTA-fetch fallback is covered by a regression test and logs a
+  warning rather than carrying a pragma. (`_extract_provenance` reads
+  the accept header directly from `response.request`, which is always
+  present because the function also reads `response.url`; no guard or
+  pragma is needed.)
 
 **Verify.**
 ```bash
@@ -215,7 +217,7 @@ pytest tests/unit tests/property tests/client tests/contract --cov --cov-branch 
 mark to 92.20% across the v1.1.x clinical/biomedical work; it has been
 restored to 100% with assertion-bearing tests for every previously
 -uncovered arc, and the gate now enforces 100% so a future regression
-fails CI. The three `# pragma: no cover` branches are unreachable in
+fails CI. The two `# pragma: no cover` branches are unreachable in
 normal operation, not untested behaviour.
 
 **Last reviewed:** 2026-07-12.

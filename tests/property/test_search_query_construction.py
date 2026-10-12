@@ -143,4 +143,8 @@ async def test_reviewed_only_is_idempotent(query: str) -> None:
     if not route.called:
         return
     sent = route.calls[0].request.url.params["query"]
-    assert sent.lower().count("reviewed:") == 1, f"reviewed:true was duplicated: {sent!r}"
+    # The caller's free-text query may itself contain ``reviewed:`` (Hypothesis
+    # found ``query='REVIEWED:'``), so compare against the input's own count
+    # rather than asserting exactly one occurrence.
+    expected = already_reviewed.lower().count("reviewed:")
+    assert sent.lower().count("reviewed:") == expected, f"reviewed:true was duplicated: {sent!r}"

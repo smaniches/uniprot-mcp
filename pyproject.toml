@@ -146,11 +146,12 @@ source = ["uniprot_mcp"]
 # v1.0.1 -> v1.1.x clinical/biomedical work had let it drift to ~92%.
 # Two genuinely-unreachable arcs carry a justified ``# pragma: no cover``
 # so they do not block the gate:
-#   - client.py version-lookup ``except``: import-time fallback to "dev"
-#     when running uninstalled; exercising it requires a module reload
-#     that breaks exception-class identity across the package.
-#   - server.py target-dossier FASTA-fetch ``except``: non-fatal
-#     chemistry fallback.
+#   - client.py / __init__.py version-lookup ``except PackageNotFoundError``:
+#     import-time fallback when running uninstalled; exercising it
+#     requires a module reload that breaks exception-class identity
+#     across the package.
+# (The server.py target-dossier FASTA-fetch ``except`` is exercised by
+# ``test_target_dossier_tolerates_fasta_failure`` and logs a warning.)
 # ``_extract_provenance`` reads the accept header directly from
 # ``response.request``: the function also reads ``response.url`` (which
 # httpx derives from the request), so the request is always present and
