@@ -25,6 +25,8 @@ The complete tool catalog remains available for specialized research workflows.
 
 > Author: **Santiago Maniches** · ORCID [0009-0005-6480-1987](https://orcid.org/0009-0005-6480-1987) · TOPOLOGICA LLC
 
+**Research authorship:** Santiago Maniches independently maintains this server and is the sole scientific author of its project-specific research contributions. AI-assisted tools have supported development, testing, and internal review under his direction. UniProt records, linked source data, and underlying third-party methods retain their original authorship; internal tool-assisted review is not external scientific validation.
+
 **Run it in one line:**
 
 ```bash
