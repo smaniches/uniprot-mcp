@@ -15,7 +15,7 @@ from pathlib import Path
 
 import httpx
 
-import uniprot_mcp
+from uniprot_mcp import __version__ as uniprot_mcp_version
 from uniprot_mcp import server
 from uniprot_mcp.client import canonical_response_hash
 
@@ -86,7 +86,7 @@ async def main():
         )
     meta = {
         "captured_at_utc_start": transcript and records[0]["received_at"],
-        "uniprot_mcp_version": uniprot_mcp.__version__,
+        "uniprot_mcp_version": uniprot_mcp_version,
         "python": platform.python_version(),
         "httpx": httpx.__version__,
         "digest_method": (

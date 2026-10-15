@@ -4,8 +4,9 @@ This directory binds `examples/01_clinical_variant_interpretation.jsonl`
 to the source bytes it was rendered from.
 
 - **Recorded:** 2026-10-15 between 10:32:43Z and 10:32:45Z (UTC), live, by
-  `capture.py` in this directory. The script was only reformatted for
-  the repository's ruff gate after the run; its logic is unchanged.
+  `capture.py` in this directory. After the run, the script was only reformatted for
+  the repository's ruff gate and had one import restyled for CodeQL; its
+  logic is unchanged.
 - **Software:** uniprot-mcp 1.3.9 working tree with the provenance
   source-attribution footer fix applied (unreleased). Exact interpreter and httpx versions
   are in `capture_manifest.json`.
