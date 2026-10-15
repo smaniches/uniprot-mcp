@@ -2,7 +2,7 @@
 
 **UniProt:** [P02545](https://www.uniprot.org/uniprotkb/P02545).
 **Gene:** LMNA · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0011712 (dilated cardiomyopathy 1A), MONDO:0008977 (Emery-Dreifuss muscular dystrophy 2), MONDO:0008034 (Hutchinson-Gilford progeria syndrome), MONDO:0011055 (familial partial lipodystrophy 2, Dunnigan), MONDO:0009872 (Charcot-Marie-Tooth 2B1).
+**Disease (MONDO):** MONDO:0007269 (dilated cardiomyopathy 1A), MONDO:0008310 (Hutchinson-Gilford progeria syndrome); Emery-Dreifuss muscular dystrophy 2, familial partial lipodystrophy 2 (Dunnigan) and Charcot-Marie-Tooth 2B1 — MONDO IDs unresolved (previously cited MONDO:0008977, MONDO:0011055, MONDO:0009872 name different diseases).
 **OMIM:** 150330 (gene), 115200 (DCM1A), 181350 (EDMD2), 176670 (HGPS), 151660 (FPLD2).
 **Disease class:** laminopathy spectrum — at least nine distinct phenotypes from one gene.
 
@@ -36,7 +36,7 @@ PDB has Ig-like-fold tail-domain structures + N-terminal coiled-coil; AlphaFold 
 
 ## Adjacent ontologies
 
-MONDO:0011712, MONDO:0008977, MONDO:0008034, MONDO:0011055, MONDO:0009872; HPO:HP:0001644 (DCM), HP:0003560 (muscular dystrophy), HP:0008066 (atypical scarring), HP:0008064 (premature aging); Orphanet:ORPHA:740 (HGPS).
+MONDO:0007269, MONDO:0008310 (EDMD2, FPLD2, CMT2B1 unresolved); HPO:HP:0001644 (DCM), HP:0003560 (muscular dystrophy), HP:0008066 (atypical scarring), HP:0008064 (premature aging); Orphanet:ORPHA:740 (HGPS).
 
 ## Why LMNA
 

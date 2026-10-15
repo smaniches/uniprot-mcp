@@ -46,8 +46,31 @@ these are wrong:
 
 - **MONDO IDs name the claimed disease.** The gates verify the format
   (`mondo:NNNNNNN`); they do not query the live MONDO API to check
-  that, e.g., `mondo:0007254` actually names "Li-Fraumeni syndrome."
+  that, e.g., `mondo:0018875` actually names "Li-Fraumeni syndrome."
   Cross-check at https://monarchinitiative.org/.
+
+  A one-off manual audit (2026-10-15) checked every MONDO disease pair
+  in `atlas.json` against EBI OLS4 (MONDO release 2026-10-06). Each
+  disease object now carries a `mappingRelation` field:
+  `exact` (ID's label matches the authored name, case/punctuation
+  and Arabic-vs-Roman numerals aside), `synonym` (matches an exact synonym of the ID's record),
+  `broader` (ID is a verified MONDO ancestor of the authored disease;
+  e.g. KRAS `mondo:0005192` exocrine pancreatic carcinoma for
+  pancreatic adenocarcinoma), `sentinel` (`mondo:0000001`, the
+  intentional pharmacogenomic placeholder; note it is MONDO's root
+  class "disease"). Of 56 non-sentinel pairs, 35
+  cited IDs naming a different disease; 26 were replaced where an
+  OLS search returned a single non-obsolete term whose label or exact
+  synonym matched the authored name. The other 9 (HBOC1, Fanconi anemia
+  complementation group S, HBOC2, familial pancreatic cancer 2, X-linked
+  dilated cardiomyopathy 3B, Emery-Dreifuss muscular dystrophy 2, familial
+  partial lipodystrophy 2, Charcot-Marie-Tooth 2B1, vitamin K-dependent
+  clotting factor deficiency) had no unambiguous MONDO term. Their disease
+  objects were removed from `atlas.json` rather than kept with an ID known
+  to name a different disease. The entry pages still name these diseases
+  and mark their MONDO IDs as unresolved. BRCA1 and VKORC1 therefore have
+  an empty `diseases` array until a curator confirms an ID. Replacement and
+  verification is a manual snapshot, not a CI gate.
 - **OMIM IDs name the claimed gene/disease.** Same logic. Cross-check
   at https://omim.org/.
 - **The therapeutic axis described in each entry.** This is curated

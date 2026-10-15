@@ -2,7 +2,7 @@
 
 **UniProt:** [P04626](https://www.uniprot.org/uniprotkb/P04626).
 **Gene:** ERBB2 · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0007254 (HER2-positive breast cancer subtype), MONDO:0006520 (gastric adenocarcinoma).
+**Disease (MONDO):** MONDO:0006244 (HER2-positive breast carcinoma), MONDO:0005036 (gastric adenocarcinoma).
 **OMIM:** 164870 (gene), 137215 (HBOC), 114500 (CRC, HER2 subset).
 **Disease class:** receptor tyrosine kinase oncogene (amplification-driven + activating-mutation-driven).
 
@@ -39,7 +39,7 @@ For HER2-positive breast cancer, what are the actionable axes — amplification,
 
 ## Adjacent ontologies
 
-MONDO:0007254 (HER2+ breast cancer), MONDO:0006520 (gastric adenocarcinoma), MONDO:0021682 (HER2-low breast cancer); EFO:0003869 (breast carcinoma); HPO:HP:0003002.
+MONDO:0006244 (HER2+ breast carcinoma), MONDO:0005036 (gastric adenocarcinoma), HER2-low breast cancer (no MONDO term found); EFO:0003869 (breast carcinoma); HPO:HP:0003002.
 
 ## Why ERBB2
 

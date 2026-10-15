@@ -4,7 +4,7 @@
 **Gene symbol:** HBB
 **Protein:** Hemoglobin subunit beta
 **Organism:** *Homo sapiens* (taxonomy ID 9606)
-**Disease (MONDO):** [MONDO:0011382 — sickle cell disease](https://monarchinitiative.org/disease/MONDO:0011382); see also MONDO:0007928 (beta-thalassemia).
+**Disease (MONDO):** [MONDO:0011382 — sickle cell disease](https://monarchinitiative.org/disease/MONDO:0011382); see also MONDO:0019402 (beta-thalassemia).
 **OMIM:** [141900 (HBB gene)](https://omim.org/entry/141900), 603903 (sickle cell anemia).
 **Disease class:** rare-disease hemoglobinopathy; one of the most-studied human variants.
 
@@ -68,7 +68,7 @@ Standard envelope on every response.
 
 | Ontology | Identifier |
 |---|---|
-| MONDO | MONDO:0011382 (sickle cell disease), MONDO:0007928 (beta-thalassemia) |
+| MONDO | MONDO:0011382 (sickle cell disease), MONDO:0019402 (beta-thalassemia) |
 | HPO | HP:0001923 (vaso-occlusive crisis), HP:0001877 (anemic crisis), HP:0001903 (hemolytic anemia) |
 | Orphanet | ORPHA:232 (sickle cell anemia), ORPHA:848 (beta-thalassemia) |
 

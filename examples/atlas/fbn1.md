@@ -2,7 +2,7 @@
 
 **UniProt:** [P35555](https://www.uniprot.org/uniprotkb/P35555).
 **Gene:** FBN1 · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0007947 (Marfan syndrome), MONDO:0011625 (acromicric dysplasia), MONDO:0009098 (geleophysic dysplasia 2), MONDO:0011382 (stiff skin syndrome).
+**Disease (MONDO):** MONDO:0007947 (Marfan syndrome), MONDO:0007055 (acromicric dysplasia), MONDO:0013612 (geleophysic dysplasia 2), MONDO:0008492 (stiff skin syndrome).
 **OMIM:** 134797 (gene), 154700 (Marfan), 102370 (acromicric).
 **Disease class:** connective-tissue disorder; modular extracellular protein with calcium-binding EGF + TGF-β–binding domains.
 
@@ -33,7 +33,7 @@ PDB has individual cbEGF domain structures; AlphaFold model `AF-P35555-F1`; Clin
 
 ## Adjacent ontologies
 
-MONDO:0007947, MONDO:0011625, MONDO:0009098, MONDO:0011382; HPO:HP:0002616 (aortic root aneurysm), HP:0001654 (aortic regurgitation), HP:0000545 (myopia), HP:0001083 (ectopia lentis), HP:0001763 (pes planus); Orphanet:ORPHA:558 (Marfan).
+MONDO:0007947, MONDO:0007055, MONDO:0013612, MONDO:0008492; HPO:HP:0002616 (aortic root aneurysm), HP:0001654 (aortic regurgitation), HP:0000545 (myopia), HP:0001083 (ectopia lentis), HP:0001763 (pes planus); Orphanet:ORPHA:558 (Marfan).
 
 ## Why FBN1
 

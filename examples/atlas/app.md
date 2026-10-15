@@ -65,7 +65,7 @@ Standard envelope on every response.
 
 | Ontology | Identifier |
 |---|---|
-| MONDO | MONDO:0004975 (AD), MONDO:0007088 (FAD type 1), MONDO:0007098 (CAA Dutch) |
+| MONDO | MONDO:0004975 (AD), MONDO:0007088 (FAD type 1), CAA Dutch type (MONDO ID unresolved) |
 | HPO | HP:0002511 (Alzheimer disease), HP:0002145 (frontotemporal dementia overlap), HP:0001302 (pachygyria — for some FAD variants) |
 | Orphanet | ORPHA:1020 (familial AD) |
 

@@ -5,6 +5,14 @@ These are **realistic Claude Desktop conversations** demonstrating
 sequence of message records (one per line) with the exact tool calls
 the model would make and the structural shape of the responses.
 
+`01_clinical_variant_interpretation.jsonl` is a **dated live capture**
+(2026-10-15): its tool outputs are verbatim, and the upstream response
+bytes are stored in
+[`captures/2026-10-15_tp53_r175h/`](captures/2026-10-15_tp53_r175h/README.md)
+so each footer digest can be recomputed. The other transcripts are
+illustrative. Their footer digests have not been checked against stored
+payloads, so do not treat them as verifiable receipts.
+
 The transcripts are **illustrative**, not regression-test artefacts:
 the actual UniProt release shifts month-to-month, so values like
 "83,526 proteins in the human proteome" or
@@ -16,7 +24,7 @@ recorded answer via `uniprot_provenance_verify`.
 
 | File | Workflow | Tools exercised |
 |---|---|---|
-| `01_clinical_variant_interpretation.jsonl` | "Is `TP53 R175H` a clinically actionable variant?" | `uniprot_features_at_position`, `uniprot_lookup_variant`, `uniprot_resolve_clinvar`, `uniprot_get_alphafold_confidence`, `uniprot_get_disease_associations` |
+| `01_clinical_variant_interpretation.jsonl` | "What is the molecular evidence for `TP53 R175H`?" (live capture, 2026-10-15) | `uniprot_search`, `uniprot_features_at_position`, `uniprot_lookup_variant`, `uniprot_resolve_clinvar`, `uniprot_get_alphafold_confidence` |
 | `02_drug_target_dossier.jsonl` | "Give me a complete characterisation of human BRCA1 as a drug target." | `uniprot_target_dossier`, `uniprot_resolve_pdb`, `uniprot_resolve_chembl`, `uniprot_get_evidence_summary` |
 | `03_provenance_verify_after_a_year.jsonl` | "I have a research note from a year ago that cites a UniProt entry. Is the underlying answer still the same today?" | `uniprot_provenance_verify` |
 | `04_pathogen_drug_discovery.jsonl` | "Scope a TEM-1 beta-lactamase inhibitor program: catalytic machinery, processing, PTMs, structures." | `uniprot_search`, `uniprot_get_active_sites`, `uniprot_get_processing_features`, `uniprot_get_ptms`, `uniprot_resolve_pdb` (v1.1.0 biomedical-features family) |

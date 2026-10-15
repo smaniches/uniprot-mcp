@@ -67,7 +67,7 @@ retrieved_at / url / response_sha256`.
 
 | Ontology | Identifier |
 |---|---|
-| MONDO | MONDO:0009061 (cystic fibrosis), MONDO:0009217 (CBAVD) |
+| MONDO | MONDO:0009061 (cystic fibrosis), MONDO:0018801 (CBAVD) |
 | HPO | HP:0002721 (immunodeficiency), HP:0001738 (exocrine pancreatic insufficiency), HP:0006538 (recurrent bronchitis) |
 | Orphanet | ORPHA:586 (cystic fibrosis) |
 

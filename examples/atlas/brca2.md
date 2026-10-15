@@ -2,7 +2,7 @@
 
 **UniProt:** [P51587](https://www.uniprot.org/uniprotkb/P51587).
 **Gene:** BRCA2 · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0011544 (HBOC2), MONDO:0009100 (Fanconi anemia complementation group D1), MONDO:0014498 (familial pancreatic cancer 2).
+**Disease (MONDO):** HBOC2 — MONDO ID unresolved (previously cited MONDO:0011544, which names a different disease); MONDO:0011584 (Fanconi anemia complementation group D1); familial pancreatic cancer 2 — MONDO ID unresolved (previously cited MONDO:0014498, which names a different disease).
 **OMIM:** 600185 (gene), 612555 (HBOC2), 605724 (FANCD1).
 **Disease class:** hereditary cancer + DNA-repair (homologous recombination).
 
@@ -35,7 +35,7 @@ Same synthetic-lethality logic as BRCA1: PARP inhibitors (olaparib, niraparib, r
 
 ## Adjacent ontologies
 
-MONDO:0011544, MONDO:0009100, MONDO:0014498; HPO:HP:0003002 (breast carcinoma), HP:0100615 (ovarian neoplasm), HP:0006725 (Fanconi anemia type features); Orphanet:ORPHA:84.
+MONDO:0011584 (FA-D1; HBOC2 and familial pancreatic cancer 2 unresolved); HPO:HP:0003002 (breast carcinoma), HP:0100615 (ovarian neoplasm), HP:0006725 (Fanconi anemia type features); Orphanet:ORPHA:84.
 
 ## Why BRCA2
 

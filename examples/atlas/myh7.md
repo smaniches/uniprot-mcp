@@ -2,7 +2,7 @@
 
 **UniProt:** [P12883](https://www.uniprot.org/uniprotkb/P12883).
 **Gene:** MYH7 · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0024533 (hypertrophic cardiomyopathy 1), MONDO:0011712 (dilated cardiomyopathy 1S), MONDO:0011688 (Laing distal myopathy), MONDO:0008052 (Liang-Wang syndrome).
+**Disease (MONDO):** MONDO:0008647 (hypertrophic cardiomyopathy 1), MONDO:0013262 (dilated cardiomyopathy 1S), MONDO:0008050 (Laing distal myopathy), MONDO:0032886 (Liang-Wang syndrome).
 **OMIM:** 160760 (gene), 192600 (HCM), 613426 (DCM1S), 160500 (Laing).
 **Disease class:** sarcomeric cardiomyopathy + skeletal myopathy.
 
@@ -36,7 +36,7 @@ PDB has many motor-head structures with substrate analogues and inhibitors (mava
 
 ## Adjacent ontologies
 
-MONDO:0024533 (HCM1), MONDO:0011712 (DCM1S), MONDO:0011688 (Laing); HPO:HP:0001639 (HCM), HP:0001644 (DCM), HP:0003560 (skeletal muscle weakness); Orphanet:ORPHA:217569 (HCM).
+MONDO:0008647 (HCM1), MONDO:0013262 (DCM1S), MONDO:0008050 (Laing); HPO:HP:0001639 (HCM), HP:0001644 (DCM), HP:0003560 (skeletal muscle weakness); Orphanet:ORPHA:217569 (HCM).
 
 ## Why MYH7
 

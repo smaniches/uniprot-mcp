@@ -2,7 +2,7 @@
 
 **UniProt:** [P37840](https://www.uniprot.org/uniprotkb/P37840).
 **Gene:** SNCA · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0008199 (Parkinson disease 1, autosomal dominant), MONDO:0008245 (dementia with Lewy bodies), MONDO:0008298 (multiple system atrophy).
+**Disease (MONDO):** MONDO:0008200 (autosomal dominant Parkinson disease 1), MONDO:0007488 (dementia with Lewy bodies), MONDO:0007803 (multiple system atrophy).
 **OMIM:** 163890 (gene), 168600 (PD1), 127750 (DLB).
 **Disease class:** neurodegenerative; intrinsically disordered protein → amyloid (Lewy bodies).
 
@@ -38,7 +38,7 @@ PDB has the fibril cryo-EM structures (resolved post-2018); ChEMBL has anle138b 
 
 ## Adjacent ontologies
 
-MONDO:0008199 (PD1), MONDO:0008245 (DLB), MONDO:0008298 (MSA); HPO:HP:0001300 (parkinsonism), HP:0002354 (memory impairment); Orphanet:ORPHA:411602.
+MONDO:0008200 (PD1), MONDO:0007488 (DLB), MONDO:0007803 (MSA); HPO:HP:0001300 (parkinsonism), HP:0002354 (memory impairment); Orphanet:ORPHA:411602.
 
 ## Why SNCA
 

@@ -1,0 +1,118 @@
+{
+  "captured_at_utc_start": "2026-10-15T10:32:43Z",
+  "uniprot_mcp_version": "1.3.9",
+  "python": "3.12.3",
+  "httpx": "0.28.1",
+  "digest_method": "SHA-256; JSON bodies re-serialized with sort_keys=True, separators=(',',':'), ensure_ascii=False (uniprot_mcp.client.canonical_response_hash); non-JSON raw bytes",
+  "upstream": [
+    {
+      "index": 0,
+      "url": "https://rest.uniprot.org/uniprotkb/search?query=gene_exact%3ATP53+AND+organism_id%3A9606+AND+reviewed%3Atrue&size=1",
+      "status": 200,
+      "received_at": "2026-10-15T10:32:43Z",
+      "headers": {
+        "content-type": "application/json",
+        "x-api-deployment-date": "07-October-2026",
+        "date": "Thu, 15 Oct 2026 10:32:42 GMT",
+        "x-uniprot-release": "2026_03",
+        "x-uniprot-release-date": "02-September-2026"
+      },
+      "body_file": "upstream/00.body.gz",
+      "raw_sha256": "8efa9955a482029d01af51a4eb9a19f5bb5b42e8d16f1936e4e1d399e1bbf0e9",
+      "canonical_sha256": "e530061373cf90ae8804b1ae73197fc991d73a021fe55118de12ec3c01ebe724"
+    },
+    {
+      "index": 1,
+      "url": "https://rest.uniprot.org/uniprotkb/P04637",
+      "status": 200,
+      "received_at": "2026-10-15T10:32:43Z",
+      "headers": {
+        "content-type": "application/json",
+        "x-api-deployment-date": "07-October-2026",
+        "date": "Thu, 15 Oct 2026 10:32:43 GMT",
+        "x-uniprot-release": "2026_03",
+        "x-uniprot-release-date": "02-September-2026"
+      },
+      "body_file": "upstream/01.body.gz",
+      "raw_sha256": "6bdb471fae5b0d4c92a1e2fd63f35b49e3826188e82ff54fcddec70c4e63e114",
+      "canonical_sha256": "112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf"
+    },
+    {
+      "index": 2,
+      "url": "https://rest.uniprot.org/uniprotkb/P04637",
+      "status": 200,
+      "received_at": "2026-10-15T10:32:43Z",
+      "headers": {
+        "content-type": "application/json",
+        "x-api-deployment-date": "07-October-2026",
+        "date": "Thu, 15 Oct 2026 10:32:43 GMT",
+        "x-uniprot-release": "2026_03",
+        "x-uniprot-release-date": "02-September-2026"
+      },
+      "body_file": "upstream/01.body.gz",
+      "raw_sha256": "6bdb471fae5b0d4c92a1e2fd63f35b49e3826188e82ff54fcddec70c4e63e114",
+      "canonical_sha256": "112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf"
+    },
+    {
+      "index": 3,
+      "url": "https://rest.uniprot.org/uniprotkb/P04637",
+      "status": 200,
+      "received_at": "2026-10-15T10:32:43Z",
+      "headers": {
+        "content-type": "application/json",
+        "x-api-deployment-date": "07-October-2026",
+        "date": "Thu, 15 Oct 2026 10:32:43 GMT",
+        "x-uniprot-release": "2026_03",
+        "x-uniprot-release-date": "02-September-2026"
+      },
+      "body_file": "upstream/01.body.gz",
+      "raw_sha256": "6bdb471fae5b0d4c92a1e2fd63f35b49e3826188e82ff54fcddec70c4e63e114",
+      "canonical_sha256": "112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf"
+    },
+    {
+      "index": 4,
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&term=TP53%5BGene%5D+AND+%22R175H%22%5BVariant+Name%5D&retmode=json&retmax=5",
+      "status": 200,
+      "received_at": "2026-10-15T10:32:44Z",
+      "headers": {
+        "date": "Thu, 15 Oct 2026 10:32:43 GMT",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "body_file": "upstream/04.body.gz",
+      "raw_sha256": "03f88590d0857d8dc3823bae6357f532daceef38315c28de925b1541f5302ed0",
+      "canonical_sha256": "5933150aadd047fcb4e22474448e34f1dda9b23b93803d1329441ff9c13b555d"
+    },
+    {
+      "index": 5,
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&id=12374&retmode=json",
+      "status": 200,
+      "received_at": "2026-10-15T10:32:44Z",
+      "headers": {
+        "date": "Thu, 15 Oct 2026 10:32:43 GMT",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "body_file": "upstream/05.body.gz",
+      "raw_sha256": "c9be500639181e259a26ab76607c69e919f3bdb8ad30f4ea0fa76dabf5753e1b",
+      "canonical_sha256": "d871175f6903bc1844926639e16e13cc7588fa9a140d04f5366d0ceda23de34a"
+    },
+    {
+      "index": 6,
+      "url": "https://alphafold.ebi.ac.uk/api/prediction/P04637",
+      "status": 200,
+      "received_at": "2026-10-15T10:32:45Z",
+      "headers": {
+        "content-type": "application/json",
+        "date": "Thu, 15 Oct 2026 10:32:45 GMT"
+      },
+      "body_file": "upstream/06.body.gz",
+      "raw_sha256": "1ef436288de2bfd9dbc9a24147b758fbe09bd4a1e27db56d0ced3e5bac215589",
+      "canonical_sha256": "a87643758dc6c1a0ed23ab6bcb012588b0402a14773a5c2fca6d981a21308555"
+    }
+  ],
+  "storage": "Bodies stored gzip-compressed (mtime=0); raw_sha256 is over the decompressed bytes exactly as received. Identical bodies are stored once.",
+  "licenses": {
+    "rest.uniprot.org": "UniProt CC BY 4.0",
+    "eutils.ncbi.nlm.nih.gov": "NCBI ClinVar (public domain, NCBI policies)",
+    "alphafold.ebi.ac.uk": "AlphaFold DB CC BY 4.0"
+  }
+}

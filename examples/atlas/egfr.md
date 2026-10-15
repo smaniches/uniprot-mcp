@@ -71,7 +71,7 @@ Standard envelope on every response.
 
 | Ontology | Identifier |
 |---|---|
-| MONDO | MONDO:0005233 (NSCLC), MONDO:0021642 (lung adenocarcinoma) |
+| MONDO | MONDO:0005233 (NSCLC), MONDO:0005061 (lung adenocarcinoma) |
 | HPO | HP:0002088 (abnormal lung function), HP:0100526 (lung neoplasm) |
 | EFO | EFO_0003060 (NSCLC) |
 

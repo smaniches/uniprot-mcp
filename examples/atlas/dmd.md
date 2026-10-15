@@ -64,7 +64,7 @@ Standard envelope on every response.
 
 | Ontology | Identifier |
 |---|---|
-| MONDO | MONDO:0010679 (DMD), MONDO:0010311 (BMD), MONDO:0010500 (CMD3B) |
+| MONDO | MONDO:0010679 (DMD), MONDO:0010311 (BMD), X-linked dilated cardiomyopathy 3B (MONDO ID unresolved) |
 | HPO | HP:0003560 (muscular dystrophy), HP:0001288 (gait disturbance), HP:0002650 (scoliosis), many more |
 | Orphanet | ORPHA:98896 (DMD), ORPHA:98895 (BMD) |
 
