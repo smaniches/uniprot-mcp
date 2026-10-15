@@ -1210,36 +1210,40 @@ TrEMBL fragment.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>&gt; What features are annotated at residue 175 of P04637?
 </code></pre></div>
 <p>Tool call: <code>uniprot_features_at_position("P04637", 175)</code>.</p>
-<p>Typical output: the residue lies inside the <strong>DNA-binding domain
-(102-292)</strong>, is itself a known <strong>Modified residue</strong> (phosphoserine in
-some isoforms), and has multiple <strong>Natural variant</strong> annotations
-including R175H. The structural context alone — DNA-binding-domain,
-post-translationally modified — is a strong signal that any
-substitution is functionally important.</p>
+<p>Output (UniProt release 2026_03, captured 2026-10-15): the residue lies
+inside the annotated <strong>DNA-binding</strong> region (102-292) and a short helix
+(174-176), within several protein-interaction regions, and carries
+seven <strong>Natural variant</strong> annotations (R→C, G, H, L, P, Q, S), including
+R175H. No <strong>Modified residue</strong> feature is annotated at 175. Location in
+an annotated functional region is context, not by itself evidence that a
+particular substitution is damaging.</p>
 <h2 id="step-3-is-r175h-specifically-annotated-by-uniprot">Step 3 — is R175H specifically annotated by UniProt?<a class="headerlink" href="#step-3-is-r175h-specifically-annotated-by-uniprot" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>&gt; Is R175H a known UniProt-annotated TP53 variant?
 </code></pre></div>
 <p>Tool call: <code>uniprot_lookup_variant("P04637", "R175H")</code>.</p>
-<p>Output (paraphrased):</p>
+<p>Output (verbatim, release 2026_03):</p>
 <blockquote>
-<p><strong>R175H</strong> — In a sporadic cancer; loss of DNA binding; one of the
-most frequent p53 mutations in human cancers. Evidence: ECO:0000269.</p>
+<p><strong>R175H</strong> — in LFS; germline mutation and in sporadic cancers; somatic
+mutation; does not induce SNAI1 degradation; reduces interaction with
+ZNF385A; dbSNP:rs28934578. Evidence: ECO:0000269.</p>
 </blockquote>
-<p>The <code>ECO:0000269</code> evidence code marks this as <strong>experimental evidence
-used in manual assertion</strong> — wet-lab confirmed, not inferred by
-similarity. (Distinction matters: roughly half of UniProt features
-carry only sequence-similarity evidence and should be treated as
-hypotheses, not facts.)</p>
+<p><code>ECO:0000269</code> is <strong>experimental evidence used in manual assertion</strong>: a
+curator attributed the statement to published experimental work (here,
+seven PubMed references on the feature). It is distinct from codes for
+evidence inferred by sequence similarity, but the code alone does not say
+which experiment supports which clause of the annotation.</p>
 <h2 id="step-4-what-does-clinvar-say-at-the-population-level">Step 4 — what does ClinVar say at the population level?<a class="headerlink" href="#step-4-what-does-clinvar-say-at-the-population-level" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&gt; Look up ClinVar records for this variant.
 </code></pre></div>
-<p>Tool call: <code>uniprot_resolve_clinvar("P04637", change="R175H", size=10)</code>.</p>
-<p>Output: typically ten or more ClinVar submissions, with classifications
-like <em>Pathogenic</em>, <em>Likely pathogenic</em>, and review status ranging
-from <em>criteria provided, single submitter</em> up to <em>reviewed by expert
-panel</em>. The molecular consequence is <strong>missense variant</strong>; the
-trait set centres on <strong>Li-Fraumeni syndrome</strong> and several specific
-cancers.</p>
+<p>Tool call: <code>uniprot_resolve_clinvar("P04637", change="R175H", size=5)</code>.</p>
+<p>Output (captured 2026-10-15): the gene-plus-variant-name query matches
+<strong>one ClinVar variation record</strong>, <code>VCV000012374</code>,
+NM_000546.6(TP53):c.524G&gt;A (p.Arg175His), with germline classification
+<em>Pathogenic</em> and review status <em>reviewed by expert panel</em>; molecular
+consequence <strong>missense variant</strong>. A variation record aggregates the
+individual submissions; the tool reports records, not submission counts.
+The classification shown is ClinVar's germline classification, which is
+not the same question as somatic (tumor) actionability.</p>
 <p>A clinician now has both:</p>
 <ul>
 <li><strong>UniProt side</strong>: literature-anchored functional annotation.</li>
@@ -1249,14 +1253,15 @@ cancers.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&gt; What's the AlphaFold confidence summary for P04637?
 </code></pre></div>
 <p>Tool call: <code>uniprot_get_alphafold_confidence("P04637")</code>.</p>
-<p>Output: global mean pLDDT plus the four-band distribution. For TP53
-the DNA-binding core has high pLDDT (<code>very high</code> band, &gt; 90 — the
-model is publication-grade), while the N- and C-terminal regions are
-disordered (<code>very low</code> band, &lt; 50 — structural inference unsafe).</p>
-<p>Position 175 sits inside the well-modelled core, so any structural
-reasoning ("R175 forms a specific contact with the DNA backbone") is
-on solid ground. If the variant had been in a <code>very low</code> region, that
-caveat would dominate the interpretation.</p>
+<p>Output (AlphaFold DB, captured 2026-10-15): model <code>AF-P04637-F1</code>, model
+version v6 (created 2025-08-01), global mean pLDDT 75.1, with 52.7% of
+residues in the <code>very high</code> band (≥ 90), 7.1% <code>confident</code>, 10.4% <code>low</code>
+and 29.8% <code>very low</code> (&lt; 50).</p>
+<p>This is a <strong>model-level</strong> summary. It does not report the confidence at
+residue 175, so it cannot by itself establish that structural reasoning
+at that residue is reliable; residue-level pLDDT is in the model file
+(e.g. the CIF B-factor column), which this tool does not fetch. pLDDT is
+model confidence, not experimental validation.</p>
 <h2 id="step-6-disease-associations-recorded-on-the-entry">Step 6 — disease associations recorded on the entry<a class="headerlink" href="#step-6-disease-associations-recorded-on-the-entry" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>&gt; What diseases does UniProt record for this protein?
 </code></pre></div>
@@ -1269,15 +1274,22 @@ in a clinical-genetics workflow.</p>
 <h2 id="step-7-sealed-provenance-for-the-report">Step 7 — sealed provenance for the report<a class="headerlink" href="#step-7-sealed-provenance-for-the-report" title="Permanent link">&para;</a></h2>
 <p>Every tool response above carries a footer like:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>---
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>_Source: UniProt release 2026_01 (28-January-2026) • Retrieved 2026-04-25T12:00:00Z_
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>_Source: UniProt release 2026_03 (02-September-2026) • Retrieved 2026-10-15T10:32:43Z_
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>_Query: https://rest.uniprot.org/uniprotkb/P04637_
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>_SHA-256: 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e_
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>_SHA-256: 112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf_
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>_Accept: application/json_
 </code></pre></div>
-<p>Six months later, the clinician (or a regulator) can call:</p>
+<p>The footer names the provider that served each response: ClinVar
+responses show <code>NCBI ClinVar (eutils)</code> and AlphaFold DB responses show
+<code>AlphaFoldDB model v6 (created …)</code>. This footer is from the 2026-10-15
+capture in
+<a href="https://github.com/smaniches/uniprot-mcp/tree/main/examples/captures/2026-10-15_tp53_r175h"><code>examples/captures/2026-10-15_tp53_r175h/</code></a>,
+which stores the upstream response bytes so the digest can be recomputed.</p>
+<p>Later, the clinician (or a reviewer) can call:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>&gt; Verify this provenance from a previous report.
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>&gt; URL: https://rest.uniprot.org/uniprotkb/P04637
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>&gt; Release: 2026_01
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>&gt; SHA-256: 0040d79b…345e
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>&gt; Release: 2026_03
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>&gt; SHA-256: 112540dc…7fcf
 </code></pre></div>
 <p>Tool call: <code>uniprot_provenance_verify(url, release, response_sha256)</code>.</p>
 <p>If the verdict is <code>verified</code>, the report's UniProt evidence is
@@ -1292,8 +1304,8 @@ it's <code>hash_drift</code>, the entry has been edited within the same release
   structural confidence, disease associations, and a
   cryptographically-verifiable audit trail.</li>
 <li><strong>Evidence-aware</strong>: the ECO code distinguishes experimental from
-  inferred annotations; the AlphaFold pLDDT distinguishes
-  trustworthy from disordered regions.</li>
+  inferred annotations; the AlphaFold summary reports model-level
+  confidence and states that it is not per-residue confidence.</li>
 <li><strong>Reproducible</strong>: every datum carries a SHA-256 footer; six months
   later the same clinician (or a different one) can verify the
   evidence base hasn't drifted.</li>
@@ -1306,10 +1318,9 @@ it's <code>hash_drift</code>, the entry has been edited within the same release
 <li>We don't dive into population frequency. gnomAD is the right
   source for that and is out of scope for <code>uniprot-mcp</code>.</li>
 <li>We don't model the structural impact of R175H specifically. That
-  needs MD or specialised tools (FoldX, PROVEAN, etc.). The pLDDT
-  band tells you the <em>model</em> is reliable enough that downstream
-  structural reasoning is meaningful; it does not tell you the
-  variant's effect itself.</li>
+  needs MD or specialised tools (FoldX, PROVEAN, etc.). The global
+  pLDDT summary describes the model as a whole; it neither establishes
+  confidence at a specific residue nor the variant's effect.</li>
 </ul>
 <p>The agent's job is to assemble defensible evidence. The clinician's
 job is to weigh it.</p>
