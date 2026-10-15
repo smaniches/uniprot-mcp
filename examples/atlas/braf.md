@@ -2,7 +2,7 @@
 
 **UniProt:** [P15056](https://www.uniprot.org/uniprotkb/P15056).
 **Gene:** BRAF · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0005105 (melanoma), MONDO:0005077 (CRC), MONDO:0008753 (cardiofaciocutaneous syndrome 1).
+**Disease (MONDO):** MONDO:0005105 (melanoma), MONDO:0005575 (CRC), MONDO:0007265 (cardiofaciocutaneous syndrome 1).
 **OMIM:** 164757 (gene), 155600 (melanoma), 115150 (CFC1).
 **Disease class:** somatic-driver oncogene (MAPK pathway kinase) + germline RASopathy.
 
@@ -30,7 +30,7 @@ PDB-rich; AlphaFold model `AF-P15056-F1`; ChEMBL one of the best-populated kinas
 
 ## Adjacent ontologies
 
-MONDO:0005105 (melanoma), MONDO:0005077 (CRC), MONDO:0008753 (CFC1); EFO:0000756 (melanoma); HPO:HP:0002861 (melanoma), HP:0001627 (cardiofaciocutaneous syndrome features for germline).
+MONDO:0005105 (melanoma), MONDO:0005575 (CRC), MONDO:0007265 (CFC1); EFO:0000756 (melanoma); HPO:HP:0002861 (melanoma), HP:0001627 (cardiofaciocutaneous syndrome features for germline).
 
 ## Why BRAF
 

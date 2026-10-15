@@ -21,7 +21,7 @@
   "schema:license": "https://www.apache.org/licenses/LICENSE-2.0",
   "schema:version": "1.1.3",
   "schema:dateCreated": "2026-04-26",
-  "schema:dateModified": "2026-05-05",
+  "schema:dateModified": "2026-10-15",
   "schema:isAccessibleForFree": true,
   "schema:creator": {
     "@type": "schema:Person",
@@ -62,7 +62,7 @@
       "gene": "TP53",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0018875", "name": "Li-Fraumeni syndrome"}
+        {"@id": "mondo:0018875", "name": "Li-Fraumeni syndrome", "mappingRelation": "exact"}
       ],
       "omim": ["191170", "151623"],
       "diseaseClass": "Hereditary cancer",
@@ -78,8 +78,6 @@
       "gene": "BRCA1",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0011535", "name": "Hereditary breast-ovarian cancer syndrome 1"},
-        {"@id": "mondo:0011686", "name": "Fanconi anemia complementation group S"}
       ],
       "omim": ["113705", "604370"],
       "diseaseClass": "Hereditary cancer",
@@ -95,9 +93,7 @@
       "gene": "BRCA2",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0011544", "name": "Hereditary breast-ovarian cancer syndrome 2"},
-        {"@id": "mondo:0009100", "name": "Fanconi anemia complementation group D1"},
-        {"@id": "mondo:0014498", "name": "Familial pancreatic cancer 2"}
+        {"@id": "mondo:0011584", "name": "Fanconi anemia complementation group D1", "mappingRelation": "exact"}
       ],
       "omim": ["600185", "612555", "605724"],
       "diseaseClass": "Hereditary cancer",
@@ -113,9 +109,9 @@
       "gene": "MLH1",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0007648", "name": "Lynch syndrome 2"},
-        {"@id": "mondo:0009116", "name": "Muir-Torre syndrome"},
-        {"@id": "mondo:0007637", "name": "Mismatch repair cancer syndrome 1"}
+        {"@id": "mondo:0012249", "name": "Lynch syndrome 2", "mappingRelation": "exact"},
+        {"@id": "mondo:0008018", "name": "Muir-Torre syndrome", "mappingRelation": "exact"},
+        {"@id": "mondo:0010159", "name": "Mismatch repair cancer syndrome 1", "mappingRelation": "exact"}
       ],
       "omim": ["120436", "609310", "158320"],
       "diseaseClass": "Hereditary cancer",
@@ -131,7 +127,7 @@
       "gene": "EGFR",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0005233", "name": "Non-small cell lung carcinoma"}
+        {"@id": "mondo:0005233", "name": "Non-small cell lung carcinoma", "mappingRelation": "exact"}
       ],
       "omim": ["131550", "211980"],
       "diseaseClass": "Solid-tumour driver",
@@ -147,9 +143,9 @@
       "gene": "KRAS",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0005233", "name": "Non-small cell lung carcinoma"},
-        {"@id": "mondo:0005077", "name": "Colorectal cancer"},
-        {"@id": "mondo:0005192", "name": "Pancreatic adenocarcinoma"}
+        {"@id": "mondo:0005233", "name": "Non-small cell lung carcinoma", "mappingRelation": "exact"},
+        {"@id": "mondo:0005575", "name": "Colorectal cancer", "mappingRelation": "exact"},
+        {"@id": "mondo:0005192", "name": "Pancreatic adenocarcinoma", "mappingRelation": "broader"}
       ],
       "omim": ["190070"],
       "diseaseClass": "Solid-tumour driver",
@@ -165,9 +161,9 @@
       "gene": "BRAF",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0005105", "name": "Melanoma"},
-        {"@id": "mondo:0005077", "name": "Colorectal cancer"},
-        {"@id": "mondo:0008753", "name": "Cardiofaciocutaneous syndrome 1"}
+        {"@id": "mondo:0005105", "name": "Melanoma", "mappingRelation": "exact"},
+        {"@id": "mondo:0005575", "name": "Colorectal cancer", "mappingRelation": "exact"},
+        {"@id": "mondo:0007265", "name": "Cardiofaciocutaneous syndrome 1", "mappingRelation": "exact"}
       ],
       "omim": ["164757", "155600", "115150"],
       "diseaseClass": "Solid-tumour driver",
@@ -183,8 +179,8 @@
       "gene": "ERBB2",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0006244", "name": "HER2-positive breast carcinoma"},
-        {"@id": "mondo:0006520", "name": "Gastric adenocarcinoma"}
+        {"@id": "mondo:0006244", "name": "HER2-positive breast carcinoma", "mappingRelation": "exact"},
+        {"@id": "mondo:0005036", "name": "Gastric adenocarcinoma", "mappingRelation": "exact"}
       ],
       "omim": ["164870", "137215"],
       "diseaseClass": "Solid-tumour driver",
@@ -200,7 +196,7 @@
       "gene": "CFTR",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0009061", "name": "Cystic fibrosis"}
+        {"@id": "mondo:0009061", "name": "Cystic fibrosis", "mappingRelation": "exact"}
       ],
       "omim": ["602421", "219700"],
       "diseaseClass": "Single-gene rare disease",
@@ -216,7 +212,7 @@
       "gene": "HTT",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0007739", "name": "Huntington disease"}
+        {"@id": "mondo:0007739", "name": "Huntington disease", "mappingRelation": "exact"}
       ],
       "omim": ["613004", "143100"],
       "diseaseClass": "Single-gene rare disease",
@@ -232,9 +228,8 @@
       "gene": "DMD",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0010679", "name": "Duchenne muscular dystrophy"},
-        {"@id": "mondo:0010311", "name": "Becker muscular dystrophy"},
-        {"@id": "mondo:0010500", "name": "X-linked dilated cardiomyopathy 3B"}
+        {"@id": "mondo:0010679", "name": "Duchenne muscular dystrophy", "mappingRelation": "exact"},
+        {"@id": "mondo:0010311", "name": "Becker muscular dystrophy", "mappingRelation": "exact"}
       ],
       "omim": ["300377", "310200", "300376"],
       "diseaseClass": "Single-gene rare disease",
@@ -250,8 +245,8 @@
       "gene": "HBB",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0011382", "name": "Sickle cell disease"},
-        {"@id": "mondo:0007928", "name": "Beta-thalassemia"}
+        {"@id": "mondo:0011382", "name": "Sickle cell disease", "mappingRelation": "exact"},
+        {"@id": "mondo:0019402", "name": "Beta-thalassemia", "mappingRelation": "exact"}
       ],
       "omim": ["141900", "603903"],
       "diseaseClass": "Single-gene rare disease",
@@ -267,10 +262,10 @@
       "gene": "SMN1",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0011127", "name": "Spinal muscular atrophy type 1"},
-        {"@id": "mondo:0011131", "name": "Spinal muscular atrophy type 2"},
-        {"@id": "mondo:0011132", "name": "Spinal muscular atrophy type 3"},
-        {"@id": "mondo:0011130", "name": "Spinal muscular atrophy type 4"}
+        {"@id": "mondo:0009669", "name": "Spinal muscular atrophy type 1", "mappingRelation": "exact"},
+        {"@id": "mondo:0009673", "name": "Spinal muscular atrophy type 2", "mappingRelation": "exact"},
+        {"@id": "mondo:0009672", "name": "Spinal muscular atrophy type 3", "mappingRelation": "exact"},
+        {"@id": "mondo:0010056", "name": "Spinal muscular atrophy type 4", "mappingRelation": "exact"}
       ],
       "omim": ["600354", "253300", "253550", "253400", "271150"],
       "diseaseClass": "Single-gene rare disease",
@@ -286,10 +281,10 @@
       "gene": "FBN1",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0007947", "name": "Marfan syndrome"},
-        {"@id": "mondo:0011625", "name": "Acromicric dysplasia"},
-        {"@id": "mondo:0009098", "name": "Geleophysic dysplasia 2"},
-        {"@id": "mondo:0008492", "name": "Stiff skin syndrome"}
+        {"@id": "mondo:0007947", "name": "Marfan syndrome", "mappingRelation": "exact"},
+        {"@id": "mondo:0007055", "name": "Acromicric dysplasia", "mappingRelation": "exact"},
+        {"@id": "mondo:0013612", "name": "Geleophysic dysplasia 2", "mappingRelation": "exact"},
+        {"@id": "mondo:0008492", "name": "Stiff skin syndrome", "mappingRelation": "exact"}
       ],
       "omim": ["134797", "154700", "102370"],
       "diseaseClass": "Single-gene rare disease",
@@ -305,7 +300,7 @@
       "gene": "NF1",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0018975", "name": "Neurofibromatosis type 1"}
+        {"@id": "mondo:0018975", "name": "Neurofibromatosis type 1", "mappingRelation": "exact"}
       ],
       "omim": ["613113", "162200"],
       "diseaseClass": "Single-gene rare disease",
@@ -321,8 +316,8 @@
       "gene": "PAH",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0009861", "name": "Phenylketonuria"},
-        {"@id": "mondo:0017739", "name": "Mild hyperphenylalaninemia"}
+        {"@id": "mondo:0009861", "name": "Phenylketonuria", "mappingRelation": "exact"},
+        {"@id": "mondo:0019335", "name": "Mild hyperphenylalaninemia", "mappingRelation": "exact"}
       ],
       "omim": ["612349", "261600", "261630"],
       "diseaseClass": "Metabolic / lysosomal",
@@ -338,10 +333,10 @@
       "gene": "GBA1",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0009207", "name": "Gaucher disease type 1"},
-        {"@id": "mondo:0009208", "name": "Gaucher disease type 2"},
-        {"@id": "mondo:0009209", "name": "Gaucher disease type 3"},
-        {"@id": "mondo:1040030", "name": "GBA1-related Parkinson disease, susceptibility"}
+        {"@id": "mondo:0009265", "name": "Gaucher disease type 1", "mappingRelation": "exact"},
+        {"@id": "mondo:0009266", "name": "Gaucher disease type 2", "mappingRelation": "exact"},
+        {"@id": "mondo:0009267", "name": "Gaucher disease type 3", "mappingRelation": "exact"},
+        {"@id": "mondo:1040030", "name": "GBA1-related Parkinson disease, susceptibility", "mappingRelation": "exact"}
       ],
       "omim": ["606463", "230800", "230900", "231000"],
       "diseaseClass": "Metabolic / lysosomal",
@@ -357,8 +352,8 @@
       "gene": "APP",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0004975", "name": "Alzheimer disease"},
-        {"@id": "mondo:0007088", "name": "Alzheimer disease, familial type 1"}
+        {"@id": "mondo:0004975", "name": "Alzheimer disease", "mappingRelation": "exact"},
+        {"@id": "mondo:0007088", "name": "Alzheimer disease, familial type 1", "mappingRelation": "synonym"}
       ],
       "omim": ["104760", "104300"],
       "diseaseClass": "Neurodegenerative",
@@ -374,9 +369,9 @@
       "gene": "SNCA",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0008200", "name": "autosomal dominant Parkinson disease 1"},
-        {"@id": "mondo:0008245", "name": "Dementia with Lewy bodies"},
-        {"@id": "mondo:0008298", "name": "Multiple system atrophy"}
+        {"@id": "mondo:0008200", "name": "autosomal dominant Parkinson disease 1", "mappingRelation": "exact"},
+        {"@id": "mondo:0007488", "name": "Dementia with Lewy bodies", "mappingRelation": "synonym"},
+        {"@id": "mondo:0007803", "name": "Multiple system atrophy", "mappingRelation": "exact"}
       ],
       "omim": ["163890", "168600", "127750"],
       "diseaseClass": "Neurodegenerative",
@@ -392,9 +387,9 @@
       "gene": "MYH7",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0024533", "name": "Hypertrophic cardiomyopathy 1"},
-        {"@id": "mondo:0013262", "name": "dilated cardiomyopathy 1S"},
-        {"@id": "mondo:0011688", "name": "Laing distal myopathy"}
+        {"@id": "mondo:0008647", "name": "Hypertrophic cardiomyopathy 1", "mappingRelation": "exact"},
+        {"@id": "mondo:0013262", "name": "dilated cardiomyopathy 1S", "mappingRelation": "exact"},
+        {"@id": "mondo:0008050", "name": "Laing distal myopathy", "mappingRelation": "synonym"}
       ],
       "omim": ["160760", "192600", "613426", "160500"],
       "diseaseClass": "Cardiovascular / laminopathy",
@@ -410,11 +405,8 @@
       "gene": "LMNA",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0007269", "name": "dilated cardiomyopathy 1A"},
-        {"@id": "mondo:0008977", "name": "Emery-Dreifuss muscular dystrophy 2"},
-        {"@id": "mondo:0008034", "name": "Hutchinson-Gilford progeria syndrome"},
-        {"@id": "mondo:0011055", "name": "Familial partial lipodystrophy 2"},
-        {"@id": "mondo:0009872", "name": "Charcot-Marie-Tooth 2B1"}
+        {"@id": "mondo:0007269", "name": "dilated cardiomyopathy 1A", "mappingRelation": "exact"},
+        {"@id": "mondo:0008310", "name": "Hutchinson-Gilford progeria syndrome", "mappingRelation": "exact"}
       ],
       "omim": ["150330", "115200", "181350", "176670", "151660"],
       "diseaseClass": "Cardiovascular / laminopathy",
@@ -430,7 +422,7 @@
       "gene": "CYP2D6",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0000001", "name": "Pharmacogenomic phenotype (not a disease)"}
+        {"@id": "mondo:0000001", "name": "Pharmacogenomic phenotype (not a disease)", "mappingRelation": "sentinel"}
       ],
       "omim": ["124030", "608902"],
       "diseaseClass": "Pharmacogenomic",
@@ -446,7 +438,6 @@
       "gene": "VKORC1",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0009842", "name": "Vitamin K-dependent clotting factor deficiency"}
       ],
       "omim": ["608547", "122700"],
       "diseaseClass": "Pharmacogenomic",
@@ -462,8 +453,8 @@
       "gene": "G6PD",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
       "diseases": [
-        {"@id": "mondo:0010222", "name": "G6PD deficiency"},
-        {"@id": "mondo:0019146", "name": "Favism"}
+        {"@id": "mondo:0005775", "name": "G6PD deficiency", "mappingRelation": "exact"},
+        {"@id": "mondo:0001761", "name": "Favism", "mappingRelation": "exact"}
       ],
       "omim": ["305900", "300908"],
       "diseaseClass": "Pharmacogenomic",

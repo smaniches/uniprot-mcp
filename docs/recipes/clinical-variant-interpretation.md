@@ -27,12 +27,13 @@ TrEMBL fragment.
 
 Tool call: `uniprot_features_at_position("P04637", 175)`.
 
-Typical output: the residue lies inside the **DNA-binding domain
-(102-292)**, is itself a known **Modified residue** (phosphoserine in
-some isoforms), and has multiple **Natural variant** annotations
-including R175H. The structural context alone — DNA-binding-domain,
-post-translationally modified — is a strong signal that any
-substitution is functionally important.
+Output (UniProt release 2026_03, captured 2026-10-15): the residue lies
+inside the annotated **DNA-binding** region (102-292) and a short helix
+(174-176), within several protein-interaction regions, and carries
+seven **Natural variant** annotations (R→C, G, H, L, P, Q, S), including
+R175H. No **Modified residue** feature is annotated at 175. Location in
+an annotated functional region is context, not by itself evidence that a
+particular substitution is damaging.
 
 ## Step 3 — is R175H specifically annotated by UniProt?
 
@@ -42,16 +43,17 @@ substitution is functionally important.
 
 Tool call: `uniprot_lookup_variant("P04637", "R175H")`.
 
-Output (paraphrased):
+Output (verbatim, release 2026_03):
 
-> **R175H** — In a sporadic cancer; loss of DNA binding; one of the
-> most frequent p53 mutations in human cancers. Evidence: ECO:0000269.
+> **R175H** — in LFS; germline mutation and in sporadic cancers; somatic
+> mutation; does not induce SNAI1 degradation; reduces interaction with
+> ZNF385A; dbSNP:rs28934578. Evidence: ECO:0000269.
 
-The `ECO:0000269` evidence code marks this as **experimental evidence
-used in manual assertion** — wet-lab confirmed, not inferred by
-similarity. (Distinction matters: roughly half of UniProt features
-carry only sequence-similarity evidence and should be treated as
-hypotheses, not facts.)
+`ECO:0000269` is **experimental evidence used in manual assertion**: a
+curator attributed the statement to published experimental work (here,
+seven PubMed references on the feature). It is distinct from codes for
+evidence inferred by sequence similarity, but the code alone does not say
+which experiment supports which clause of the annotation.
 
 ## Step 4 — what does ClinVar say at the population level?
 
@@ -59,14 +61,16 @@ hypotheses, not facts.)
 > Look up ClinVar records for this variant.
 ```
 
-Tool call: `uniprot_resolve_clinvar("P04637", change="R175H", size=10)`.
+Tool call: `uniprot_resolve_clinvar("P04637", change="R175H", size=5)`.
 
-Output: typically ten or more ClinVar submissions, with classifications
-like *Pathogenic*, *Likely pathogenic*, and review status ranging
-from *criteria provided, single submitter* up to *reviewed by expert
-panel*. The molecular consequence is **missense variant**; the
-trait set centres on **Li-Fraumeni syndrome** and several specific
-cancers.
+Output (captured 2026-10-15): the gene-plus-variant-name query matches
+**one ClinVar variation record**, `VCV000012374`,
+NM_000546.6(TP53):c.524G>A (p.Arg175His), with germline classification
+*Pathogenic* and review status *reviewed by expert panel*; molecular
+consequence **missense variant**. A variation record aggregates the
+individual submissions; the tool reports records, not submission counts.
+The classification shown is ClinVar's germline classification, which is
+not the same question as somatic (tumor) actionability.
 
 A clinician now has both:
 
@@ -81,15 +85,16 @@ A clinician now has both:
 
 Tool call: `uniprot_get_alphafold_confidence("P04637")`.
 
-Output: global mean pLDDT plus the four-band distribution. For TP53
-the DNA-binding core has high pLDDT (`very high` band, > 90 — the
-model is publication-grade), while the N- and C-terminal regions are
-disordered (`very low` band, < 50 — structural inference unsafe).
+Output (AlphaFold DB, captured 2026-10-15): model `AF-P04637-F1`, model
+version v6 (created 2025-08-01), global mean pLDDT 75.1, with 52.7% of
+residues in the `very high` band (≥ 90), 7.1% `confident`, 10.4% `low`
+and 29.8% `very low` (< 50).
 
-Position 175 sits inside the well-modelled core, so any structural
-reasoning ("R175 forms a specific contact with the DNA backbone") is
-on solid ground. If the variant had been in a `very low` region, that
-caveat would dominate the interpretation.
+This is a **model-level** summary. It does not report the confidence at
+residue 175, so it cannot by itself establish that structural reasoning
+at that residue is reliable; residue-level pLDDT is in the model file
+(e.g. the CIF B-factor column), which this tool does not fetch. pLDDT is
+model confidence, not experimental validation.
 
 ## Step 6 — disease associations recorded on the entry
 
@@ -111,18 +116,26 @@ Every tool response above carries a footer like:
 
 ```
 ---
-_Source: UniProt release 2026_01 (28-January-2026) • Retrieved 2026-04-25T12:00:00Z_
+_Source: UniProt release 2026_03 (02-September-2026) • Retrieved 2026-10-15T10:32:43Z_
 _Query: https://rest.uniprot.org/uniprotkb/P04637_
-_SHA-256: 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e_
+_SHA-256: 112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf_
+_Accept: application/json_
 ```
 
-Six months later, the clinician (or a regulator) can call:
+The footer names the provider that served each response: ClinVar
+responses show `NCBI ClinVar (eutils)` and AlphaFold DB responses show
+`AlphaFoldDB model v6 (created …)`. This footer is from the 2026-10-15
+capture in
+[`examples/captures/2026-10-15_tp53_r175h/`](https://github.com/smaniches/uniprot-mcp/tree/main/examples/captures/2026-10-15_tp53_r175h),
+which stores the upstream response bytes so the digest can be recomputed.
+
+Later, the clinician (or a reviewer) can call:
 
 ```text
 > Verify this provenance from a previous report.
 > URL: https://rest.uniprot.org/uniprotkb/P04637
-> Release: 2026_01
-> SHA-256: 0040d79b…345e
+> Release: 2026_03
+> SHA-256: 112540dc…7fcf
 ```
 
 Tool call: `uniprot_provenance_verify(url, release, response_sha256)`.
@@ -140,8 +153,8 @@ it's `hash_drift`, the entry has been edited within the same release
   structural confidence, disease associations, and a
   cryptographically-verifiable audit trail.
 - **Evidence-aware**: the ECO code distinguishes experimental from
-  inferred annotations; the AlphaFold pLDDT distinguishes
-  trustworthy from disordered regions.
+  inferred annotations; the AlphaFold summary reports model-level
+  confidence and states that it is not per-residue confidence.
 - **Reproducible**: every datum carries a SHA-256 footer; six months
   later the same clinician (or a different one) can verify the
   evidence base hasn't drifted.
@@ -154,10 +167,9 @@ it's `hash_drift`, the entry has been edited within the same release
 - We don't dive into population frequency. gnomAD is the right
   source for that and is out of scope for `uniprot-mcp`.
 - We don't model the structural impact of R175H specifically. That
-  needs MD or specialised tools (FoldX, PROVEAN, etc.). The pLDDT
-  band tells you the *model* is reliable enough that downstream
-  structural reasoning is meaningful; it does not tell you the
-  variant's effect itself.
+  needs MD or specialised tools (FoldX, PROVEAN, etc.). The global
+  pLDDT summary describes the model as a whole; it neither establishes
+  confidence at a specific residue nor the variant's effect.
 
 The agent's job is to assemble defensible evidence. The clinician's
 job is to weigh it.

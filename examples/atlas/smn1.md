@@ -2,7 +2,7 @@
 
 **UniProt:** [Q16637](https://www.uniprot.org/uniprotkb/Q16637).
 **Gene:** SMN1 · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0011127 (spinal muscular atrophy type 1, Werdnig-Hoffmann), MONDO:0011131 (SMA type 2), MONDO:0011132 (SMA type 3, Kugelberg-Welander), MONDO:0011130 (SMA type 4, adult-onset).
+**Disease (MONDO):** MONDO:0009669 (spinal muscular atrophy type 1, Werdnig-Hoffmann), MONDO:0009673 (SMA type 2), MONDO:0009672 (SMA type 3, Kugelberg-Welander), MONDO:0010056 (SMA type 4, adult-onset).
 **OMIM:** 600354 (gene), 253300 (SMA1), 253550 (SMA2), 253400 (SMA3), 271150 (SMA4).
 **Disease class:** rare-disease motor-neuron disorder; one of the most-cited gene-therapy success stories.
 
@@ -35,7 +35,7 @@ PDB has Tudor-domain structures; AlphaFold model `AF-Q16637-F1`; ChEMBL has risd
 
 ## Adjacent ontologies
 
-MONDO:0011127–MONDO:0011132 (SMA1–4); HPO:HP:0003323 (proximal muscle weakness), HP:0008936 (axial muscle weakness), HP:0001324 (muscle weakness); Orphanet:ORPHA:83330 (SMA).
+MONDO:0009669, MONDO:0009673, MONDO:0009672, MONDO:0010056 (SMA1–4); HPO:HP:0003323 (proximal muscle weakness), HP:0008936 (axial muscle weakness), HP:0001324 (muscle weakness); Orphanet:ORPHA:83330 (SMA).
 
 ## Why SMN1
 

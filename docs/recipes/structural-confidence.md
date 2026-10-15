@@ -16,7 +16,7 @@ parsing the structure file.
 
 Tool call: `uniprot_get_alphafold_confidence("P04637")`.
 
-Output (illustrative):
+Output (captured 2026-10-15 from AlphaFold DB; excerpt, verbatim):
 
 ```
 ## AlphaFold confidence — AF-P04637-F1: Homo sapiens
@@ -24,14 +24,17 @@ Output (illustrative):
 **Gene:** TP53
 **Residues modelled:** 1-393
 **Model version:** v6
-**Global pLDDT (mean):** 76.4  (confident)
+**Global pLDDT (mean):** 75.1  (confident)
 
 **pLDDT band distribution:**
-- Very high (≥ 90):  32.0%
-- Confident (70-90): 40.0%
-- Low (50-70):       20.0%
-- Very low (< 50):    8.0%
+- Very high (≥ 90):  52.7%
+- Confident (70-90):   7.1%
+- Low (50-70):  10.4%
+- Very low (< 50):  29.8%
 ```
+
+The full response, footer and source bytes are in
+[`examples/captures/2026-10-15_tp53_r175h/`](https://github.com/smaniches/uniprot-mcp/tree/main/examples/captures/2026-10-15_tp53_r175h).
 
 ## What the bands mean
 
@@ -49,10 +52,10 @@ Source: [AlphaFold-DB FAQ](https://alphafold.ebi.ac.uk/faq).
 A protein is rarely uniform. The four-band distribution is more
 useful than the global mean:
 
-- **TP53 (above)**: 72 % confident-or-better. The DNA-binding core
-  is `very high`; the N- and C-terminal regulatory regions sit in
-  the `low` and `very low` bands. → Structural reasoning about the
-  core is sound; reasoning about the tails is not.
+- **TP53 (above)**: 59.8 % confident-or-better and 29.8 % `very low`.
+  The summary does not say *which* residues fall in each band; to judge
+  a specific region (e.g. the DNA-binding domain versus the termini),
+  read per-residue pLDDT from the model file before relying on it.
 
 - **An intrinsically disordered protein** (e.g. some transcription
   factors, prion proteins): may show 60-90 % `very low`. → The

@@ -2,7 +2,7 @@
 
 **UniProt:** [Q9BQB6](https://www.uniprot.org/uniprotkb/Q9BQB6).
 **Gene:** VKORC1 · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** *not a disease gene per se*; pharmacogenomic locus + warfarin sensitivity / resistance phenotypes; rare MONDO:0009842 (vitamin K-dependent clotting factor deficiency).
+**Disease (MONDO):** *not a disease gene per se*; pharmacogenomic locus + warfarin sensitivity / resistance phenotypes; rare vitamin K-dependent clotting factor deficiency — MONDO ID unresolved (previously cited MONDO:0009842, which names a different disease).
 **OMIM:** 608547 (gene), 122700 (warfarin resistance).
 **Disease class:** warfarin pharmacogenomic determinant; the canonical PGx case studied jointly with CYP2C9.
 

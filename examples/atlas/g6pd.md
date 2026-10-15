@@ -2,7 +2,7 @@
 
 **UniProt:** [P11413](https://www.uniprot.org/uniprotkb/P11413).
 **Gene:** G6PD · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0010222 (G6PD deficiency); also linked to MONDO:0019146 (favism).
+**Disease (MONDO):** MONDO:0005775 (G6PD deficiency); also linked to MONDO:0001761 (favism).
 **OMIM:** 305900 (gene), 300908 (deficiency).
 **Disease class:** X-linked enzymopathy; pharmacogenomic precaution flag (oxidative-drug avoidance).
 
@@ -33,7 +33,7 @@ PDB: many tetramer structures with substrate/cofactor; AlphaFold `AF-P11413-F1`;
 
 ## Adjacent ontologies
 
-MONDO:0010222 (G6PD deficiency); HPO:HP:0001923 (anemic crisis), HP:0001878 (hemolytic anemia); Orphanet:ORPHA:362; PharmGKB.
+MONDO:0005775 (G6PD deficiency); HPO:HP:0001923 (anemic crisis), HP:0001878 (hemolytic anemia); Orphanet:ORPHA:362; PharmGKB.
 
 ## Why G6PD
 

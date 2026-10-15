@@ -1,0 +1,59 @@
+[
+  {
+    "tool": "uniprot_search",
+    "arguments": {
+      "query": "gene_exact:TP53 AND organism_id:9606 AND reviewed:true",
+      "size": 1
+    },
+    "output": "**1 results**\n\n**1. [P04637]** Cellular tumor antigen p53 (TP53)\n   Homo sapiens | 393 aa | SP\n\n\n---\n_Source: UniProt release 2026_03 (02-September-2026) • Retrieved 2026-10-15T10:32:43Z_\n_Query: https://rest.uniprot.org/uniprotkb/search?query=gene_exact%3ATP53+AND+organism_id%3A9606+AND+reviewed%3Atrue&size=1_\n_SHA-256: e530061373cf90ae8804b1ae73197fc991d73a021fe55118de12ec3c01ebe724_\n_Accept: application/json_",
+    "upstream_records": [
+      0
+    ]
+  },
+  {
+    "tool": "uniprot_features_at_position",
+    "arguments": {
+      "accession": "P04637",
+      "position": 175
+    },
+    "output": "## Features at residue 175 of P04637 (15 feature(s))\n\n- **Chain** [1-393]: Cellular tumor antigen p53\n- **DNA binding** [102-292]\n- **Region** [1-320]: Interaction with CCAR2\n- **Region** [100-370]: Interaction with HIPK1\n- **Region** [100-300]: Required for interaction with ZNF385A\n- **Region** [113-236]: Required for interaction with FBXO42\n- **Region** [116-292]: Interaction with AXIN1\n- **Natural variant** [175]: in sporadic cancers; somatic mutation; dbSNP:rs138729528\n  Variant: R → C\n- **Natural variant** [175]: in LFS; germline mutation and in sporadic cancers; somatic mutation; dbSNP:rs138729528\n  Variant: R → G\n- **Natural variant** [175]: in LFS; germline mutation and in sporadic cancers; somatic mutation; does not induce SNAI1 degradation; reduces interaction with ZNF385A; dbSNP:rs28934578\n  Variant: R → H\n- **Natural variant** [175]: in LFS; germline mutation and in sporadic cancers; somatic mutation; dbSNP:rs28934578\n  Variant: R → L\n- **Natural variant** [175]: in sporadic cancers; somatic mutation\n  Variant: R → P\n- **Natural variant** [175]: in a sporadic cancer; somatic mutation\n  Variant: R → Q\n- **Natural variant** [175]: in sporadic cancers; somatic mutation\n  Variant: R → S\n- **Helix** [174-176]\n\n---\n_Source: UniProt release 2026_03 (02-September-2026) • Retrieved 2026-10-15T10:32:43Z_\n_Query: https://rest.uniprot.org/uniprotkb/P04637_\n_SHA-256: 112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf_\n_Accept: application/json_",
+    "upstream_records": [
+      1
+    ]
+  },
+  {
+    "tool": "uniprot_lookup_variant",
+    "arguments": {
+      "accession": "P04637",
+      "change": "R175H"
+    },
+    "output": "## Variant lookup: P04637 R175H (1 match(es))\n\n### R175H\nin LFS; germline mutation and in sporadic cancers; somatic mutation; does not induce SNAI1 degradation; reduces interaction with ZNF385A; dbSNP:rs28934578\n**Evidence:** ECO:0000269\n\n\n---\n_Source: UniProt release 2026_03 (02-September-2026) • Retrieved 2026-10-15T10:32:43Z_\n_Query: https://rest.uniprot.org/uniprotkb/P04637_\n_SHA-256: 112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf_\n_Accept: application/json_",
+    "upstream_records": [
+      2
+    ]
+  },
+  {
+    "tool": "uniprot_resolve_clinvar",
+    "arguments": {
+      "accession": "P04637",
+      "change": "R175H",
+      "size": 5
+    },
+    "output": "## ClinVar records for P04637 (gene TP53, change `R175H`)\n\n**Showing 1 of 1 matching records**\n\n### NM_000546.6(TP53):c.524G>A (p.Arg175His)\n**ClinVar accession:** VCV000012374\n**Classification:** Pathogenic  (reviewed by expert panel)\n**Molecular consequence(s):** missense variant\n**Protein change(s):** R175H, R136H, R43H, R16H\n\n\n---\n_Source: NCBI ClinVar (eutils) • Retrieved 2026-10-15T10:32:44Z_\n_Query: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&id=12374&retmode=json_\n_SHA-256: d871175f6903bc1844926639e16e13cc7588fa9a140d04f5366d0ceda23de34a_\n_Accept: application/json_",
+    "upstream_records": [
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "tool": "uniprot_get_alphafold_confidence",
+    "arguments": {
+      "accession": "P04637"
+    },
+    "output": "## AlphaFold confidence — AF-P04637-F1: Homo sapiens\n\n**Gene:** TP53\n**Residues modelled:** 1-393\n**Model version:** v6\n**Global pLDDT (mean):** 75.1  (confident)\n\n**pLDDT band distribution:**\n- Very high (≥ 90):  52.7%\n- Confident (70-90):   7.1%\n- Low (50-70):  10.4%\n- Very low (< 50):  29.8%\n\n**CIF:** https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif\n**PDB:** https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.pdb\n**PAE image:** https://alphafold.ebi.ac.uk/files/AF-P04637-F1-predicted_aligned_error_v6.png\n_Mean pLDDT summarizes local model confidence, not per-residue confidence or experimental validation._\n\n---\n_Source: AlphaFoldDB model v6 (created 2025-08-01T00:00:00Z) • Retrieved 2026-10-15T10:32:45Z_\n_Query: https://alphafold.ebi.ac.uk/api/prediction/P04637_\n_SHA-256: a87643758dc6c1a0ed23ab6bcb012588b0402a14773a5c2fca6d981a21308555_\n_Accept: application/json_",
+    "upstream_records": [
+      6
+    ]
+  }
+]

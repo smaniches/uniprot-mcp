@@ -176,14 +176,24 @@ def _provenance_md_footer(provenance: Provenance) -> list[str]:
     retrieved_at = provenance["retrieved_at"]
     url = provenance["url"]
     response_sha256 = provenance.get("response_sha256", "")
+    # Name the provider the record itself carries (ClinVar and AlphaFold DB
+    # responses are not UniProt). A record without a source is a legacy
+    # UniProt record, so keep the UniProt default for it.
+    source = provenance.get("source") or SOURCE_NAME
+    # AlphaFold DB provenance carries the *model* version and the model's
+    # creation date, not a database release; label them as such.
+    if source == "AlphaFoldDB":
+        release_label, date_prefix = "model", "created "
+    else:
+        release_label, date_prefix = "release", ""
 
     release_text: str
     if release and release_date:
-        release_text = f"{SOURCE_NAME} release {release} ({release_date})"
+        release_text = f"{source} {release_label} {release} ({date_prefix}{release_date})"
     elif release:
-        release_text = f"{SOURCE_NAME} release {release}"
+        release_text = f"{source} {release_label} {release}"
     else:
-        release_text = SOURCE_NAME
+        release_text = source
 
     accept_header = provenance.get("accept_header", "application/json")
 

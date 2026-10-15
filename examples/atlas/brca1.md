@@ -4,7 +4,7 @@
 **Gene symbol:** BRCA1
 **Protein:** Breast cancer type 1 susceptibility protein
 **Organism:** *Homo sapiens* (taxonomy ID 9606)
-**Disease (MONDO):** [MONDO:0011535 — hereditary breast-ovarian cancer syndrome 1 (HBOC1)](https://monarchinitiative.org/disease/MONDO:0011535); see also MONDO:0011686 (Fanconi anemia complementation group S).
+**Disease (MONDO):** hereditary breast-ovarian cancer syndrome 1 (HBOC1) — MONDO ID unresolved (previously cited MONDO:0011535, which names a different disease); see also Fanconi anemia complementation group S — MONDO ID unresolved (previously cited MONDO:0011686, which names a different disease).
 **OMIM:** [113705 (BRCA1 gene)](https://omim.org/entry/113705), 604370 (HBOC1).
 **Disease class:** hereditary cancer syndrome.
 
@@ -68,7 +68,7 @@ capture.
 
 | Ontology | Identifier |
 |---|---|
-| MONDO | MONDO:0011535 (HBOC1), MONDO:0011686 (FANCS) |
+| MONDO | HBOC1 and FANCS: unresolved (see atlas.json `mappingRelation`) |
 | HPO | HP:0003002 (breast carcinoma), HP:0100615 (ovarian neoplasm), many more |
 | EFO | EFO_0003869 (breast carcinoma) |
 

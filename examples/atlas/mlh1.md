@@ -2,7 +2,7 @@
 
 **UniProt:** [P40692](https://www.uniprot.org/uniprotkb/P40692).
 **Gene:** MLH1 · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0007648 (Lynch syndrome 2), MONDO:0009116 (Muir-Torre syndrome), MONDO:0007637 (mismatch repair cancer syndrome 1, biallelic).
+**Disease (MONDO):** MONDO:0012249 (Lynch syndrome 2), MONDO:0008018 (Muir-Torre syndrome), MONDO:0010159 (mismatch repair cancer syndrome 1, biallelic).
 **OMIM:** 120436 (gene), 609310 (Lynch syndrome 2), 158320 (Muir-Torre).
 **Disease class:** mismatch-repair (MMR) hereditary cancer; Lynch syndrome canonical.
 
@@ -35,7 +35,7 @@ For a Lynch-syndrome family with a MLH1 frameshift, what's the protein-domain co
 
 ## Adjacent ontologies
 
-MONDO:0007648 (Lynch 2), MONDO:0009116 (Muir-Torre), MONDO:0007637 (MMRCS1, CMMRD); HPO:HP:0006716 (hereditary nonpolyposis colorectal cancer), HP:0003003 (colon cancer); Orphanet:ORPHA:144 (Lynch).
+MONDO:0012249 (Lynch 2), MONDO:0008018 (Muir-Torre), MONDO:0010159 (MMRCS1, CMMRD); HPO:HP:0006716 (hereditary nonpolyposis colorectal cancer), HP:0003003 (colon cancer); Orphanet:ORPHA:144 (Lynch).
 
 ## Why MLH1
 

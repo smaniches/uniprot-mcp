@@ -2,7 +2,7 @@
 
 **UniProt:** [P01116](https://www.uniprot.org/uniprotkb/P01116) — KRas isoform 4B canonical.
 **Gene:** KRAS · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0005233 (NSCLC), MONDO:0005077 (colorectal cancer), MONDO:0005192 (pancreatic adenocarcinoma).
+**Disease (MONDO):** MONDO:0005233 (NSCLC), MONDO:0005575 (colorectal cancer), MONDO:0005192 (exocrine pancreatic carcinoma — broader parent of pancreatic adenocarcinoma, MONDO:0006047).
 **OMIM:** 190070 (gene), 211980 (NSCLC), 114500 (CRC), 260350 (PDAC).
 **Disease class:** somatic-driver oncogene (small GTPase).
 
@@ -35,7 +35,7 @@ KRAS was "undruggable" until covalent G12C inhibitors (sotorasib/AMG-510, adagra
 
 ## Adjacent ontologies
 
-MONDO:0005233 (NSCLC), MONDO:0005077 (CRC), MONDO:0005192 (PDAC); EFO:0003060 (NSCLC); HPO:HP:0100526 (lung neoplasm).
+MONDO:0005233 (NSCLC), MONDO:0005575 (CRC), MONDO:0005192 (exocrine pancreatic carcinoma; broader than PDAC); EFO:0003060 (NSCLC); HPO:HP:0100526 (lung neoplasm).
 
 ## Why KRAS
 

@@ -4,7 +4,7 @@
 **Gene symbol:** PAH
 **Protein:** Phenylalanine-4-hydroxylase
 **Organism:** *Homo sapiens* (taxonomy ID 9606)
-**Disease (MONDO):** [MONDO:0009861 — phenylketonuria](https://monarchinitiative.org/disease/MONDO:0009861); see also MONDO:0017739 (mild hyperphenylalaninemia).
+**Disease (MONDO):** [MONDO:0009861 — phenylketonuria](https://monarchinitiative.org/disease/MONDO:0009861); see also MONDO:0019335 (mild hyperphenylalaninemia).
 **OMIM:** [612349 (PAH gene)](https://omim.org/entry/612349), 261600 (PKU), 261630 (HPABH4A).
 **Disease class:** rare-disease metabolic enzyme deficiency; aromatic-amino-acid hydroxylase family.
 
@@ -67,7 +67,7 @@ Standard envelope on every response.
 
 | Ontology | Identifier |
 |---|---|
-| MONDO | MONDO:0009861 (PKU), MONDO:0017739 (mild HPA) |
+| MONDO | MONDO:0009861 (PKU), MONDO:0019335 (mild HPA) |
 | HPO | HP:0002148 (hyperphenylalaninemia), HP:0001249 (intellectual disability), HP:0000718 (aggressive behavior), HP:0002375 (hypotonia) |
 | Orphanet | ORPHA:716 (PKU) |
 

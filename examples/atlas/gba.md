@@ -2,7 +2,7 @@
 
 **UniProt:** [P04062](https://www.uniprot.org/uniprotkb/P04062).
 **Gene:** GBA1 · **Organism:** *Homo sapiens* (9606).
-**Disease (MONDO):** MONDO:0009207 (Gaucher disease type 1, non-neuronopathic), MONDO:0009208 (type 2, acute neuronopathic), MONDO:0009209 (type 3, chronic neuronopathic); also MONDO:0008199 risk modifier (Parkinson disease 1).
+**Disease (MONDO):** MONDO:0009265 (Gaucher disease type 1, non-neuronopathic), MONDO:0009266 (type 2, acute neuronopathic), MONDO:0009267 (type 3, chronic neuronopathic); also MONDO:1040030 risk modifier (GBA1-related Parkinson disease, susceptibility).
 **OMIM:** 606463 (gene), 230800 (GD1), 230900 (GD2), 231000 (GD3).
 **Disease class:** lysosomal storage disorder + Parkinson-disease genetic risk factor.
 
@@ -37,7 +37,7 @@ PDB has many co-crystal structures; AlphaFold `AF-P04062-F1`; ChEMBL has imigluc
 
 ## Adjacent ontologies
 
-MONDO:0009207–0009209 (GD1–3), MONDO:0008199 (PD1); HPO:HP:0001744 (splenomegaly), HP:0001433 (hepatomegaly), HP:0001939 (osseous lesion); Orphanet:ORPHA:355.
+MONDO:0009265, MONDO:0009266, MONDO:0009267 (GD1–3), MONDO:1040030 (GBA1-PD susceptibility); HPO:HP:0001744 (splenomegaly), HP:0001433 (hepatomegaly), HP:0001939 (osseous lesion); Orphanet:ORPHA:355.
 
 ## Why GBA
 
