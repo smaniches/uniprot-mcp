@@ -152,8 +152,8 @@ def test_every_organism_has_taxon_id(manifest: dict) -> None:
 
 def test_disease_ids_are_well_formed(manifest: dict) -> None:
     """Each disease's @id must match either MONDO or DOID format.
-    Pharmacogenomic entries may use a synthetic placeholder under
-    mondo:0000001 (we treat that as a valid sentinel)."""
+    The MONDO root disease class must never be used as a placeholder
+    for a pharmacogenomic phenotype or an unverified disease mapping."""
     for entry in manifest["entries"]:
         for disease in entry.get("diseases", []):
             did = disease.get("@id", "")
@@ -285,3 +285,14 @@ def test_every_uniprot_accession_resolves_live(manifest: dict) -> None:
     finally:
         client.close()
     assert not failures, "Atlas accessions failing live verification:\n  " + "\n  ".join(failures)
+
+
+def test_pharmacogenomic_atlas_never_uses_generic_mondo_disease_root(manifest: dict) -> None:
+    """A legitimate PGx phenotype is not an association with generic disease."""
+    for entry in manifest["entries"]:
+        for disease in entry.get("diseases", []):
+            assert disease["@id"] != "mondo:0000001"
+            assert disease.get("mappingRelation") != "sentinel"
+    cyp2d6 = next(entry for entry in manifest["entries"] if entry["gene"] == "CYP2D6")
+    assert cyp2d6["diseases"] == []
+    assert cyp2d6["diseaseClass"] == "Pharmacogenomic"
