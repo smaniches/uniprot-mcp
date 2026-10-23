@@ -205,6 +205,7 @@ def test_empty_histogram_is_safe() -> None:
 def test_weights_are_echoed_for_transparency() -> None:
     conf = score_evidence({"ECO:0000269": 1})
     assert conf["weights"] == dict(CLASS_WEIGHTS)
+    assert conf["calibrated"] is False
 
 
 def test_fractions_are_rounded_to_three_places() -> None:
@@ -220,7 +221,7 @@ def test_fractions_are_rounded_to_three_places() -> None:
 
 def test_markdown_headline_and_graded_rows() -> None:
     lines = confidence_markdown_lines(score_evidence({"ECO:0000269": 2, "ECO:0000250": 2}))
-    assert lines[0] == "**Evidence confidence:** 75.0 / 100 (high)"
+    assert lines[0] == "**ECO evidence-mix index (uncalibrated):** 75.0 / 100 (high mix)"
     assert "- Experimental (wet-lab): 2 (50.0%)" in lines
     assert "- Manual (curator-reviewed): 2 (50.0%)" in lines
     assert "- Automatic (pipeline-inferred): 0 (0.0%)" in lines
@@ -235,5 +236,5 @@ def test_markdown_shows_other_row_when_present() -> None:
 
 def test_markdown_unscored_uses_na_headline() -> None:
     lines = confidence_markdown_lines(score_evidence({"ECO:9999999": 3}))
-    assert lines[0] == "**Evidence confidence:** n/a — only unclassified ECO codes present"
+    assert lines[0] == "**ECO evidence-mix index (uncalibrated):** n/a — no classified codes"
     assert "- Other (unclassified): 3 (100.0%)" in lines

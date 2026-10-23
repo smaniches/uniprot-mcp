@@ -296,7 +296,7 @@ The only tools that consult origins outside `rest.uniprot.org`. Each is document
 | Tool | Purpose |
 |---|---|
 | `uniprot_resolve_orthology` | Group orthology cross-references by source DB (KEGG / OMA / OrthoDB / eggNOG / 8 more). |
-| `uniprot_get_evidence_summary` | Aggregate ECO codes (Evidence and Conclusion Ontology) across an entry and grade them into a 0-100 evidence-confidence score (high / moderate / low / very-low). Distinguishes wet-lab confirmed from inferred-by-similarity from automatic. |
+| `uniprot_get_evidence_summary` | Summarize UniProt ECO annotation evidence and assertion methods, with a weighted 0-100 descriptive mix index. The index is uncalibrated, not a probability of annotation correctness and not comparable to AlphaFold pLDDT. |
 | `uniprot_target_dossier` | One-call comprehensive characterisation: nine sections — identity / function / chemistry / structure / drug-target / disease / variants / functional annotations / cross-refs. |
 | `uniprot_provenance_verify` | Re-fetch a previously recorded URL and compare release tag + canonical response SHA-256. Five verdicts (`verified`, `release_drift`, `hash_drift`, `release_and_hash_drift`, `url_unreachable`) each with an advice string. |
 | `uniprot_replay_from_cache` | Read a cached UniProt response without hitting the upstream. Opt-in via `UNIPROT_MCP_CACHE_DIR`. |
