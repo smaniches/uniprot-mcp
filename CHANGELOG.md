@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.14](https://github.com/smaniches/uniprot-mcp/compare/v1.3.13...v1.3.14) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ci:** update audited virtualenv dev lock to 21.14.10 ([#221](https://github.com/smaniches/uniprot-mcp/issues/221)) ([4ab6d3d](https://github.com/smaniches/uniprot-mcp/commit/4ab6d3d36b8e13a2ee4093f0791b4950982dd4d3))
+
 ## [1.3.13](https://github.com/smaniches/uniprot-mcp/compare/v1.3.12...v1.3.13) (2026-10-23)
 
 
