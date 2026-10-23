@@ -28,7 +28,7 @@ _SHA_LINE = re.compile(r"^_SHA-256: ([0-9a-f]{64})_$", re.MULTILINE)
 _QUERY_LINE = re.compile(r"^_Query: (\S+)_$", re.MULTILINE)
 
 # The sdist ships only README files from examples/, not the capture data
-# (same situation as the atlas contract tests); run wherever the data exists.
+# (the repository contains the recorded capture, but wheels omit it); run where present.
 pytestmark = pytest.mark.skipif(
     not (CAPTURE / "capture_manifest.json").exists(), reason="capture data not present"
 )
