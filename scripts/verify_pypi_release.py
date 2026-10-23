@@ -30,14 +30,17 @@ def _download(url: str, limit: int) -> bytes:
     return data
 
 
+def _normalize(name: object) -> str:
+    return re.sub(r"[-_.]+", "-", str(name)).lower()
+
+
 def verify_metadata(data: dict[str, Any], package: str, version: str) -> list[dict[str, Any]]:
     """Fail closed on wrong identity, missing formats, yanks, or bad digests."""
     info = data.get("info", {})
-    normalize = lambda name: re.sub(r"[-_.]+", "-", str(name)).lower()  # noqa: E731
-    if normalize(info.get("name", "")) != normalize(package) or info.get("version") != version:
+    if _normalize(info.get("name", "")) != _normalize(package) or info.get("version") != version:
         raise VerificationError("PyPI package/version does not match the requested release")
     files = data.get("urls", [])
-    if not files or {item.get("packagetype") for item in files} < {"bdist_wheel", "sdist"}:
+    if not {"bdist_wheel", "sdist"}.issubset({item.get("packagetype") for item in files}):
         raise VerificationError("release must contain both a wheel and an sdist")
     for item in files:
         if item.get("yanked"):
