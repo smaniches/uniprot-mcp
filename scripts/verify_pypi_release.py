@@ -22,7 +22,10 @@ def _download(url: str, limit: int) -> bytes:
     parsed = urlsplit(url)
     if parsed.scheme != "https" or parsed.hostname not in {"pypi.org", "files.pythonhosted.org"}:
         raise VerificationError("release URL is not on an allowed HTTPS origin")
-    request = urllib.request.Request(url, headers={"User-Agent": "uniprot-release-verifier"})
+    # The preceding check rejects non-HTTPS schemes and unapproved origins.
+    request = urllib.request.Request(  # noqa: S310
+        url, headers={"User-Agent": "uniprot-release-verifier"}
+    )
     with urllib.request.urlopen(request, timeout=45) as response:  # noqa: S310
         data = response.read(limit + 1)
     if len(data) > limit:
