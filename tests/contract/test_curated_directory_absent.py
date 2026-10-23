@@ -15,5 +15,5 @@ def test_retired_curated_directory_is_absent() -> None:
 
 def test_live_mcp_implementation_independent_of_curated_examples() -> None:
     server = (ROOT / "src" / "uniprot_mcp" / "server.py").read_text(encoding="utf-8")
-    assert 'examples/atlas' not in server
-    assert 'def uniprot_search(' in server
+    assert "examples/atlas" not in server
+    assert "def uniprot_search(" in server
