@@ -2002,14 +2002,12 @@ async def uniprot_get_evidence_summary(
     attached to a UniProt entry's annotations. Counts how many features and
     comments cite each evidence code, then classifies every occurrence as
     experimental (wet-lab, ECO:0000269), manual (curator-reviewed inference),
-    or automatic (un-reviewed pipeline call) and collapses that into a single
-    0-100 evidence-confidence score with a high / moderate / low / very-low
-    band. A score near 100 means the entry is dominated by direct experimental
-    evidence; a score near 10 means it is almost entirely computationally
-    inferred. Critical for any downstream agent that must distinguish
-    'wet-lab confirmed' annotations from 'inferred by similarity'. JSON output
-    adds an ``evidence_confidence`` block (score, band, per-class breakdown,
-    weights) alongside the raw ``evidence_counts``."""
+    or automatic (un-reviewed pipeline call). A project-defined 0-100
+    index describes the annotation evidence mix, NOT annotation correctness,
+    biological certainty, or a calibrated probability (unlike AlphaFold
+    pLDDT). The legacy JSON key ``evidence_confidence`` includes
+    ``calibrated=False`` and the raw ``evidence_counts`` remain available.
+    """
     try:
         _check_accession(accession)
         _check_format(response_format)

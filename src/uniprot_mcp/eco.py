@@ -1,40 +1,14 @@
-"""Evidence & Conclusion Ontology (ECO) grading for UniProt annotations.
+"""Evidence & Conclusion Ontology (ECO) annotation-evidence composition.
 
-Pure data and pure functions — no I/O, mypy-strict clean.
+Pure data and functions, with no I/O. Counts and labels originate from
+UniProt's ECO annotations, while the weighted index and numeric bands
+are explicitly project-defined, uncalibrated descriptive conveniences.
 
-UniProt attaches one or more ECO codes to every annotated feature and
-comment. Each code encodes two orthogonal facts:
-
-* the *kind* of evidence — an experimental result, sequence similarity,
-  an author statement, a curator's inference, a pipeline match, …; and
-* the *assertion method* — a human curator reviewed it (an ECO term
-  "used in manual assertion") versus a pipeline emitted it with no human
-  review (an ECO term "used in automatic assertion").
-
-For an agent deciding whether to *trust* an annotation, the single most
-useful collapse of that space is a three-rung ladder::
-
-    experimental  >  manually curated  >  automatically inferred
-
-This module maps every ECO code UniProt emits onto that ladder
-(:data:`ECO_EVIDENCE_CLASS`), attaches a confidence weight to each rung
-(:data:`CLASS_WEIGHTS`), and turns an ECO code-count histogram into a
-single ``0-100`` evidence-confidence score plus a four-band label
-(:func:`score_evidence`). The banding deliberately mirrors the pLDDT
-four-band idiom used by the AlphaFold-confidence tool so the two
-"how much should I trust this?" surfaces read the same way.
-
-The class boundary is UniProt's own: only :data:`ECO_EXPERIMENTAL`
-(``ECO:0000269``) means "a wet-lab experiment was performed and a curator
-recorded it". Everything else in the "manual assertion" family is a
-curator-reviewed *inference*; everything in the "automatic assertion"
-family is an *un-reviewed* pipeline call. Codes we do not recognise are
-reported as :data:`ECO_OTHER` and excluded from the weighted score
-rather than silently folded into a rung.
-
-ECO term labels were taken verbatim from the Evidence & Conclusion
-Ontology (https://www.evidenceontology.org / EBI OLS ``eco``). The
-weights are a deliberate, documented choice — see :data:`CLASS_WEIGHTS`.
+The index is NOT a probability that an annotation is scientifically true,
+does not validate a cited experiment, does not imply independent evidence,
+and must not be compared to AlphaFold pLDDT. Unknown ECO codes remain
+unscored and visible in the separate breakdown. The legacy API retains
+its evidence_confidence name for backward compatibility.
 
 SPDX-License-Identifier: Apache-2.0
 """
@@ -150,11 +124,10 @@ ECO_EVIDENCE_CLASS: Final[dict[str, str]] = {
     "ECO:0000501": ECO_AUTOMATIC,
 }
 
-#: Confidence weight per rung, used to collapse a class histogram into a
-#: single score. The ratios encode the intended ranking, not a calibrated
-#: probability: direct observation (1.0) is worth twice a curator-reviewed
-#: inference (0.5), which is worth five times an un-reviewed pipeline call
-#: (0.1). :data:`ECO_OTHER` carries no weight and never enters the score.
+#: Project-defined annotation-mix weights, not calibrated probabilities of
+#: correctness. Occurrences can be dependent; these weights do not express
+#: independent evidence or establish reliability. Unrecognized codes remain
+#: visible but are excluded from the index denominator.
 CLASS_WEIGHTS: Final[dict[str, float]] = {
     ECO_EXPERIMENTAL: 1.0,
     ECO_MANUAL: 0.5,
@@ -184,6 +157,7 @@ class EvidenceConfidence(TypedDict):
     total_occurrences: int
     breakdown: dict[str, ClassBreakdown]
     weights: dict[str, float]
+    calibrated: bool
 
 
 def classify_eco(code: str) -> str:
@@ -196,12 +170,10 @@ def classify_eco(code: str) -> str:
 
 
 def evidence_confidence_band(score: float) -> str:
-    """Map a ``0-100`` evidence-confidence score to a semantic band.
+    """Bucket an uncalibrated annotation-mix index into legacy bands.
 
-    Boundaries (mirroring the pLDDT four-band idiom): ``>= 70`` high,
-    ``>= 40`` moderate, ``>= 15`` low, otherwise very low. A pure
-    experimental entry scores 100 (high); pure sequence-similarity 50
-    (moderate); pure automatic 10 (very low).
+    Thresholds >=70, >=40, and >=15 are arbitrary descriptive cutoffs,
+    not pLDDT bands or evidence that a biological conclusion is correct.
     """
     if score >= 70:
         return "high"
@@ -213,7 +185,7 @@ def evidence_confidence_band(score: float) -> str:
 
 
 def score_evidence(counts: Mapping[str, int]) -> EvidenceConfidence:
-    """Collapse an ECO code-count histogram into a confidence verdict.
+    """Compute a project-weighted, uncalibrated annotation mix index.
 
     ``counts`` maps ECO code -> number of annotations citing it (the
     histogram the evidence-summary tool already builds). Every occurrence
@@ -253,6 +225,7 @@ def score_evidence(counts: Mapping[str, int]) -> EvidenceConfidence:
         total_occurrences=total,
         breakdown=breakdown,
         weights=dict(CLASS_WEIGHTS),
+        calibrated=False,
     )
 
 
@@ -274,11 +247,11 @@ def confidence_markdown_lines(confidence: EvidenceConfidence) -> list[str]:
     """
     score = confidence["score"]
     if score is None:
-        head = "**Evidence confidence:** n/a — only unclassified ECO codes present"
+        head = "**ECO evidence-mix index (uncalibrated):** n/a — no classified codes"
     else:
-        head = f"**Evidence confidence:** {score:.1f} / 100 ({confidence['band']})"
+        head = f"**ECO evidence-mix index (uncalibrated):** {score:.1f} / 100 ({confidence['band']} mix)"
 
-    lines = [head]
+    lines = [head, "Descriptive annotation mix, not a probability of scientific correctness."]
     breakdown = confidence["breakdown"]
     for cls in ECO_CLASS_ORDER:
         entry = breakdown[cls]

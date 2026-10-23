@@ -456,7 +456,7 @@ async def test_evidence_summary_renders_confidence_grade() -> None:
             )
         )
         out = await uniprot_get_evidence_summary("P04637", "markdown")
-    assert "**Evidence confidence:** 75.0 / 100 (high)" in out
+    assert "**ECO evidence-mix index (uncalibrated):** 75.0 / 100 (high mix)" in out
     assert "- Experimental (wet-lab): 2 (50.0%)" in out
     assert "- Manual (curator-reviewed): 2 (50.0%)" in out
     assert "- Automatic (pipeline-inferred): 0 (0.0%)" in out
@@ -482,6 +482,7 @@ async def test_evidence_summary_json_shape() -> None:
     assert confidence["classified_occurrences"] == 4
     assert confidence["breakdown"]["experimental"]["occurrences"] == 2
     assert confidence["weights"]["experimental"] == 1.0
+    assert confidence["calibrated"] is False
 
 
 async def test_evidence_summary_handles_no_evidences() -> None:
