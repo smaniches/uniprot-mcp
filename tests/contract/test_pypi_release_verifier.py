@@ -73,7 +73,9 @@ def test_invalid_artifact_is_rejected(field: str, value: object) -> None:
 
 
 @pytest.mark.parametrize("payload", [b"test", b"fake", b"truncated"])
-def test_downloaded_artifact_bytes_are_verified(monkeypatch: pytest.MonkeyPatch, payload: bytes) -> None:
+def test_downloaded_artifact_bytes_are_verified(
+    monkeypatch: pytest.MonkeyPatch, payload: bytes
+) -> None:
     metadata = json.dumps(_metadata()).encode()
     monkeypatch.setattr(
         VERIFIER, "_download", lambda url, limit: metadata if url.endswith("/json") else payload
