@@ -163,13 +163,13 @@ If you are a biomedical researcher visiting this repo, the highest-signal places
 
 | Resource | What it gives you |
 |---|---|
-| **[`examples/atlas/`](examples/atlas/)** | Two artifacts with deliberately different scopes: <br>• **Curated atlas (25 entries).** TP53, BRCA1, CFTR, HTT, EGFR, BRAF, KRAS, TEM-1 β-lactamase, more — each linking the canonical UniProt accession to MONDO / OMIM / PharmGKB / ARO IDs and the relevant tool sequence. JSON-LD manifest at `examples/atlas/atlas.json`. <br>• **Comprehensive index (11,590 rows).** UniProt's curated disease + pathogen surface as two TSVs (`comprehensive_index.tsv` 7,250 human disease rows, `comprehensive_index_pathogens.tsv` 4,340 pathogen rows). Each row carries a UniProt disease ID and an OMIM cross-reference where available. MONDO / PharmGKB / ARO mappings exist only in the 25-entry curated atlas, not in the 11,590-row index. SHA-256 reproducibility manifest at `examples/atlas/manifest.json`. <br>Methodology (how compiled, what's verified, what's community-reviewable) at `examples/atlas/METHODOLOGY.md`. |
+| **[`examples/atlas/`](examples/atlas/)** | **Source-derived snapshot only:** two date-stamped TSV indexes (7,250 human disease-protein rows, 4,340 pathogen entries; 11,590 total), with SHA-256 file and row-count commitments in `manifest.json`. The former 25 hand-authored clinical/therapeutic atlas pages have been withdrawn from the active repository: their scientific narratives and changing drug-status descriptions were outside the UniProt retrieval contract. Historical versions remain in Git history and archives. See `examples/atlas/METHODOLOGY.md`. |
 | **[`examples/01..04.jsonl`](examples/)** | Full Claude-Desktop transcripts of clinical-variant interpretation (TP53 R175H), drug-target dossier (BRCA1), provenance verification a year later, pathogen drug-discovery (TEM-1). |
 | **[`tests/benchmark/`](tests/benchmark/)** | Pre-registered 30-prompt benchmark with SHA-256 commitments on `main`. The 2026-04-26 v1.1.0 run verified 30/30 against live UniProt — transcript at `tests/benchmark/run-2026-04-26-v1.1.0/`. |
 | **[`scripts/replicate.sh`](scripts/replicate.sh)** | One-command verification that the published PyPI wheel was built from this exact repo (cross-checks SHA-256 across PyPI / GitHub Release / SLSA attestation; runs `--self-test`; re-runs the benchmark live). POSIX + `scripts/replicate.ps1` for Windows. |
 | **[`docs/COMPETITIVE_LANDSCAPE.md`](docs/COMPETITIVE_LANDSCAPE.md)** | Honest 14-server survey of the bio-MCP space (April 2026) and the specific differentiation this server claims. |
 
-Issues / corrections welcome at https://github.com/smaniches/uniprot-mcp/issues. The atlas in particular is community-reviewable — see METHODOLOGY.md for what is machine-verified vs what needs human review.
+Issues / corrections welcome at https://github.com/smaniches/uniprot-mcp/issues. The active example index is a frozen, source-attributed UniProt snapshot, not a clinical interpretation or a MONDO identity crosswalk.
 
 ---
 
