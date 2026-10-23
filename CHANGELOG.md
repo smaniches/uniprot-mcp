@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.12](https://github.com/smaniches/uniprot-mcp/compare/v1.3.11...v1.3.12) (2026-10-23)
+
+
+### Bug Fixes
+
+* **science:** remove unverified clinical atlas and preserve source index ([a946a59](https://github.com/smaniches/uniprot-mcp/commit/a946a5917bea8080791eac1208b8260caa74a210))
+
 ## [1.3.11](https://github.com/smaniches/uniprot-mcp/compare/v1.3.10...v1.3.11) (2026-10-23)
 
 
