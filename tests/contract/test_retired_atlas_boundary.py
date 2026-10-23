@@ -8,10 +8,33 @@ ATLAS = ROOT / "examples" / "atlas"
 
 def test_no_unsourced_curated_atlas_active() -> None:
     assert not (ATLAS / "atlas.json").exists()
-    retired = (
-        "tp53 brca1 brca2 mlh1 egfr kras braf erbb2 cftr htt dmd hbb smn1 "
-        "fbn1 nf1 pah gba app snca myh7 lmna cyp2d6 vkorc1 g6pd tem1"
-    ).split()
+    retired = [
+        "tp53",
+        "brca1",
+        "brca2",
+        "mlh1",
+        "egfr",
+        "kras",
+        "braf",
+        "erbb2",
+        "cftr",
+        "htt",
+        "dmd",
+        "hbb",
+        "smn1",
+        "fbn1",
+        "nf1",
+        "pah",
+        "gba",
+        "app",
+        "snca",
+        "myh7",
+        "lmna",
+        "cyp2d6",
+        "vkorc1",
+        "g6pd",
+        "tem1",
+    ]
     assert not [name for name in retired if (ATLAS / f"{name}.md").exists()]
 
 
