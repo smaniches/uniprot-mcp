@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **science:** preserve ECO evidence mix without implying calibrated biological confidence ([508a445](https://github.com/smaniches/uniprot-mcp/commit/508a445e2a957a0a8695f80d81012a663e7892e4))
 * **science:** preserve pharmacogenomic atlas identity without false MONDO disease ([5c92726](https://github.com/smaniches/uniprot-mcp/commit/5c927267d8aedbb31f2b0c510f159f4746e9a183))
+  * Remove a synthetic CYP2D6 root-disease association, clarify phenotype and dosing boundaries, and update all 25 atlas-example documentation.
+  * Report ECO evidence-mix index as descriptive and uncalibrated, not biological correctness probability.
 
 ## [1.3.10](https://github.com/smaniches/uniprot-mcp/compare/v1.3.9...v1.3.10) (2026-10-15)
 
