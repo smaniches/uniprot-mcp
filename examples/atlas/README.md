@@ -25,18 +25,20 @@ UniProt issues a release change.
 
 ## Disease classes covered
 
-| Class | Atlas entries | Why |
-|---|---|---|
-| **Hereditary cancer syndromes** | TP53, BRCA1, BRCA2, MSH2 | Most-cited Mendelian cancer drivers; high-confidence variant annotations; multiple OMIM/MONDO links per entry. |
-| **Single-gene rare disease** | HTT (Huntington), DMD (Duchenne), CFTR (cystic fibrosis), HBB (sickle cell), PAH (phenylketonuria) | Textbook rare-disease examples; stable annotations; demonstrate position-aware feature lookup. |
-| **Neurodegenerative** | APP (Alzheimer), SNCA (Parkinson), MAPT (FTD/PSP) | Multiple disease links per entry; show MONDO axis for sporadic vs familial forms. |
-| **Cardiovascular** | MYH7 (HCM), LMNA (laminopathies) | Show variant-effect interpretation in structural proteins. |
-| **Metabolic / lysosomal** | GAA (Pompe), GBA (Gaucher) | Enzyme replacement therapy targets; demonstrate active-site queries. |
-| **Infectious-disease targets** | TEM-1 beta-lactamase, MTB gyrA | Pathogen drug-target side; demonstrate `uniprot_get_active_sites` + `uniprot_get_processing_features` for drug discovery. |
-| **Solid-tumour drug targets** | EGFR, KRAS, BRAF | The non-Mendelian cancer axis; show ChEMBL bridge + ClinVar somatic variant resolution. |
+The current atlas contains **25 curated research examples** across eight
+categories. These are illustrative protein and disease-workflow examples,
+not an authoritative disease ontology or a clinical decision system.
 
-Total: 18 atlas entries planned; 10 are populated in this initial
-release (v1.1.0). The remaining 8 land in v1.2.
+| Category | Example genes |
+|---|---|
+| Hereditary cancer | TP53, BRCA1, BRCA2, MLH1 |
+| Solid-tumour driver | EGFR, KRAS, BRAF, ERBB2 |
+| Single-gene rare disease | CFTR, HTT, DMD, HBB, SMN1, FBN1, NF1 |
+| Metabolic / lysosomal | PAH, GBA1 |
+| Neurodegenerative | APP, SNCA |
+| Cardiovascular / laminopathy | MYH7, LMNA |
+| Pharmacogenomic | CYP2D6, VKORC1, G6PD |
+| Infectious-disease drug-resistance | bla (TEM) |
 
 ## How to read an atlas entry
 
@@ -65,14 +67,12 @@ two captures.
 ## How to extend
 
 Add a new file `examples/atlas/<gene>.md` following the template above.
-Open a PR; `tests/contract/test_atlas_consistency.py` (planned for
-v1.2.0) will assert that:
-
-- Each file references a real UniProt accession that resolves
-  `200 OK`.
-- The tool sequence cites tools that exist on the live FastMCP
-  instance.
-- The MONDO/OMIM IDs are well-formed.
+Open a PR. The existing `tests/contract/test_atlas_consistency.py`
+checks the manifest, UniProt accession syntax, entry files, disease ID
+formatting, and other structural invariants. Its optional live
+integration test verifies accessions against UniProt. These checks do
+not independently establish clinical or ontology claims; those require
+source-specific validation.
 
 ## Why MONDO
 
@@ -81,11 +81,12 @@ unifies disease nomenclature across DOID, OMIM, Orphanet, MeSH, NCIt,
 and others. UniProt's DISEASE-type comments link to OMIM directly;
 MONDO acts as the bridge to the broader disease-ontology landscape
 that adjacent MCP servers (planned: `clinvar-mcp`, `pdb-mcp`,
-`mondo-mcp`) will query. The atlas anchors each protein on both
-its UniProt accession (the gateway-of-record for protein knowledge)
-*and* its primary MONDO identifier (the gateway-of-record for the
-disease side), so a downstream orchestrator can chain the two
-without re-deriving mappings.
+`mondo-mcp`) will query. The atlas anchors every entry on its UniProt accession and provides
+curated MONDO or DOID links **only when the disease identity has been
+established**. Some entries intentionally have no disease identifier:
+for example, CYP2D6 describes a pharmacogenomic phenotype rather than
+a disease. An absent ontology link must not be replaced by MONDO's
+generic root class or inferred from a ranked search result.
 
 ## Compliance & provenance
 
@@ -122,8 +123,7 @@ Each row carries the canonical UniProt accession + gene + protein name + organis
 
 ## Hand-curated atlas index
 
-The v1.1.0 atlas entries (25 to start; the disease universe is open and
-the atlas grows over time). Cross-references vary per entry — MONDO
+The current curated atlas has 25 examples. Cross-references vary per entry — MONDO
 applies for human Mendelian disease but not for pathogen drug-targets;
 PharmGKB / CPIC apply for pharmacogenomic genes; ARO / CARD apply for
 antibiotic-resistance enzymes. Each entry surfaces the

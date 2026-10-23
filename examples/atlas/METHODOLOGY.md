@@ -56,9 +56,10 @@ these are wrong:
   and Arabic-vs-Roman numerals aside), `synonym` (matches an exact synonym of the ID's record),
   `broader` (ID is a verified MONDO ancestor of the authored disease;
   e.g. KRAS `mondo:0005192` exocrine pancreatic carcinoma for
-  pancreatic adenocarcinoma), `sentinel` (`mondo:0000001`, the
-  intentional pharmacogenomic placeholder; note it is MONDO's root
-  class "disease"). Of 56 non-sentinel pairs, 35
+  pancreatic adenocarcinoma). The historical pharmacogenomic
+  `mondo:0000001` sentinel was removed because it is MONDO's root
+  disease class, not an identifier for CYP2D6 metabolism. Of the
+  56 actual disease pairs reviewed on 2026-10-15, 35
   cited IDs naming a different disease; 26 were replaced where an
   OLS search returned a single non-obsolete term whose label or exact
   synonym matched the authored name. The other 9 (HBOC1, Fanconi anemia
@@ -68,8 +69,10 @@ these are wrong:
   clotting factor deficiency) had no unambiguous MONDO term. Their disease
   objects were removed from `atlas.json` rather than kept with an ID known
   to name a different disease. The entry pages still name these diseases
-  and mark their MONDO IDs as unresolved. BRCA1 and VKORC1 therefore have
-  an empty `diseases` array until a curator confirms an ID. Replacement and
+  and mark their MONDO IDs as unresolved. BRCA1 and VKORC1 therefore have an empty `diseases` array until a
+  curator confirms an ID. CYP2D6 also has an empty disease array by
+  design: its pharmacogenomic phenotype is not itself a MONDO disease.
+  Replacement and
   verification is a manual snapshot, not a CI gate.
 - **OMIM IDs name the claimed gene/disease.** Same logic. Cross-check
   at https://omim.org/.

@@ -8,13 +8,13 @@
 
 ## Question
 
-For a patient prescribed codeine, tamoxifen, or atomoxetine, what's their CYP2D6 metabolizer phenotype based on star-allele genotype, and what's the dosing implication?
+Which CYP2D6 protein, variant, and structural evidence can UniProt provide for a pharmacogenomics investigation, and which additional phased diplotype, copy-number, and drug-specific guideline evidence would be required to determine a metabolizer phenotype or dosing implication?
 
 ## Tool sequence
 
 1. `uniprot_get_entry("P10635")` — function (cytochrome P450 2D6; ~25% of clinically used drugs), 497 aa.
 2. `uniprot_features_at_position("P10635", <pos>)` — heme-binding region; substrate-recognition sites (SRS1–SRS6).
-3. `uniprot_lookup_variant("P10635", "<HGVS>")` — known star-allele defining variants (`*4` rs3892097, `*10` rs1065852, etc.).
+3. `uniprot_lookup_variant("P10635", "<HGVS>")` — retrieve source annotations for a specific sequence variant, if present. A variant lookup alone does not phase the CYP2D6 haplotype, resolve gene copy number, assign a star-allele diplotype, or calculate clinical phenotype.
 4. `uniprot_resolve_clinvar("P10635", size=15)`.
 5. `uniprot_get_active_sites("P10635")` — heme iron coordination, oxygen-binding pocket.
 6. `uniprot_resolve_pdb("P10635")` — apo + substrate-bound structures.
@@ -32,7 +32,13 @@ For a patient prescribed codeine, tamoxifen, or atomoxetine, what's their CYP2D6
 
 **Antipsychotics (risperidone, haloperidol, aripiprazole), opioids (tramadol, oxycodone):** various PGx considerations.
 
-The **star-allele system** (CYP2D6\*1 wild type, \*2 normal, \*4 null, \*5 deletion, \*10 reduced, \*17 reduced, \*41 reduced; \*1xN duplication = ultrarapid) is canonical PGx vocabulary.
+The **star-allele system** describes haplotypes with different function;
+CYP2D6 copy-number variants, hybrid alleles, and phased diplotypes affect
+the final activity score. Even a duplicated functional allele is **not by
+itself** sufficient to assign an ultrarapid-metabolizer phenotype: the
+complete diplotype and applicable CPIC activity-score rules must be used.
+This MCP provides sequence and annotation evidence, not a validated
+star-allele caller or prescribing engine.
 
 ## Cross-references
 

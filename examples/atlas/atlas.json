@@ -421,9 +421,7 @@
       "name": "Cytochrome P450 2D6",
       "gene": "CYP2D6",
       "organism": {"@type": "bioschemas:Taxon", "taxonId": "ncbitaxon:9606", "scientificName": "Homo sapiens"},
-      "diseases": [
-        {"@id": "mondo:0000001", "name": "Pharmacogenomic phenotype (not a disease)", "mappingRelation": "sentinel"}
-      ],
+      "diseases": [],
       "omim": ["124030", "608902"],
       "diseaseClass": "Pharmacogenomic",
       "alphafold": "alphafold:P10635",
