@@ -1,22 +1,8 @@
 name: Immediate release verification
 
-# Fires after a GitHub Release is published (by release.yml or by
-# manual creation). Confirms the release links that should settle
-# immediately:
-#
-#   1. PyPI                  — `pip index versions` returns the tag
-#   2. GitHub Release assets — sdist + wheel + sigstore + sbom present
-#   3. Provenance            — `gh attestation verify` passes against the
-#                              wheel with --repo smaniches/uniprot-mcp
-#   4. SBOM binding          — the released sbom.cdx.json root still equals
-#                              SHA-256(released wheel), so a post-release
-#                              asset swap cannot go unnoticed
-#
-# Zenodo publication is asynchronous and is deliberately not part of this
-# immediate gate. `.github/workflows/zenodo-verify.yml` reconciles the latest
-# release only after a minimum age, so ordinary webhook propagation does not
-# create a stale release-drift issue.
-
+# Verifies PyPI identity and downloaded artifact SHA-256, GitHub Release
+# assets, SLSA provenance, and SBOM-to-wheel binding. Zenodo is deliberately
+# handled by the separate delayed reconciliation workflow.
 on:
   release:
     types: [published]
@@ -40,8 +26,6 @@ jobs:
     steps:
       - name: Derive plain version from tag
         id: version
-        # Tags are normally `v1.3.2` or — historically, for the
-        # provenance-chain quirk in v1.1.5 — `v.1.1.5`. Strip both prefixes.
         run: |
           v="${TAG#v}"
           v="${v#.}"
@@ -56,25 +40,9 @@ jobs:
 
       - name: Verify PyPI publish
         id: pypi
-        run: |
-          set -euo pipefail
-          # `pip index versions` lists every published version. Capture its
-          # complete output before matching so an early-exiting grep cannot
-          # SIGPIPE the producer under `set -o pipefail`. Escape the dots in
-          # the version so the regular expression matches the literal token.
-          version="${{ steps.version.outputs.version }}"
-          version_re=${version//./\\.}
-          for i in 1 2 3 4 5; do
-            versions=$(pip index versions "$PYPI_NAME" 2>/dev/null || true)
-            if grep -E "(^|[^0-9])${version_re}([^0-9]|$)" <<< "$versions"; then
-              echo "PyPI: $PYPI_NAME $version present"
-              exit 0
-            fi
-            echo "PyPI not ready, attempt $i/5; sleeping 30s"
-            sleep 30
-          done
-          echo "PyPI: $PYPI_NAME $version NOT FOUND after 5 attempts"
-          exit 1
+        env:
+          VERIFY_VERSION: ${{ steps.version.outputs.version }}
+        run: python scripts/verify_pypi_release.py "$PYPI_NAME" "$VERIFY_VERSION"
 
       - name: Verify GitHub Release assets
         id: assets
@@ -82,7 +50,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          # `gh release view` is preinstalled on ubuntu-latest runners.
           assets=$(gh release view "$TAG" --json assets --jq '.assets[].name')
           echo "Assets:"
           echo "$assets"
@@ -98,10 +65,10 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/relverify
           cd /tmp/relverify
-          gh release download "$TAG" --repo ${{ github.repository }} --pattern '*.whl'
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.whl'
           for whl in *.whl; do
             echo "verifying provenance for $whl"
-            gh attestation verify "$whl" --repo ${{ github.repository }}
+            gh attestation verify "$whl" --repo "$GITHUB_REPOSITORY"
           done
 
       - name: Verify SBOM binds to the released wheel
@@ -112,7 +79,7 @@ jobs:
           shopt -s nullglob
           mkdir -p /tmp/sbomverify
           cd /tmp/sbomverify
-          gh release download "$TAG" --repo ${{ github.repository }} \
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
             --pattern '*.whl' --pattern 'sbom.cdx.json'
           wheels=(*.whl)
           if (( ${#wheels[@]} != 1 )); then
@@ -136,9 +103,9 @@ jobs:
               `Run: ${runUrl}`,
               ``,
               `One or more of {PyPI, GitHub Release assets, SLSA provenance, SBOM binding}`,
-              `did not land within the immediate timeout. Inspect the failing step`,
-              `and repair the release chain before the next tag. Zenodo is checked`,
-              `separately by the delayed reconciliation workflow.`,
+              `failed verification. Inspect the failing step and repair the release chain`,
+              `before the next tag. Index metadata and downloaded hashes are checked`,
+              `against the requested version; no pip index console output is parsed.`,
             ].join("\n");
             const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner, repo: context.repo.repo,
