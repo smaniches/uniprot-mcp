@@ -102,7 +102,13 @@ The committed digests in `expected.hashes.jsonl` are sealed by `seal.py` over th
 
 ## Verification log
 
-Every entry in this log records a fresh end-to-end re-derivation of every benchmark answer from `https://rest.uniprot.org/...`. The log is append-only; older entries are never edited. Each entry names: the date, the verifier commit SHA (so the exact derivation logic is reproducible), and the per-tier outcome.
+The **original history is append-only at the Git commit level**. The active
+Markdown view may replace an unsupported verification claim with a dated,
+explicit withdrawal, provided the original wording remains accessible at
+an identified immutable commit. This exception does not change or re-seal
+benchmark answers and cannot be used to erase adverse results. The initial
+benchmark verification entry below is unchanged; the separate April 2026
+provenance transcript is explicitly withdrawn in the correction below.
 
 ### 2026-04-25 — initial verification at sealing time
 
@@ -114,24 +120,41 @@ Every entry in this log records a fresh end-to-end re-derivation of every benchm
 
 A reviewer can reproduce this by cloning the repo, holding their own copy of `expected.jsonl` (provided at scoring time), and running both commands. Both must exit 0.
 
-### 2026-04-25 — live end-to-end provenance round-trip (architectural validation)
+### 2026-10-25 — correction to the April provenance transcript
 
-Independent of the benchmark commitments above: a separate test exercises the full architectural chain *upstream → Provenance extraction → Markdown / JSON surface → `uniprot_provenance_verify` re-fetch* against real UniProt to confirm the wiring is correct, not just the unit-test mocks.
+The original April 2026 entry remains visible in the immutable
+[pre-correction audit revision](https://github.com/smaniches/uniprot-mcp/blob/917934a30bfe04c31a4176ced82955af005c7461/tests/benchmark/AUDIT.md).
+The corrected active view is a disclosure of its evidence limitation,
+not a claim that the entry never existed.
 
-- **Pytest suite:** `tests/integration/test_provenance_roundtrip_live.py` — 4 tests, all PASSED. Run: `pytest --integration tests/integration/test_provenance_roundtrip_live.py`.
-- **Captured transcript:** [`run-2026-04-25-roundtrip/transcript.md`](run-2026-04-25-roundtrip/transcript.md) — full markdown + JSON output of every verifier verdict, with the actual live values observed.
-- **Demo runner:** `tests/benchmark/demo_roundtrip.py` — re-runnable on demand to capture a fresh transcript.
-- **Live values observed at capture (2026-04-25T17:09:00Z):**
-  - `release`: `2026_01`
-  - `release_date`: `28-January-2026` (UniProt returns this in human-readable form, not ISO 8601)
-  - `response_sha256` for `P04637`: `0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e`
-- **Verdicts produced:**
-  - matching `(release, sha)` → `verified` ✓
-  - matching release, wrong sha → `hash_drift` ✓
-  - wrong release, matching sha → `release_drift` ✓
-  - made-up accession URL → `url_unreachable` ✓ (HTTP 400 from UniProt)
+The generator `tests/benchmark/demo_roundtrip.py` was retired because
+it could recreate an unbound transcript; the separate optional
+live-integration tests remain available.
 
-Every architectural claim made in this codebase about Provenance and verification is now grounded in observed behaviour against the real UniProt API at the recorded capture time.
+The earlier April 25 round-trip transcript was initially presented as
+a reproducible live verification artifact. It included a source
+digest and verdicts, but **did not preserve the upstream response
+bytes** needed to independently validate those exact recorded
+receipts. Therefore, that transcript is
+[withdrawn as verification evidence](run-2026-04-25-roundtrip/transcript.md).
+No historical digest or status should be inferred from it.
+
+This correction is specific to the **April provenance demonstration**,
+not to the separately sealed 30-prompt benchmark or to the
+implementation's unit tests. The transcript can be recovered from Git
+history if a historical investigation requires its original content.
+
+The separately captured
+[October 15, 2026 TP53 R175H live example](../../examples/01_clinical_variant_interpretation.jsonl)
+preserves upstream response bytes and source metadata. Its
+[manifest](../../examples/captures/2026-10-15_tp53_r175h/)
+and `tests/contract/test_tp53_capture_binding.py` give a reproducible,
+offline hash-binding check. They do **not** constitute independent
+clinical validation or evidence that future live responses will match.
+
+The optional `tests/integration/test_provenance_roundtrip_live.py`
+remains the executable live-integration check for the verifier's
+current behavior; actual run results must be reported separately.
 
 ## Independence statement (formal)
 

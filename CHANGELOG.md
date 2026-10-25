@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
+* **science/evidence:** withdraw unverified biomedical transcripts and provenance receipts while retaining the byte-bound TP53 capture ([#227](https://github.com/smaniches/uniprot-mcp/pull/227)) ([968dc89](https://github.com/smaniches/uniprot-mcp/commit/968dc8945c106f803252b0bbe52c4851e7ecccf9))
 * **ci:** fail closed on incomplete mutation results ([cab2bfe](https://github.com/smaniches/uniprot-mcp/commit/cab2bfe82fee03f85d74d6e2550790462055811b))
 * **ci:** make mutation aggregate executable and respect fatal exit bits ([7256dee](https://github.com/smaniches/uniprot-mcp/commit/7256dee2ee6e58714d5251b48687e0dbad2a0448))
 * **ci:** update audited virtualenv dev lock to 21.14.10 ([#221](https://github.com/smaniches/uniprot-mcp/issues/221)) ([4ab6d3d](https://github.com/smaniches/uniprot-mcp/commit/4ab6d3d36b8e13a2ee4093f0791b4950982dd4d3))

@@ -63,10 +63,10 @@ SHA-256.
 
 ## 4. Verify provenance (~1 min)
 
-Copy the provenance footer from step 3 (or use the values from the
-committed transcript at
-`tests/benchmark/run-2026-04-25-roundtrip/transcript.md`) and ask the
-agent:
+Copy the provenance footer from step 3 (or use the dated real source
+capture at `examples/01_clinical_variant_interpretation.jsonl`, backed
+by stored upstream bytes). This is a **current drift check**, not a
+promise that the historical response will still match. Ask the agent:
 
 ```
 Verify the provenance for P04637 using URL
