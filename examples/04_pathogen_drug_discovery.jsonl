@@ -1,8 +1,0 @@
-{"role":"user","content":"I'm scoping a beta-lactamase inhibitor program. Walk me through the molecular characterisation of TEM-1 beta-lactamase (the canonical class A beta-lactamase) — what's the catalytic machinery, how is the protein processed, and are there post-translational modifications I need to model?"}
-{"role":"assistant","content":"ILLUSTRATIVE WORKFLOW RECIPE — NOT EXECUTED. Suggested steps for investigating TEM-1 beta-lactamase; this file contains no live UniProt outputs, made-up source digests, or confirmed mechanistic/therapeutic conclusions. Re-query the source and retain actual provenance before reporting results."}
-{"role":"suggested_call","tool_call":{"name":"uniprot_search","arguments":{"query":"protein_name:\"Beta-lactamase TEM\" AND organism_id:562 AND reviewed:true","size":1}}}
-{"role":"suggested_call","tool_call":{"name":"uniprot_get_active_sites","arguments":{"accession":"P62593"}}}
-{"role":"suggested_call","tool_call":{"name":"uniprot_get_processing_features","arguments":{"accession":"P62593"}}}
-{"role":"suggested_call","tool_call":{"name":"uniprot_get_ptms","arguments":{"accession":"P62593"}}}
-{"role":"suggested_call","tool_call":{"name":"uniprot_resolve_pdb","arguments":{"accession":"P62593"}}}
-{"role":"assistant","content":"Interpretation checklist (not a result): verify the selected accession and organism, distinguish precursor from mature-chain residue numbering, cross-check site annotations against the linked primary literature, and treat absence of annotated PTMs as absence of annotation rather than proof of no modification. Structural coverage does not establish drug-target suitability."}

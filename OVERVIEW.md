@@ -18,7 +18,7 @@ Source: [github.com/smaniches/uniprot-mcp](https://github.com/smaniches/uniprot-
 | Claim | Where to check |
 |---|---|
 | 41 tools across 8 families. | `src/uniprot_mcp/server.py` (each `@mcp.tool` decorator); `.well-known/mcp.json` lists them; contract test `tests/contract/test_manifest_consistency.py` enforces equality between code and manifest. |
-| Per-response provenance with SHA-256. | `src/uniprot_mcp/client.py` `_extract_provenance` + `canonical_response_hash`; sample footer at `tests/benchmark/run-2026-04-25-roundtrip/transcript.md`. |
+| Per-response provenance with SHA-256. | `src/uniprot_mcp/client.py` `_extract_provenance` + `canonical_response_hash`; source-bound 2026-10-15 TP53 capture at `examples/01_clinical_variant_interpretation.jsonl`, with upstream bytes and a binding test. |
 | A `uniprot_provenance_verify` tool with five enumerated verdicts. | `src/uniprot_mcp/server.py` (the tool registration); unit tests in `tests/unit/test_provenance_verify.py`. |
 | Offline + live-integration test suites (exact counts via `pytest --collect-only`). | `pytest --collect-only --ignore=tests/integration -q` for the offline suite; `pytest --collect-only tests/integration -q` for the live-integration suite. |
 | 30/30 sealed-prompt benchmark verified against live UniProt 2026-04-26 (maintainer cryptographic path: `verify.py` + `verify_answers.py` with the local `expected.jsonl`). | `tests/benchmark/run-2026-04-26-v1.1.0/` (transcript) + the cryptographic seals at `tests/benchmark/expected.hashes.jsonl`. Third-party reproducibility tool (re-derives + prints answers live; does not recompute the seal): `tests/benchmark/verify_against_hashes.py`. |
