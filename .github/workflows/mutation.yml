@@ -99,24 +99,42 @@ jobs:
             shard: 0
             nshards: 1
             timeout: 240
-          # formatters.py (~490 min unsharded) -> 3 mutant shards.
+          # Six disjoint formatter shards to stay below runner wall time.
           - path: src/uniprot_mcp/formatters.py
             module: formatters
             tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py tests/unit/test_coverage_gaps_formatters.py
             shard: 0
-            nshards: 3
+            nshards: 6
             timeout: 240
           - path: src/uniprot_mcp/formatters.py
             module: formatters
             tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py tests/unit/test_coverage_gaps_formatters.py
             shard: 1
-            nshards: 3
+            nshards: 6
             timeout: 240
           - path: src/uniprot_mcp/formatters.py
             module: formatters
             tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py tests/unit/test_coverage_gaps_formatters.py
             shard: 2
-            nshards: 3
+            nshards: 6
+            timeout: 240
+          - path: src/uniprot_mcp/formatters.py
+            module: formatters
+            tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py tests/unit/test_coverage_gaps_formatters.py
+            shard: 3
+            nshards: 6
+            timeout: 240
+          - path: src/uniprot_mcp/formatters.py
+            module: formatters
+            tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py tests/unit/test_coverage_gaps_formatters.py
+            shard: 4
+            nshards: 6
+            timeout: 240
+          - path: src/uniprot_mcp/formatters.py
+            module: formatters
+            tests: tests/unit/test_formatters.py tests/unit/test_formatter_snapshots.py tests/unit/test_keyword_subcellular.py tests/unit/test_provenance.py tests/unit/test_round_two_alphafold_publications.py tests/unit/test_biomedical_features.py tests/unit/test_empty_set_advisories.py tests/unit/test_uniref.py tests/unit/test_coverage_gaps.py tests/unit/test_coverage_gaps_formatters.py
+            shard: 5
+            nshards: 6
             timeout: 240
           # server.py (~1000 min unsharded) -> 5 mutant shards.
           - path: src/uniprot_mcp/server.py
@@ -265,6 +283,12 @@ jobs:
           else:
               done = total = killed = timeout = suspicious = survived = skipped = 0
 
+          # A zero-mutant module emits no progress lines but reaches
+          # the normal end marker. Cancellation never counts as complete.
+          complete = done == total and (
+              bool(matches) or "2. Checking mutants" in text
+          )
+
           # mutmut counts TIMEOUT and SUSPICIOUS as effectively-killed for
           # rate purposes (they did break the test suite, just not via a
           # clean fail signal). Survived is the only "the suite missed it"
@@ -291,6 +315,9 @@ jobs:
                   fh.write(f"skipped={skipped}\n")
                   fh.write(f"total={attempted}\n")
                   fh.write(f"rate={rate:.4f}\n")
+                  fh.write(f"done={done}\n")
+                  fh.write(f"planned={total}\n")
+                  fh.write(f"complete={int(complete)}\n")
           PY
       - name: Save per-shard summary
         if: always()
@@ -308,6 +335,9 @@ jobs:
             echo "skipped: ${{ steps.score.outputs.skipped }}"
             echo "total: ${{ steps.score.outputs.total }}"
             echo "rate: ${{ steps.score.outputs.rate }}"
+            echo "done: ${{ steps.score.outputs.done }}"
+            echo "planned: ${{ steps.score.outputs.planned }}"
+            echo "complete: ${{ steps.score.outputs.complete }}"
           } > "mutation-summary/${{ matrix.module }}-shard${{ matrix.shard }}-of${{ matrix.nshards }}.yaml"
       - name: Upload shard results
         if: always()
@@ -330,99 +360,15 @@ jobs:
     needs: mutmut
     if: always()
     runs-on: ubuntu-latest
+    env:
+      MUTATION_MATRIX_RESULT: ${{ needs.mutmut.result }}
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           path: artifacts
           pattern: mutmut-*
-      - name: Aggregate
-        run: |
-          python - <<'PY'
-          import collections
-          import pathlib
-
-          shards = []
-          for summary in sorted(pathlib.Path("artifacts").rglob("*.yaml")):
-              parsed = {}
-              for line in summary.read_text(encoding="utf-8").splitlines():
-                  if ":" in line:
-                      k, v = line.split(":", 1)
-                      parsed[k.strip()] = v.strip()
-              shards.append(parsed)
-
-          if not shards:
-              print("No per-shard summaries collected.")
-              raise SystemExit(0)
-
-          # Fold each module's shards back into one per-module row. Strided
-          # shard slices are disjoint and exhaustive, so summing the raw
-          # bucket counts reconstructs the unsharded per-module totals
-          # exactly.
-          def as_int(value):
-              try:
-                  return int(value)
-              except (TypeError, ValueError):
-                  return 0
-
-          modules = collections.OrderedDict()
-          for s in shards:
-              mod = s.get("module", "?")
-              acc = modules.setdefault(
-                  mod,
-                  {"killed": 0, "survived": 0, "timeout": 0,
-                   "suspicious": 0, "skipped": 0, "nshards": 0},
-              )
-              for bucket in ("killed", "survived", "timeout", "suspicious", "skipped"):
-                  acc[bucket] += as_int(s.get(bucket))
-              acc["nshards"] += 1
-
-          rows = []
-          for mod, acc in modules.items():
-              relevant = acc["killed"] + acc["survived"] + acc["timeout"] + acc["suspicious"]
-              rate = (acc["killed"] + acc["timeout"] + acc["suspicious"]) / relevant if relevant else 0.0
-              rows.append({"module": mod, "rate": rate, **acc})
-
-          total_k = sum(r["killed"] for r in rows)
-          total_s = sum(r["survived"] for r in rows)
-          total_t = sum(r["timeout"] for r in rows)
-          total_x = sum(r["suspicious"] for r in rows)
-          total_skip = sum(r["skipped"] for r in rows)
-          total_relevant = total_k + total_s + total_t + total_x
-          overall = ((total_k + total_t + total_x) / total_relevant) if total_relevant else 0.0
-
-          header = (
-              "| module | shards | killed | survived | timeout | "
-              "suspicious | skipped | kill rate |"
-          )
-          sep = "|---|---|---|---|---|---|---|---|"
-          print("\n## Mutation testing summary\n")
-          print(header)
-          print(sep)
-          body_lines = []
-          for r in rows:
-              line = (
-                  f"| `{r['module']}` | {r['nshards']} | "
-                  f"{r['killed']} | {r['survived']} | {r['timeout']} | "
-                  f"{r['suspicious']} | {r['skipped']} | {r['rate']:.2%} |"
-              )
-              print(line)
-              body_lines.append(line)
-          total_line = (
-              f"| **TOTAL** | | **{total_k}** | **{total_s}** | **{total_t}** | "
-              f"**{total_x}** | **{total_skip}** | **{overall:.2%}** |"
-          )
-          print(total_line)
-          print(f"\nGate threshold currently 0.0 (measurement-first run).")
-          print(f"Aspirational threshold: 0.95 -- to be enforced once baseline + uplift land.")
-
-          pathlib.Path("MUTATION_SUMMARY.md").write_text(
-              "## Mutation testing summary\n\n"
-              + header + "\n" + sep + "\n"
-              + "\n".join(body_lines) + "\n"
-              + total_line + "\n",
-              encoding="utf-8",
-          )
-          PY
+      - name: Aggregate and verify complete matrix
+        run: python scripts/mutation_summary.py artifacts MUTATION_SUMMARY.md
       - name: Upload consolidated table
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
