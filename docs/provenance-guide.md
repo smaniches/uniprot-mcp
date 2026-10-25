@@ -38,7 +38,7 @@ rather than the live REST API.
 
 ### Actual recorded UniProt response
 
-The [October 15, 2026 TP53 capture](../examples/01_clinical_variant_interpretation.jsonl)
+The [October 15, 2026 TP53 capture](https://github.com/smaniches/uniprot-mcp/blob/main/examples/01_clinical_variant_interpretation.jsonl)
 contains this footer from a real `P04637` retrieval:
 
 ```text
@@ -50,7 +50,7 @@ _Accept: application/json_
 ```
 
 The exact source bytes and capture manifest are stored in
-[the capture directory](../examples/captures/2026-10-15_tp53_r175h/).
+[the capture directory](https://github.com/smaniches/uniprot-mcp/tree/main/examples/captures/2026-10-15_tp53_r175h/).
 `tests/contract/test_tp53_capture_binding.py` recomputes the
 recorded hashes; this verifies the capture, not the biological
 meaning of the record.
