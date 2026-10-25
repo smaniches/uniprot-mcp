@@ -23,6 +23,19 @@ EXPECTED = {
 BUCKETS = ("killed", "survived", "timeout", "suspicious", "skipped")
 
 
+def nonfatal_mutmut_exit(raw: str) -> bool:
+    """Accept only nonfatal mutmut 2.5.1 bitmask exit statuses.
+
+    Bit 1 means a fatal execution error. Bits 2, 4, and 8 respectively
+    indicate surviving mutants, timeouts, and suspicious mutants.
+    """
+    try:
+        code = int(raw)
+    except (TypeError, ValueError):
+        return False
+    return 0 <= code <= 14 and (code & 1) == 0
+
+
 def _read_summary(path: pathlib.Path) -> dict[str, str]:
     result: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -38,6 +51,9 @@ def _read_summary(path: pathlib.Path) -> dict[str, str]:
 def _counts(summary: dict[str, str]) -> dict[str, int]:
     fields = (*BUCKETS, "done", "planned", "complete")
     values = {field: int(summary[field]) for field in fields}
+    status = summary["exit_code"]
+    if values["complete"] and not nonfatal_mutmut_exit(status):
+        raise ValueError(f"fatal or invalid mutmut exit status {status!r} marked complete")
     if any(value < 0 for value in values.values()):
         raise ValueError("negative mutant counts")
     if values["complete"] not in (0, 1):

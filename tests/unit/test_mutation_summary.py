@@ -10,6 +10,7 @@ SCRIPT = pathlib.Path(__file__).resolve().parents[2] / "scripts/mutation_summary
 FUNCTIONS = runpy.run_path(str(SCRIPT), run_name="imported")
 EXPECTED = FUNCTIONS["EXPECTED"]
 summarize = FUNCTIONS["summarize"]
+nonfatal_mutmut_exit = FUNCTIONS["nonfatal_mutmut_exit"]
 
 
 BUCKETS = {"killed": 3, "survived": 2, "timeout": 0, "suspicious": 0, "skipped": 0}
@@ -35,6 +36,7 @@ def _fixture(
         "done": done,
         "planned": planned,
         "complete": int(done == planned),
+        "exit_code": 2,
     }
     (folder / f"{module}-shard{shard}-of{count}.yaml").write_text(
         "".join(f"{key}: {value}\n" for key, value in values.items()), encoding="utf-8"
@@ -160,3 +162,34 @@ def test_no_artifacts_must_fail_with_an_explicit_report(tmp_path: pathlib.Path) 
     assert "INCOMPLETE" in content
     assert "missing shards:" in content
     assert "PARTIAL ONLY" in content
+
+
+def test_nonfatal_mutmut_251_exit_bitmasks() -> None:
+    for status in (0, 2, 4, 6, 8, 10, 12, 14):
+        assert nonfatal_mutmut_exit(str(status)), f"{status} must be accepted"
+    for status in (-1, 1, 3, 5, 7, 9, 11, 13, 15, 16, 130, 255, "", "bad"):
+        assert not nonfatal_mutmut_exit(str(status)), f"{status} must be rejected"
+
+
+def test_a_fatal_mutmut_exit_cannot_be_certified_complete(tmp_path: pathlib.Path) -> None:
+    root = tmp_path / "artifacts"
+    _full_roster(root)
+    file = next(root.rglob("client-shard0-of1.yaml"))
+    file.write_text(
+        file.read_text(encoding="utf-8").replace("exit_code: 2", "exit_code: 3"),
+        encoding="utf-8",
+    )
+    report = tmp_path / "summary.md"
+    assert not summarize(root, "success", report)
+    assert "fatal or invalid mutmut exit status" in report.read_text(encoding="utf-8")
+
+
+def test_aggregate_has_checkout_before_the_checker() -> None:
+    repo = pathlib.Path(__file__).resolve().parents[2]
+    workflow = (repo / ".github/workflows/mutation.yml").read_text(encoding="utf-8")
+    agg = workflow.split("\n  aggregate:\n", 1)[1]
+    assert "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" in agg
+    assert agg.index("actions/checkout@") < agg.index("scripts/mutation_summary.py")
+    assert "persist-credentials: false" in agg
+    upload = agg.split("      - name: Upload consolidated table", 1)[1]
+    assert "if: always()" in upload
