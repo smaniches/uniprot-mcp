@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.14](https://github.com/smaniches/uniprot-mcp/compare/v1.3.13...v1.3.14) (2026-10-25)
+
+
+### Bug Fixes
+
+* **ci:** fail closed on incomplete mutation results ([cab2bfe](https://github.com/smaniches/uniprot-mcp/commit/cab2bfe82fee03f85d74d6e2550790462055811b))
+* **ci:** make mutation aggregate executable and respect fatal exit bits ([7256dee](https://github.com/smaniches/uniprot-mcp/commit/7256dee2ee6e58714d5251b48687e0dbad2a0448))
+* **ci:** update audited virtualenv dev lock to 21.14.10 ([#221](https://github.com/smaniches/uniprot-mcp/issues/221)) ([4ab6d3d](https://github.com/smaniches/uniprot-mcp/commit/4ab6d3d36b8e13a2ee4093f0791b4950982dd4d3))
+
 ## [1.3.13](https://github.com/smaniches/uniprot-mcp/compare/v1.3.12...v1.3.13) (2026-10-23)
 
 
