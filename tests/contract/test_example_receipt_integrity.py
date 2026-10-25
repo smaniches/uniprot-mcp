@@ -37,9 +37,7 @@ HEX_DIGEST = re.compile(r"\b[0-9a-fA-F]{64}\b")
 
 def _records(path: Path) -> list[dict]:
     return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
 
 
@@ -61,11 +59,7 @@ def test_research_recipes_have_no_unverified_results(
         "suggested_call",
     }
     assert not HEX_DIGEST.search(raw), "recipe contains a purported source digest"
-    calls = [
-        row["tool_call"]["name"]
-        for row in records
-        if row["role"] == "suggested_call"
-    ]
+    calls = [row["tool_call"]["name"] for row in records if row["role"] == "suggested_call"]
     assert tuple(calls) == expected_calls
     assert all(
         isinstance(record["tool_call"]["arguments"], dict)
@@ -81,9 +75,7 @@ def test_only_source_bound_live_capture_has_tool_results() -> None:
         tool_results = [row for row in _records(path) if row["role"] == "tool"]
         if path.name == LIVE_CAPTURE:
             assert tool_results
-            assert (
-                EXAMPLES / "captures/2026-10-15_tp53_r175h/capture_manifest.json"
-            ).exists()
+            assert (EXAMPLES / "captures/2026-10-15_tp53_r175h/capture_manifest.json").exists()
         else:
             assert not tool_results, path.name
 
