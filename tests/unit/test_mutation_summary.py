@@ -108,9 +108,7 @@ def test_matrix_matches_expected_roster() -> None:
         assert module and shard and count
         seen.add((module.group(1), int(shard.group(1)), int(count.group(1))))
     expected = {
-        (module, index, count)
-        for module, count in EXPECTED.items()
-        for index in range(count)
+        (module, index, count) for module, count in EXPECTED.items() for index in range(count)
     }
     assert seen == expected
 
