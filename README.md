@@ -42,8 +42,11 @@ is a **real capture from October 15, 2026**, not a hypothetical model
 transcript. Its UniProt, ClinVar and AlphaFold DB responses are saved with
 their original response bytes in
 [the capture directory](examples/captures/2026-10-15_tp53_r175h/).
-The contract test independently checks the recorded tool outputs,
-source URLs and raw/canonical SHA-256 values against those stored bytes.
+The contract test recomputes raw and canonical SHA-256 values from the
+saved upstream bytes and checks their captured footer URLs and hashes.
+It separately compares the transcript text with a saved tool-output
+record; it does **not** independently re-derive every parsed statement
+from those bytes.
 
 For example, the captured UniProt `P04637` response has:
 
@@ -65,8 +68,8 @@ To compare the *current* upstream record with the captured one, invoke
 A live response can legitimately differ from the October 2026 capture;
 do not assume that its verification verdict will be `verified`.
 
-This verifies source identity and recorded tool behavior, **not** every
-biomedical interpretation. ClinVar's germline classification does not
+This verifies source digest binding and that two recorded text copies
+agree, **not** the scientific correctness of every parsed claim. ClinVar's germline classification does not
 establish somatic actionability, and a model-wide AlphaFold confidence
 summary does not establish confidence at a specific residue.
 
@@ -96,7 +99,7 @@ If you are a biomedical researcher visiting this repo, the highest-signal places
 | Resource | What it gives you |
 |---|---|
 | **[MCP tool documentation](docs/tools.md)** | Live UniProt source access, accession-level lookups, provenance, and optional AlphaFold structure-confidence retrieval. No separate hand-maintained clinical collection is distributed. |
-| **[TP53 R175H capture](examples/01_clinical_variant_interpretation.jsonl)** | One dated live transcript, bound by automated tests to preserved UniProt, ClinVar and AlphaFold DB response bytes. Other illustrative transcripts were withdrawn. |
+| **[TP53 R175H capture](examples/01_clinical_variant_interpretation.jsonl)** | Dated live transcript, preserved upstream response bytes, digest/footer checks, and recorded text comparison. Not independently validated biomedical interpretation. The illustrative transcripts were withdrawn. |
 | **[`tests/benchmark/`](tests/benchmark/)** | Pre-registered 30-prompt benchmark with SHA-256 commitments on `main`. The 2026-04-26 v1.1.0 run verified 30/30 against live UniProt — transcript at `tests/benchmark/run-2026-04-26-v1.1.0/`. |
 | **[`scripts/replicate.sh`](scripts/replicate.sh)** | One-command verification that the published PyPI wheel was built from this exact repo (cross-checks SHA-256 across PyPI / GitHub Release / SLSA attestation; runs `--self-test`; re-runs the benchmark live). POSIX + `scripts/replicate.ps1` for Windows. |
 | **[`docs/COMPETITIVE_LANDSCAPE.md`](docs/COMPETITIVE_LANDSCAPE.md)** | Honest 14-server survey of the bio-MCP space (April 2026) and the specific differentiation this server claims. |

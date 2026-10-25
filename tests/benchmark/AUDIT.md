@@ -102,7 +102,13 @@ The committed digests in `expected.hashes.jsonl` are sealed by `seal.py` over th
 
 ## Verification log
 
-Every entry in this log records a fresh end-to-end re-derivation of every benchmark answer from `https://rest.uniprot.org/...`. The log is append-only; older entries are never edited. Each entry names: the date, the verifier commit SHA (so the exact derivation logic is reproducible), and the per-tier outcome.
+The **original history is append-only at the Git commit level**. The active
+Markdown view may replace an unsupported verification claim with a dated,
+explicit withdrawal, provided the original wording remains accessible at
+an identified immutable commit. This exception does not change or re-seal
+benchmark answers and cannot be used to erase adverse results. The initial
+benchmark verification entry below is unchanged; the separate April 2026
+provenance transcript is explicitly withdrawn in the correction below.
 
 ### 2026-04-25 — initial verification at sealing time
 
@@ -115,6 +121,15 @@ Every entry in this log records a fresh end-to-end re-derivation of every benchm
 A reviewer can reproduce this by cloning the repo, holding their own copy of `expected.jsonl` (provided at scoring time), and running both commands. Both must exit 0.
 
 ### 2026-10-25 — correction to the April provenance transcript
+
+The original April 2026 entry remains visible in the immutable
+[pre-correction audit revision](https://github.com/smaniches/uniprot-mcp/blob/917934a30bfe04c31a4176ced82955af005c7461/tests/benchmark/AUDIT.md).
+The corrected active view is a disclosure of its evidence limitation,
+not a claim that the entry never existed.
+
+The generator `tests/benchmark/demo_roundtrip.py` was retired because
+it could recreate an unbound transcript; the separate optional
+live-integration tests remain available.
 
 The earlier April 25 round-trip transcript was initially presented as
 a reproducible live verification artifact. It included a source

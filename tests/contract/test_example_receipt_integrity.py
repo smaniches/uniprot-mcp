@@ -28,8 +28,9 @@ def test_only_source_bound_example_is_published() -> None:
     ]
     assert any(m.get("role") == "tool" for m in messages)
     assert any("tool_call" in m for m in messages)
-    # The separate test_tp53_capture_binding.py verifies recorded messages
-    # and digests against the actual compressed upstream response bodies.
+    # The separate test_tp53_capture_binding.py binds digest/footer fields
+    # to source bodies; it compares transcript text to saved tool text but
+    # does not independently replay the parser over captured responses.
 
 
 def test_public_readmes_do_not_present_unverified_receipts() -> None:
@@ -57,3 +58,4 @@ def test_unverifiable_april_receipt_is_withdrawn_everywhere() -> None:
     withdrawn = sources[-1].read_text(encoding="utf-8").lower()
     assert "withdrawn as verification evidence" in withdrawn
     assert "upstream response bodies" in withdrawn
+    assert not (ROOT / "tests/benchmark/demo_roundtrip.py").exists()

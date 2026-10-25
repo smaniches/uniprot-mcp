@@ -9,8 +9,11 @@ The capture manifest records request URLs, timestamps, software versions,
 raw response digests, and canonical response digests.
 
 The test `tests/contract/test_tp53_capture_binding.py` recomputes
-the digests from the stored bytes and verifies that the recorded tool
-messages match the capture. Run it from the repository root:
+raw and canonical digests from stored bytes and checks the footer
+URLs and hashes. It separately confirms that the transcript matches
+`tool_outputs.json`. Neither comparison independently proves that
+every parsed text statement follows from the upstream data.
+Run it from the repository root:
 
 ```bash
 pytest -q tests/contract/test_tp53_capture_binding.py

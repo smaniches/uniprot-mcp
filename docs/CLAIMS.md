@@ -53,9 +53,11 @@ canonical response body.
 - `tests/unit/test_provenance.py` — unit tests for hash computation
   and provenance extraction.
 - `examples/01_clinical_variant_interpretation.jsonl` and
-  `examples/captures/2026-10-15_tp53_r175h/` — real recorded tool outputs,
-  with source bodies and an offline digest-binding test
-  (`tests/contract/test_tp53_capture_binding.py`).
+  `examples/captures/2026-10-15_tp53_r175h/` — recorded source bodies
+  and an offline digest/footer-binding test
+  (`tests/contract/test_tp53_capture_binding.py`). The test also checks
+  agreement between two stored text copies, not independent correctness
+  of all parsed claims.
 
 **Verify.**
 ```bash
