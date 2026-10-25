@@ -36,46 +36,35 @@ rather than the live REST API.
 
 ## How it's surfaced
 
-### Markdown footer (default)
+### Actual recorded UniProt response
 
-```
+The [October 15, 2026 TP53 capture](../examples/01_clinical_variant_interpretation.jsonl)
+contains this footer from a real `P04637` retrieval:
+
+```text
 ---
-_Source: UniProt release 2026_01 (28-January-2026) • Retrieved 2026-04-25T12:00:00Z_
+_Source: UniProt release 2026_03 (02-September-2026) • Retrieved 2026-10-15T10:32:43Z_
 _Query: https://rest.uniprot.org/uniprotkb/P04637_
-_SHA-256: 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e_
+_SHA-256: 112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf_
+_Accept: application/json_
 ```
 
-### JSON envelope (when `response_format="json"`)
+The exact source bytes and capture manifest are stored in
+[the capture directory](../examples/captures/2026-10-15_tp53_r175h/).
+`tests/contract/test_tp53_capture_binding.py` recomputes the
+recorded hashes; this verifies the capture, not the biological
+meaning of the record.
 
-```json
-{
-  "data": { ... },
-  "provenance": {
-    "source": "UniProt",
-    "release": "2026_01",
-    "release_date": "28-January-2026",
-    "retrieved_at": "2026-04-25T12:00:00Z",
-    "url": "https://rest.uniprot.org/uniprotkb/P04637",
-    "response_sha256": "0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e"
-  }
-}
-```
+### Other response formats
 
-### PIR-style FASTA header (sequence tool only)
+The JSON response envelope includes the source metadata as a
+`provenance` field. The FASTA sequence tool uses comment-prefixed
+metadata lines. Both formats must derive their **own real hash**
+from the response bytes actually returned; a JSON hash must never
+be reused as the hash of a different FASTA payload.
 
-```
-;Source: UniProt
-;Release: 2026_01 (28-January-2026)
-;Retrieved: 2026-04-25T12:00:00Z
-;URL: https://rest.uniprot.org/uniprotkb/P04637
-;SHA-256: 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e
->sp|P04637|P53_HUMAN ...
-ATCG...
-```
-
-PIR (`;`-prefix) lines are recognised as comments by every major
-FASTA parser (BLAST+, biopython `SeqIO`, emboss `seqret`). The
-sequence remains a valid FASTA record.
+For reproducible demonstrations, capture the live bytes and persist
+them with the tool output. Do not publish simulated source receipts.
 
 ## Verification tool
 

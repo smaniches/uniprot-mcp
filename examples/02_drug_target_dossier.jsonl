@@ -1,7 +1,0 @@
-{"role":"user","content":"Give me a complete characterisation of human BRCA1 as a potential drug target. I need: identity, function, structural evidence, drug-target context, disease associations, and an evidence-quality assessment. Use the dossier tool first, then drill into anything that looks promising."}
-{"role":"assistant","content":"ILLUSTRATIVE WORKFLOW RECIPE — NOT EXECUTED. These are suggested UniProt MCP tool calls, not recorded responses or verified scientific findings. Run against the current upstream, record the response bytes and timestamps, and preserve source citations before interpreting any results."}
-{"role":"suggested_call","tool_call":{"name":"uniprot_target_dossier","arguments":{"accession":"P38398"}}}
-{"role":"suggested_call","tool_call":{"name":"uniprot_resolve_pdb","arguments":{"accession":"P38398"}}}
-{"role":"suggested_call","tool_call":{"name":"uniprot_resolve_chembl","arguments":{"accession":"P38398"}}}
-{"role":"suggested_call","tool_call":{"name":"uniprot_get_evidence_summary","arguments":{"accession":"P38398"}}}
-{"role":"assistant","content":"Interpretation checklist (not a result): distinguish the protein from a therapeutic target, separate ChEMBL cross-references from approved drugs, inspect which portions of structures are resolved, and do not convert ECO annotation counts into a fraction of independently validated experiments. Druggability and clinical utility require separate evidence."}

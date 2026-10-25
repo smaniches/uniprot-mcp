@@ -52,8 +52,10 @@ canonical response body.
   the provenance footer.
 - `tests/unit/test_provenance.py` — unit tests for hash computation
   and provenance extraction.
-- `tests/benchmark/run-2026-04-25-roundtrip/transcript.md` — live
-  demonstration with real values.
+- `examples/01_clinical_variant_interpretation.jsonl` and
+  `examples/captures/2026-10-15_tp53_r175h/` — real recorded tool outputs,
+  with source bodies and an offline digest-binding test
+  (`tests/contract/test_tp53_capture_binding.py`).
 
 **Verify.**
 ```bash
@@ -87,8 +89,11 @@ canonical response SHA-256, returning one of five verdicts:
   logic.
 - `tests/unit/test_provenance_verify.py` — unit tests covering all
   five verdict paths.
-- `tests/benchmark/run-2026-04-25-roundtrip/transcript.md` — live
-  `verified` verdict.
+- `tests/integration/test_provenance_roundtrip_live.py` — optional
+  live verifier integration tests; compare only with recorded run output.
+  The former April 2026 example was withdrawn as evidence because it
+  lacked source-body capture. The preserved October TP53 example
+  verifies source-binding, not a live `verified` verdict today.
 
 **Verify.**
 ```bash

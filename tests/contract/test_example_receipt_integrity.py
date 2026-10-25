@@ -1,96 +1,61 @@
-"""Fail closed when illustrative workflows masquerade as source evidence.
+"""The public worked example must be bound to preserved source bytes.
 
-Real tool-result transcripts must be backed by captured source bytes and
-a dedicated binding test. Research recipes must never contain simulated
-upstream responses, timestamps or purported source-response digests.
+Illustrative, simulated, or hypothetical source-result transcripts are not
+accepted as published scientific evidence.
 """
 
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
-
-import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES = ROOT / "examples"
-LIVE_CAPTURE = "01_clinical_variant_interpretation.jsonl"
-RECIPES = {
-    "02_drug_target_dossier.jsonl": (
-        "uniprot_target_dossier",
-        "uniprot_resolve_pdb",
-        "uniprot_resolve_chembl",
-        "uniprot_get_evidence_summary",
-    ),
-    "03_provenance_verify_after_a_year.jsonl": ("uniprot_provenance_verify",),
-    "04_pathogen_drug_discovery.jsonl": (
-        "uniprot_search",
-        "uniprot_get_active_sites",
-        "uniprot_get_processing_features",
-        "uniprot_get_ptms",
-        "uniprot_resolve_pdb",
-    ),
-}
-HEX_DIGEST = re.compile(r"\b[0-9a-fA-F]{64}\b")
+CAPTURE = EXAMPLES / "captures/2026-10-15_tp53_r175h"
+LIVE = EXAMPLES / "01_clinical_variant_interpretation.jsonl"
+LEGACY_DIGEST = "0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e"
+CAPTURED_DIGEST = "112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf"
 
 
-def _records(path: Path) -> list[dict]:
-    return [
-        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+def test_only_source_bound_example_is_published() -> None:
+    assert sorted(p.name for p in EXAMPLES.glob("*.jsonl")) == [LIVE.name]
+    assert (CAPTURE / "capture_manifest.json").is_file()
+    assert (CAPTURE / "tool_outputs.json").is_file()
+    assert any((CAPTURE / "upstream").glob("*.body.gz"))
+
+    messages = [
+        json.loads(line)
+        for line in LIVE.read_text(encoding="utf-8").splitlines()
+        if line.strip()
     ]
+    assert any(m.get("role") == "tool" for m in messages)
+    assert any("tool_call" in m for m in messages)
+    # The separate test_tp53_capture_binding.py verifies recorded messages
+    # and digests against the actual compressed upstream response bodies.
 
 
-@pytest.mark.parametrize("filename,expected_calls", sorted(RECIPES.items()))
-def test_research_recipes_have_no_unverified_results(
-    filename: str, expected_calls: tuple[str, ...]
-) -> None:
-    path = EXAMPLES / filename
-    raw = path.read_text(encoding="utf-8")
-    records = _records(path)
-
-    assert records[0]["role"] == "user"
-    assert records[1]["role"] == "assistant"
-    assert "NOT EXECUTED" in records[1]["content"]
-    assert records[-1]["role"] == "assistant"
-    assert set(record["role"] for record in records) == {
-        "user",
-        "assistant",
-        "suggested_call",
-    }
-    assert not HEX_DIGEST.search(raw), "recipe contains a purported source digest"
-    calls = [row["tool_call"]["name"] for row in records if row["role"] == "suggested_call"]
-    assert tuple(calls) == expected_calls
-    assert all(
-        isinstance(record["tool_call"]["arguments"], dict)
-        for record in records
-        if record["role"] == "suggested_call"
-    )
-
-
-def test_only_source_bound_live_capture_has_tool_results() -> None:
-    paths = sorted(EXAMPLES.glob("*.jsonl"))
-    assert {path.name for path in paths} == {LIVE_CAPTURE, *RECIPES}
-    for path in paths:
-        tool_results = [row for row in _records(path) if row["role"] == "tool"]
-        if path.name == LIVE_CAPTURE:
-            assert tool_results
-            assert (EXAMPLES / "captures/2026-10-15_tp53_r175h/capture_manifest.json").exists()
-        else:
-            assert not tool_results, path.name
-
-    # tests/contract/test_tp53_capture_binding.py independently binds
-    # the one permitted live capture to its actual upstream response bytes.
-
-
-def test_documentation_distinguishes_retrieval_from_illustration() -> None:
-    examples_readme = (EXAMPLES / "README.md").read_text(encoding="utf-8")
+def test_public_readmes_do_not_present_unverified_receipts() -> None:
     root_readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    examples_readme = (EXAMPLES / "README.md").read_text(encoding="utf-8")
 
-    assert "Unexecuted workflow recipes" in examples_readme
-    assert "three unexecuted workflow recipes" in root_readme
-    assert "A year later, an auditor can call" not in root_readme
-    assert "# -> Status: verified  (release match" not in root_readme
-    assert "2027_03" not in (EXAMPLES / "03_provenance_verify_after_a_year.jsonl").read_text(
-        encoding="utf-8"
-    )
+    assert LEGACY_DIGEST not in root_readme
+    assert CAPTURED_DIGEST in root_readme
+    assert "three unexecuted workflow recipes" not in root_readme
+    assert "01..04.jsonl" not in root_readme
+    assert "the only published example transcript" in examples_readme.lower()
+    assert "illustrative transcripts were withdrawn" in examples_readme
+
+
+def test_unverifiable_april_receipt_is_withdrawn_everywhere() -> None:
+    sources = [
+        ROOT / "README.md",
+        ROOT / "docs/provenance-guide.md",
+        ROOT / "tests/benchmark/AUDIT.md",
+        ROOT / "tests/benchmark/run-2026-04-25-roundtrip/transcript.md",
+    ]
+    for path in sources:
+        assert LEGACY_DIGEST not in path.read_text(encoding="utf-8"), path
+
+    withdrawn = sources[-1].read_text(encoding="utf-8").lower()
+    assert "withdrawn as verification evidence" in withdrawn
+    assert "upstream response bodies" in withdrawn
