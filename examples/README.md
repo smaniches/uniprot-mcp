@@ -1,61 +1,62 @@
-# Worked-research transcripts
+# Research examples: captured evidence versus unexecuted recipes
 
-These are **realistic Claude Desktop conversations** demonstrating
-`uniprot-mcp` in three research workflows. Each `.jsonl` file is a
-sequence of message records (one per line) with the exact tool calls
-the model would make and the structural shape of the responses.
+This directory deliberately separates **one byte-bound, recorded source capture**
+from **three proposed research workflows**. Do not interpret a suggested tool call
+as a completed query, a source observation, or a validated biological conclusion.
 
-`01_clinical_variant_interpretation.jsonl` is a **dated live capture**
-(2026-10-15): its tool outputs are verbatim, and the upstream response
-bytes are stored in
-[`captures/2026-10-15_tp53_r175h/`](captures/2026-10-15_tp53_r175h/README.md)
-so each footer digest can be recomputed. The other transcripts are
-illustrative. Their footer digests have not been checked against stored
-payloads, so do not treat them as verifiable receipts.
+## Source-backed recorded example
 
-The transcripts are **illustrative**, not regression-test artefacts:
-the actual UniProt release shifts month-to-month, so values like
-"83,526 proteins in the human proteome" or
-"15 distinct feature types on TP53" drift over time. The
-**provenance footers** in each response carry the SHA-256 digest at
-capture time, so a third party can re-run any prompt and verify
-that a current UniProt response would *or wouldn't* match the
-recorded answer via `uniprot_provenance_verify`.
+- [01 — TP53 R175H](01_clinical_variant_interpretation.jsonl) is a dated
+  **live capture from 2026-10-15**. It contains real tool outputs and their
+  source footers. The underlying compressed upstream response bodies and
+  hashes are preserved in
+  [captures/2026-10-15_tp53_r175h/](captures/2026-10-15_tp53_r175h/README.md).
+- `tests/contract/test_tp53_capture_binding.py` independently recomputes
+  those hashes and checks that the transcript matches its captured tool
+  outputs. This tests source binding, **not clinical validity**.
+- Its ClinVar classification remains a **source-reported germline assertion**.
+  A patient's somatic findings, therapeutic implications, and clinical
+  actionability require separate assessment. Model-level AlphaFold pLDDT
+  does not establish confidence at an individual residue.
 
-| File | Workflow | Tools exercised |
+## Unexecuted workflow recipes (not transcripts)
+
+The other files intentionally have no recorded tool-result messages, model
+syntheses of alleged results, source-response timestamps, or SHA-256 receipts.
+Their `suggested_call` records show **which tools to invoke next**, not
+calls that have already run.
+
+| File | Question to investigate | Suggested tools |
 |---|---|---|
-| `01_clinical_variant_interpretation.jsonl` | "What is the molecular evidence for `TP53 R175H`?" (live capture, 2026-10-15) | `uniprot_search`, `uniprot_features_at_position`, `uniprot_lookup_variant`, `uniprot_resolve_clinvar`, `uniprot_get_alphafold_confidence` |
-| `02_drug_target_dossier.jsonl` | "Give me a complete characterisation of human BRCA1 as a drug target." | `uniprot_target_dossier`, `uniprot_resolve_pdb`, `uniprot_resolve_chembl`, `uniprot_get_evidence_summary` |
-| `03_provenance_verify_after_a_year.jsonl` | "I have a research note from a year ago that cites a UniProt entry. Is the underlying answer still the same today?" | `uniprot_provenance_verify` |
-| `04_pathogen_drug_discovery.jsonl` | "Scope a TEM-1 beta-lactamase inhibitor program: catalytic machinery, processing, PTMs, structures." | `uniprot_search`, `uniprot_get_active_sites`, `uniprot_get_processing_features`, `uniprot_get_ptms`, `uniprot_resolve_pdb` (v1.1.0 biomedical-features family) |
+| [02 — BRCA1 target dossier](02_drug_target_dossier.jsonl) | What evidence is available for BRCA1 characterization? | `uniprot_target_dossier`, `uniprot_resolve_pdb`, `uniprot_resolve_chembl`, `uniprot_get_evidence_summary` |
+| [03 — source drift check](03_provenance_verify_after_a_year.jsonl) | Has a recorded UniProt response changed? | `uniprot_provenance_verify`; replace the explicitly marked placeholders with **real** recorded provenance |
+| [04 — TEM-1 research plan](04_pathogen_drug_discovery.jsonl) | Which retrieved annotations are relevant to TEM-1? | `uniprot_search`, `uniprot_get_active_sites`, `uniprot_get_processing_features`, `uniprot_get_ptms`, `uniprot_resolve_pdb` |
 
-## How to read a transcript
+Each JSONL file is one JSON object per line. The recorded capture uses
+`user`, `assistant`, and `tool` roles. A **recipe** uses `user`,
+`assistant`, and `suggested_call`. The last role is an instruction
+template, not an MCP transcript event or proof of execution.
 
-Each line is a JSON object. The shape is one of:
+To use a recipe, run its suggested calls in an installed MCP client
+against current source APIs. Preserve the returned source URL, release,
+retrieval time and upstream bytes. Only then write a source-attributed
+analysis that distinguishes source assertions, software-derived
+calculations, uncertainty and unvalidated hypotheses.
 
-| Type | Schema |
-|---|---|
-| User message | `{"role": "user", "content": "<prompt>"}` |
-| Tool call by Claude | `{"role": "assistant", "tool_call": {"name": "<tool>", "arguments": {...}}}` |
-| Tool result | `{"role": "tool", "name": "<tool>", "content": "<markdown body>"}` |
-| Assistant final answer | `{"role": "assistant", "content": "<final text>"}` |
+A successful source retrieval, a reproducible SHA-256, and an expert
+scientific validation are **different evidence levels**. This directory
+does not claim clinical, regulatory, or prospective experimental
+validation.
 
-Real Claude Desktop transcripts include additional fields
-(`message_id`, `created_at`, etc.) that are omitted here for
-readability — the schema above captures the structurally-meaningful
-parts.
+## Reproduction and drift
 
-## Reproducing
+To verify the *historical* TP53 response, run
+`pytest tests/contract/test_tp53_capture_binding.py -q` from the
+repository checkout. Its frozen bytes allow offline hash reproduction.
 
-These transcripts capture deterministic tool calls but the live
-UniProt and AlphaFold responses drift between releases. To reproduce
-the *structure* (not the exact values), configure Claude Desktop with
-the `uniprot-mcp` MCP server and paste the user prompts. Claude will
-emit equivalent tool calls and produce a response with current values
-and a current provenance footer.
-
-To reproduce the *exact* values from a specific historical run,
-run with `--pin-release=YYYY_MM` (matching the release tag in the
-transcript's provenance footer) — and either accept the
-`ReleaseMismatchError` if the live release has moved on, or fetch
-the historical release from the UniProt FTP snapshot archive.
+To check whether UniProt still serves the *same* record, use
+`uniprot_provenance_verify` with genuine source metadata. The current
+UniProt release can differ. `--pin-release` is an assertion that
+rejects release mismatch; it does not retrieve a historical release.
+For exact historical records, retain original bytes or use an
+appropriate upstream snapshot.

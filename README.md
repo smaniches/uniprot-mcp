@@ -37,10 +37,14 @@ uvx uniprot-mcp-server
 
 ## Verifiable provenance (the receipts)
 
-Every answer this server returns is traceable to a primary-source URL **and**
-a content hash you can re-compute yourself. The walkthrough below is a real
-run against the live server (UniProt release `2026_01`), independently
-confirmed against the UniProt REST API.
+Successful upstream-backed tool responses include source metadata and a
+canonical SHA-256. The walkthrough below is a **dated historical example**
+from UniProt release `2026_01`, not a claim that today's response still
+matches. For an offline-verifiable 2026-10-15 TP53 capture with preserved
+source bytes and executable binding tests, see
+[`examples/01_clinical_variant_interpretation.jsonl`](examples/01_clinical_variant_interpretation.jsonl).
+A source hash verifies response identity; it does not validate a medical
+interpretation.
 
 **Question.** What is the function of human p53 (UniProt `P04637`), what
 heritable cancer syndrome is it associated with, and is the `R175H` mutation
@@ -78,25 +82,25 @@ uvx uniprot-mcp-server
 # uniprot_lookup_variant(accession="P04637", change="R175H") -> the LFS variant record
 ```
 
-**2. Confirm the hash re-verifies** (re-fetches the URL and re-checks the
-release + canonical hash with the server's own code):
+**2. Check whether the historical record has drifted** (the current
+UniProt release and response may have changed):
 
 ```bash
 # uniprot_provenance_verify(
 #   url="https://rest.uniprot.org/uniprotkb/P04637",
 #   release="2026_01",
 #   response_sha256="0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e")
-# -> Status: verified  (release match + SHA-256 match)
+# -> Inspect the actual verdict; do not assume a match or clinical validity.
 ```
 
-**3. Confirm the values against the primary source — no server in the loop:**
+**3. Independently inspect the current primary source — no server in the loop:**
 
 ```bash
 curl -s -H "Accept: application/json" https://rest.uniprot.org/uniprotkb/P04637 -o p53.json
 
-# UniProt release served (matches the footer):
+# Current release (may differ from the recorded 2026_01):
 curl -sI -H "Accept: application/json" https://rest.uniprot.org/uniprotkb/P04637 | grep -i x-uniprot-release
-# -> X-UniProt-Release: 2026_01
+# -> Read the actual release header; the historical record was 2026_01.
 
 python - <<'PY'
 import json, hashlib
@@ -118,16 +122,17 @@ for f in d["features"]:
 # the server hashes the JSON re-serialized with sorted keys + compact separators.
 canonical = json.dumps(d, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 print("sha-256     :", hashlib.sha256(canonical).hexdigest())
-# -> 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e
+# -> Current canonical digest; a change is possible and must be reported.
 PY
 ```
 
-**What this proves:** every returned claim is traceable to a primary-source
-URL and a content hash. The gene, protein name, disease (with OMIM id), and
-variant the server reports all match the live UniProt entry; the footer
-SHA-256 is reproducible byte-for-byte from the primary source using a
-documented, server-independent recipe. A third party can re-run all three
-checks today, or a year from now, without trusting this server.
+**Evidence boundary:** The dated example demonstrates how a source response
+was attributed to UniProt and how its canonical hash can be calculated.
+Re-running these commands against the current API tests whether the observed
+source content has drifted; it does not guarantee identical bytes, validate
+every biological conclusion, or reproduce a historical release by itself.
+The separate October 2026 TP53 capture stores the original source bytes for
+independent offline verification.
 
 > Note on the hash: the footer SHA-256 is of the *canonical* UniProt response
 > body — the JSON re-serialized with sorted keys and compact separators
@@ -164,7 +169,7 @@ If you are a biomedical researcher visiting this repo, the highest-signal places
 | Resource | What it gives you |
 |---|---|
 | **[MCP tool documentation](docs/tools.md)** | Live UniProt source access, accession-level lookups, provenance, and optional AlphaFold structure-confidence retrieval. No separate hand-maintained clinical collection is distributed. |
-| **[`examples/01..04.jsonl`](examples/)** | Full Claude-Desktop transcripts of clinical-variant interpretation (TP53 R175H), drug-target dossier (BRCA1), provenance verification a year later, pathogen drug-discovery (TEM-1). |
+| **[`examples/01..04.jsonl`](examples/)** | One dated, source-byte-bound live TP53 capture plus three unexecuted workflow recipes (BRCA1, provenance drift, TEM-1). Only the recorded capture includes verified source-response digests. |
 | **[`tests/benchmark/`](tests/benchmark/)** | Pre-registered 30-prompt benchmark with SHA-256 commitments on `main`. The 2026-04-26 v1.1.0 run verified 30/30 against live UniProt — transcript at `tests/benchmark/run-2026-04-26-v1.1.0/`. |
 | **[`scripts/replicate.sh`](scripts/replicate.sh)** | One-command verification that the published PyPI wheel was built from this exact repo (cross-checks SHA-256 across PyPI / GitHub Release / SLSA attestation; runs `--self-test`; re-runs the benchmark live). POSIX + `scripts/replicate.ps1` for Windows. |
 | **[`docs/COMPETITIVE_LANDSCAPE.md`](docs/COMPETITIVE_LANDSCAPE.md)** | Honest 14-server survey of the bio-MCP space (April 2026) and the specific differentiation this server claims. |
@@ -305,7 +310,7 @@ The only tools that consult origins outside `rest.uniprot.org`. Each is document
 
 ## Provenance & verification
 
-Every successful tool response includes a footer like:
+A historically recorded successful upstream-backed tool response can include a footer like:
 
 ```
 ---
@@ -314,8 +319,9 @@ _Query: https://rest.uniprot.org/uniprotkb/P04637_
 _SHA-256: 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e_
 ```
 
-A year later, an auditor can call `uniprot_provenance_verify` with
-those exact fields:
+An auditor can compare that dated record with the current upstream using
+`uniprot_provenance_verify`. The following output illustrates a
+**same-release match**, not what a future call is guaranteed to return:
 
 ```
 > uniprot_provenance_verify(
@@ -335,6 +341,10 @@ those exact fields:
 
 **Advice:** Both checks passed. The recorded provenance is reproducible against the live UniProt API.
 ```
+
+If the current release or canonical bytes have changed, the verifier
+returns a drift verdict. Never assume the illustrative `verified` result
+is the present state; compare it to live output or preserved source bytes.
 
 If UniProt has moved on, the tool tells you exactly how:
 
@@ -532,7 +542,7 @@ uniprot-mcp --self-test
    # MW 11,981 Da, pI 4.93, ε₂₈₀ 24,980 M⁻¹·cm⁻¹ — pure Python on the FASTA.
 ```
 
-**4. Provenance round-trip — proving an answer is reproducible.**
+**4. Provenance round-trip — checking a recorded answer for drift.**
 
 ```
 > [later, with the provenance footer from a prior session in hand]
