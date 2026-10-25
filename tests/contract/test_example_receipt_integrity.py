@@ -24,9 +24,7 @@ def test_only_source_bound_example_is_published() -> None:
     assert any((CAPTURE / "upstream").glob("*.body.gz"))
 
     messages = [
-        json.loads(line)
-        for line in LIVE.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in LIVE.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
     assert any(m.get("role") == "tool" for m in messages)
     assert any("tool_call" in m for m in messages)
