@@ -700,10 +700,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#markdown-footer-default" class="md-nav__link">
+  <a href="#actual-recorded-uniprot-response" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Markdown footer (default)
+        Actual recorded UniProt response
       
     </span>
   </a>
@@ -711,21 +711,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#json-envelope-when-response_formatjson" class="md-nav__link">
+  <a href="#other-response-formats" class="md-nav__link">
     <span class="md-ellipsis">
       
-        JSON envelope (when response_format="json")
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pir-style-fasta-header-sequence-tool-only" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PIR-style FASTA header (sequence tool only)
+        Other response formats
       
     </span>
   </a>
@@ -1122,10 +1111,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#markdown-footer-default" class="md-nav__link">
+  <a href="#actual-recorded-uniprot-response" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Markdown footer (default)
+        Actual recorded UniProt response
       
     </span>
   </a>
@@ -1133,21 +1122,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#json-envelope-when-response_formatjson" class="md-nav__link">
+  <a href="#other-response-formats" class="md-nav__link">
     <span class="md-ellipsis">
       
-        JSON envelope (when response_format="json")
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pir-style-fasta-header-sequence-tool-only" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PIR-style FASTA header (sequence tool only)
+        Other response formats
       
     </span>
   </a>
@@ -1287,37 +1265,28 @@ known edge case; the <code>hash_drift</code> verdict covers it. For byte-level
 reproducibility of a specific answer, use the FTP release snapshot
 rather than the live REST API.</p>
 <h2 id="how-its-surfaced">How it's surfaced<a class="headerlink" href="#how-its-surfaced" title="Permanent link">&para;</a></h2>
-<h3 id="markdown-footer-default">Markdown footer (default)<a class="headerlink" href="#markdown-footer-default" title="Permanent link">&para;</a></h3>
+<h3 id="actual-recorded-uniprot-response">Actual recorded UniProt response<a class="headerlink" href="#actual-recorded-uniprot-response" title="Permanent link">&para;</a></h3>
+<p>The <a href="https://github.com/smaniches/uniprot-mcp/blob/main/examples/01_clinical_variant_interpretation.jsonl">October 15, 2026 TP53 capture</a>
+contains this footer from a real <code>P04637</code> retrieval:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>---
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>_Source: UniProt release 2026_01 (28-January-2026) • Retrieved 2026-04-25T12:00:00Z_
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>_Source: UniProt release 2026_03 (02-September-2026) • Retrieved 2026-10-15T10:32:43Z_
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>_Query: https://rest.uniprot.org/uniprotkb/P04637_
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>_SHA-256: 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e_
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>_SHA-256: 112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf_
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>_Accept: application/json_
 </code></pre></div>
-<h3 id="json-envelope-when-response_formatjson">JSON envelope (when <code>response_format="json"</code>)<a class="headerlink" href="#json-envelope-when-response_formatjson" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">"provenance"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"UniProt"</span><span class="p">,</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">"release"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026_01"</span><span class="p">,</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">"release_date"</span><span class="p">:</span><span class="w"> </span><span class="s2">"28-January-2026"</span><span class="p">,</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">"retrieved_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-04-25T12:00:00Z"</span><span class="p">,</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://rest.uniprot.org/uniprotkb/P04637"</span><span class="p">,</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="nt">"response_sha256"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e"</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="pir-style-fasta-header-sequence-tool-only">PIR-style FASTA header (sequence tool only)<a class="headerlink" href="#pir-style-fasta-header-sequence-tool-only" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>;Source: UniProt
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>;Release: 2026_01 (28-January-2026)
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>;Retrieved: 2026-04-25T12:00:00Z
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>;URL: https://rest.uniprot.org/uniprotkb/P04637
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>;SHA-256: 0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>&gt;sp|P04637|P53_HUMAN ...
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>ATCG...
-</code></pre></div>
-<p>PIR (<code>;</code>-prefix) lines are recognised as comments by every major
-FASTA parser (BLAST+, biopython <code>SeqIO</code>, emboss <code>seqret</code>). The
-sequence remains a valid FASTA record.</p>
+<p>The exact source bytes and capture manifest are stored in
+<a href="https://github.com/smaniches/uniprot-mcp/tree/main/examples/captures/2026-10-15_tp53_r175h/">the capture directory</a>.
+<code>tests/contract/test_tp53_capture_binding.py</code> recomputes the
+recorded hashes; this verifies the capture, not the biological
+meaning of the record.</p>
+<h3 id="other-response-formats">Other response formats<a class="headerlink" href="#other-response-formats" title="Permanent link">&para;</a></h3>
+<p>The JSON response envelope includes the source metadata as a
+<code>provenance</code> field. The FASTA sequence tool uses comment-prefixed
+metadata lines. Both formats must derive their <strong>own real hash</strong>
+from the response bytes actually returned; a JSON hash must never
+be reused as the hash of a different FASTA payload.</p>
+<p>For reproducible demonstrations, capture the live bytes and persist
+them with the tool output. Do not publish simulated source receipts.</p>
 <h2 id="verification-tool">Verification tool<a class="headerlink" href="#verification-tool" title="Permanent link">&para;</a></h2>
 <p><code>uniprot_provenance_verify(url, release="", response_sha256="", accept_header="application/json")</code>
 re-fetches the URL with a fresh HTTP client (bypasses any
@@ -1372,9 +1341,9 @@ recommendation included in the markdown output.</p>
 <h2 id="strict-release-pinning">Strict release pinning<a class="headerlink" href="#strict-release-pinning" title="Permanent link">&para;</a></h2>
 <p>If you need byte-level reproducibility <em>during</em> querying (not just
 verifying afterwards), opt into pinning:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">UNIPROT_MCP_CACHE_DIR</span><span class="o">=</span>/path/to/cache<span class="w">  </span><span class="c1"># optional, but recommended for offline replay</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">UNIPROT_PIN_RELEASE</span><span class="o">=</span>2026_01
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>uniprot-mcp
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">UNIPROT_MCP_CACHE_DIR</span><span class="o">=</span>/path/to/cache<span class="w">  </span><span class="c1"># optional, but recommended for offline replay</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">UNIPROT_PIN_RELEASE</span><span class="o">=</span>2026_01
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>uniprot-mcp
 </code></pre></div>
 <p>When <code>UNIPROT_PIN_RELEASE</code> is set, every successful upstream response
 is checked against the pinned release. Any drift raises
@@ -1405,11 +1374,11 @@ that promised "every successful response is mirrored to disk" was
 retracted).</p>
 <p>When the cache is populated, each entry is a JSON record with the
 schema:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://rest.uniprot.org/uniprotkb/P04637"</span><span class="p">,</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">"body_text"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;raw response&gt;"</span><span class="p">,</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">"provenance"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://rest.uniprot.org/uniprotkb/P04637"</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">"body_text"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;raw response&gt;"</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">"provenance"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">}</span>
 </code></pre></div>
 <p><code>ProvenanceCache.write</code> (used by the test fixtures and by future
 auto-write code paths) uses atomic file replacement (tempfile +
