@@ -41,6 +41,39 @@ from uniprot_mcp.client import (
 )
 
 # ---------------------------------------------------------------------------
+# Fail closed on malformed HTTP-200 UniProtKB entries
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        [],
+        {"entryType": "UniProtKB reviewed (Swiss-Prot)"},
+        {"primaryAccession": None},
+        {"primaryAccession": ""},
+        {"primaryAccession": 123},
+    ],
+)
+@respx.mock
+async def test_get_entry_rejects_missing_identity_in_successful_http_response(
+    payload: object,
+) -> None:
+    """An unusable entry body is not evidence of an unreviewed protein."""
+    route = respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
+        return_value=httpx.Response(200, json=payload)
+    )
+    client = UniProtClient()
+    try:
+        with pytest.raises(ValueError, match="UniProtKB returned an invalid entry"):
+            await client.get_entry("P04637")
+    finally:
+        await client.close()
+    assert route.called
+
+
+# ---------------------------------------------------------------------------
 # parse_retry_after numeric branch: non-finite + negative
 # ---------------------------------------------------------------------------
 

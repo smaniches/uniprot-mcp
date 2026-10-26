@@ -476,6 +476,12 @@ class UniProtClient:
     async def get_entry(self, accession: str) -> dict[str, Any]:
         """Fetch a full UniProtKB entry as JSON."""
         data: dict[str, Any] = (await self._req("GET", f"/uniprotkb/{accession}")).json()
+        if (
+            not isinstance(data, dict)
+            or not isinstance(data.get("primaryAccession"), str)
+            or not data["primaryAccession"].strip()
+        ):
+            raise ValueError("UniProtKB returned an invalid entry (missing primary accession)")
         return data
 
     async def search(
