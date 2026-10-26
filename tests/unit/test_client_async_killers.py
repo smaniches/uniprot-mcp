@@ -805,6 +805,70 @@ async def test_get_clinvar_records_db_param_is_clinvar() -> None:
     assert qs.get("db") == "clinvar"
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "payload",
+    [
+        [],
+        {},
+        {"error": "NCBI temporary error"},
+        {"esearchresult": {}},
+        {"esearchresult": {"count": "0"}},
+        {"esearchresult": {"idlist": []}},
+        {"esearchresult": {"count": "0", "idlist": None}},
+        {"esearchresult": {"count": "invalid", "idlist": []}},
+        {"esearchresult": {"count": "1", "idlist": "111"}},
+        {"esearchresult": {"count": "1", "idlist": []}},
+    ],
+)
+@respx.mock
+async def test_clinvar_invalid_esearch_never_reports_zero_matches(payload: object) -> None:
+    """Malformed 200 responses must not be mistaken for an empty ClinVar result."""
+    route = respx.get(f"{NCBI_EUTILS_BASE}/esearch.fcgi").mock(
+        return_value=httpx.Response(200, json=payload)
+    )
+    c = UniProtClient()
+    try:
+        with pytest.raises(ValueError, match="NCBI ClinVar esearch"):
+            await c.get_clinvar_records("TP53")
+    finally:
+        await c.close()
+    assert route.called
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "payload",
+    [
+        [],
+        {},
+        {"result": {}},
+        {"result": {"uids": []}},
+        {"result": {"uids": ["111"]}},
+        {"result": {"uids": ["111"], "111": None}},
+        {"result": {"uids": ["222"], "222": {"uid": "222"}}},
+        {"result": {"uids": [111], "111": {"uid": "111"}}},
+        {"result": {"uids": ["111"], "111": []}},
+    ],
+)
+@respx.mock
+async def test_clinvar_invalid_esummary_rejected(payload: object) -> None:
+    """A malformed summary must not be presented as a successful lookup."""
+    respx.get(f"{NCBI_EUTILS_BASE}/esearch.fcgi").mock(
+        return_value=httpx.Response(200, json={"esearchresult": {"count": "1", "idlist": ["111"]}})
+    )
+    summary = respx.get(f"{NCBI_EUTILS_BASE}/esummary.fcgi").mock(
+        return_value=httpx.Response(200, json=payload)
+    )
+    c = UniProtClient()
+    try:
+        with pytest.raises(ValueError, match="NCBI ClinVar esummary"):
+            await c.get_clinvar_records("TP53")
+    finally:
+        await c.close()
+    assert summary.called
+
+
 # ---------------------------------------------------------------------------
 # get_alphafold_summary — cross-origin to AlphaFold DB
 # ---------------------------------------------------------------------------

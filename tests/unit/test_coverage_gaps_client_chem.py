@@ -7,7 +7,7 @@ Each test is pinned to a specific uncovered line/branch reported by
   - client.py 50-51   : version-lookup ``except`` fallback to "dev"
   - client.py ``_extract_provenance``: reads the accept header from the
     response's request
-  - client.py 546->544: ClinVar esummary loop skips non-dict records
+  - client.py: malformed ClinVar esummary records must fail closed
   - proteinchem.py 118->115: ``_count_amino_acids`` skips non-alpha chars
 """
 
@@ -16,6 +16,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import httpx
+import pytest
 import respx
 
 from uniprot_mcp.client import (
@@ -56,14 +57,13 @@ def test_extract_provenance_reads_request_accept_header() -> None:
 
 
 # ---------------------------------------------------------------------------
-# client.py 546->544 — esummary "uids" entry that is not a dict is skipped
+# ClinVar ESummary record missing/malformed: fail closed instead of omission
 # ---------------------------------------------------------------------------
 
 
 @respx.mock
-async def test_get_clinvar_records_skips_non_dict_summary_entries() -> None:
-    """eutils sometimes lists a uid that resolves to a non-dict value
-    (e.g. an error string). Those entries must be skipped, not appended."""
+async def test_get_clinvar_records_rejects_non_dict_summary_entries() -> None:
+    """A malformed result is an upstream error, not a missing clinical record."""
     respx.get(f"{NCBI_EUTILS_BASE}/esearch.fcgi").mock(
         return_value=httpx.Response(
             200, json={"esearchresult": {"idlist": ["111", "222"], "count": "2"}}
@@ -83,13 +83,10 @@ async def test_get_clinvar_records_skips_non_dict_summary_entries() -> None:
     )
     c = UniProtClient()
     try:
-        out = await c.get_clinvar_records("TP53")
+        with pytest.raises(ValueError, match="NCBI ClinVar esummary"):
+            await c.get_clinvar_records("TP53")
     finally:
         await c.close()
-    # total reflects the unfiltered esearch count; only the dict survives.
-    assert out["total"] == 2
-    assert len(out["records"]) == 1
-    assert out["records"][0]["uid"] == "111"
 
 
 # ---------------------------------------------------------------------------
