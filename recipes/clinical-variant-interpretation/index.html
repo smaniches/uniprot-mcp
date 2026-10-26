@@ -624,10 +624,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-4-what-does-clinvar-say-at-the-population-level" class="md-nav__link">
+  <a href="#step-4-what-human-variant-classifications-does-clinvar-report" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 4 — what does ClinVar say at the population level?
+        Step 4 — what human variant classifications does ClinVar report?
       
     </span>
   </a>
@@ -1103,10 +1103,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-4-what-does-clinvar-say-at-the-population-level" class="md-nav__link">
+  <a href="#step-4-what-human-variant-classifications-does-clinvar-report" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 4 — what does ClinVar say at the population level?
+        Step 4 — what human variant classifications does ClinVar report?
       
     </span>
   </a>
@@ -1194,10 +1194,7 @@
 
 
 <h1 id="recipe-clinical-variant-interpretation">Recipe: Clinical variant interpretation<a class="headerlink" href="#recipe-clinical-variant-interpretation" title="Permanent link">&para;</a></h1>
-<p>A clinician received a sequencing report that includes a missense
-variant <code>TP53 R175H</code>. The clinical question: <strong>how confident should
-they be that this is pathogenic, and what does the molecular evidence
-look like?</strong></p>
+<p>A research workflow starts with a reported <code>TP53 R175H</code> substitution. The task is to <strong>retrieve and distinguish upstream molecular and clinical annotations</strong>, not to assign pathogenicity or make a clinical decision.</p>
 <p>Walk-through:</p>
 <h2 id="step-1-anchor-on-the-canonical-uniprot-entry">Step 1 — anchor on the canonical UniProt entry<a class="headerlink" href="#step-1-anchor-on-the-canonical-uniprot-entry" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&gt; Look up the canonical UniProt entry for human TP53.
@@ -1232,22 +1229,25 @@ curator attributed the statement to published experimental work (here,
 seven PubMed references on the feature). It is distinct from codes for
 evidence inferred by sequence similarity, but the code alone does not say
 which experiment supports which clause of the annotation.</p>
-<h2 id="step-4-what-does-clinvar-say-at-the-population-level">Step 4 — what does ClinVar say at the population level?<a class="headerlink" href="#step-4-what-does-clinvar-say-at-the-population-level" title="Permanent link">&para;</a></h2>
+<h2 id="step-4-what-human-variant-classifications-does-clinvar-report">Step 4 — what human variant classifications does ClinVar report?<a class="headerlink" href="#step-4-what-human-variant-classifications-does-clinvar-report" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&gt; Look up ClinVar records for this variant.
 </code></pre></div>
 <p>Tool call: <code>uniprot_resolve_clinvar("P04637", change="R175H", size=5)</code>.</p>
-<p>Output (captured 2026-10-15): the gene-plus-variant-name query matches
+<p>Output (captured 2026-10-15): the gene-plus-variant-name search returned
 <strong>one ClinVar variation record</strong>, <code>VCV000012374</code>,
 NM_000546.6(TP53):c.524G&gt;A (p.Arg175His), with germline classification
 <em>Pathogenic</em> and review status <em>reviewed by expert panel</em>; molecular
 consequence <strong>missense variant</strong>. A variation record aggregates the
 individual submissions; the tool reports records, not submission counts.
-The classification shown is ClinVar's germline classification, which is
-not the same question as somatic (tumor) actionability.</p>
+A gene/protein-change text search produces candidate records, not a verified
+match to a caller's genomic allele, transcript, or protein isoform. Compare
+identifiers and the submitted HGVS expression before interpreting a result.
+The classification shown is ClinVar's germline classification, not somatic
+(tumor) actionability or an independent conclusion by this MCP.</p>
 <p>A clinician now has both:</p>
 <ul>
 <li><strong>UniProt side</strong>: literature-anchored functional annotation.</li>
-<li><strong>ClinVar side</strong>: population-level clinical-lab classifications.</li>
+<li><strong>ClinVar side</strong>: source-reported human germline variant classifications.</li>
 </ul>
 <h2 id="step-5-how-confident-is-the-structural-prediction-at-this-residue">Step 5 — how confident is the structural prediction at this residue?<a class="headerlink" href="#step-5-how-confident-is-the-structural-prediction-at-this-residue" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&gt; What's the AlphaFold confidence summary for P04637?
@@ -1272,7 +1272,7 @@ syndrome (MIM:151623), several somatic-cancer entries, and an
 adrenal-cortical carcinoma association. The OMIM IDs are clickable
 in a clinical-genetics workflow.</p>
 <h2 id="step-7-sealed-provenance-for-the-report">Step 7 — sealed provenance for the report<a class="headerlink" href="#step-7-sealed-provenance-for-the-report" title="Permanent link">&para;</a></h2>
-<p>Every tool response above carries a footer like:</p>
+<p>Each tool response carries source-specific provenance. A recorded <strong>UniProt</strong> response has a footer like:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>---
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>_Source: UniProt release 2026_03 (02-September-2026) • Retrieved 2026-10-15T10:32:43Z_
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>_Query: https://rest.uniprot.org/uniprotkb/P04637_
@@ -1292,29 +1292,33 @@ which stores the upstream response bytes so the digest can be recomputed.</p>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>&gt; SHA-256: 112540dc…7fcf
 </code></pre></div>
 <p>Tool call: <code>uniprot_provenance_verify(url, release, response_sha256)</code>.</p>
-<p>If the verdict is <code>verified</code>, the report's UniProt evidence is
-unchanged. If it's <code>release_drift</code>, UniProt has moved on (typically
-fine — the underlying biology is stable across recent releases). If
-it's <code>hash_drift</code>, the entry has been edited within the same release
-— that's an alert worth investigating.</p>
+<p>If the verdict is <code>verified</code>, the fetched UniProt response matches the
+recorded release and digest; this does not validate the biological
+interpretation. A drift verdict means the recorded UniProt response and
+the current retrieval differ and require examination. This verifier
+supports UniProt REST origins, not the separate ClinVar or AlphaFold DB
+responses, which must be checked against their own recorded source bytes.</p>
 <h2 id="what-this-recipe-demonstrates">What this recipe demonstrates<a class="headerlink" href="#what-this-recipe-demonstrates" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Composition over passthrough</strong>: six tool calls produce a complete
-  variant-interpretation packet — UniProt evidence, ClinVar evidence,
-  structural confidence, disease associations, and a
-  cryptographically-verifiable audit trail.</li>
+<li><strong>Composition over passthrough</strong>: six tool calls assemble a bounded
+  evidence packet — UniProt annotations, a ClinVar search result,
+  model-level structural confidence, disease associations, and a
+  source-integrity audit trail. This is not a complete clinical
+  interpretation or confirmation of allele identity.</li>
 <li><strong>Evidence-aware</strong>: the ECO code distinguishes experimental from
   inferred annotations; the AlphaFold summary reports model-level
   confidence and states that it is not per-residue confidence.</li>
-<li><strong>Reproducible</strong>: every datum carries a SHA-256 footer; six months
-  later the same clinician (or a different one) can verify the
-  evidence base hasn't drifted.</li>
+<li><strong>Reproducible source binding</strong>: recorded responses carry source URLs
+  and hashes. UniProt REST responses can be compared with a later live
+  retrieval; other providers require their own checks. Source hashes
+  do not independently validate parsed scientific statements.</li>
 </ul>
 <h2 id="whats-deliberately-absent">What's deliberately absent<a class="headerlink" href="#whats-deliberately-absent" title="Permanent link">&para;</a></h2>
 <ul>
 <li>We don't predict pathogenicity. The agent reports the evidence;
-  the clinical decision is the clinician's. ClinVar is the closest
-  thing to a curated answer; everything else is supporting context.</li>
+  the clinical decision is the clinician's. ClinVar reports submitted
+  classifications and review statuses, not an interpretation generated
+  or independently validated by this MCP.</li>
 <li>We don't dive into population frequency. gnomAD is the right
   source for that and is out of scope for <code>uniprot-mcp</code>.</li>
 <li>We don't model the structural impact of R175H specifically. That

@@ -1122,7 +1122,7 @@
 
 <h1 id="uniprot-mcp">uniprot-mcp<a class="headerlink" href="#uniprot-mcp" title="Permanent link">&para;</a></h1>
 <p>Produce verifiable, release-aware protein evidence packages from UniProt and linked scientific sources.</p>
-<p>Use <code>uniprot-mcp</code> to find proteins, assemble protein, target, and variant evidence, and retain a checkable record of where each result came from. Every successful response records the UniProt release, retrieval time, resolved source URL, and canonical SHA-256 digest.</p>
+<p>Use <code>uniprot-mcp</code> to find proteins, assemble protein, target, and variant evidence, and retain a checkable record of where each result came from. Successful retrievals carry source-specific provenance: provider, retrieval time, resolved source URL, and canonical SHA-256 digest. The UniProt release is recorded for UniProt responses when supplied; ClinVar and AlphaFold DB use their own provenance fields.</p>
 <p>The complete tool catalog remains available for specialized research workflows.</p>
 <h2 id="tool-surface-41">Tool surface (41)<a class="headerlink" href="#tool-surface-41" title="Permanent link">&para;</a></h2>
 <table>

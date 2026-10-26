@@ -1190,26 +1190,26 @@ parsing the structure file.</p>
 <tr>
 <td>Very high</td>
 <td>≥ 90</td>
-<td>Position-level accuracy comparable to a 1.5 Å crystal structure</td>
-<td>Folded domains with reliable templates</td>
+<td>Often reliable local geometry; not a guarantee of experimental accuracy</td>
+<td>Well-modelled regions</td>
 </tr>
 <tr>
 <td>Confident</td>
 <td>70-90</td>
-<td>Backbone-level accuracy; sidechain placement reasonable</td>
-<td>Folded domains with weaker templates, or surface</td>
+<td>Generally good backbone confidence; side-chain uncertainty remains</td>
+<td>Structured regions</td>
 </tr>
 <tr>
 <td>Low</td>
 <td>50-70</td>
-<td>Topology may be right; do not trust local geometry</td>
-<td>Surface loops, flexible linkers</td>
+<td>Local model uncertainty; interpret cautiously</td>
+<td>Loops and less certain regions</td>
 </tr>
 <tr>
 <td>Very low</td>
 <td>&lt; 50</td>
-<td>Treat as <strong>disordered</strong>; structural reasoning is unsafe</td>
-<td>Intrinsically disordered regions, signal peptides</td>
+<td>Coordinates should not be interpreted; may indicate disorder or missing structural context</td>
+<td>Flexible or poorly modelled regions</td>
 </tr>
 </tbody>
 </table>
@@ -1225,15 +1225,17 @@ useful than the global mean:</p>
   read per-residue pLDDT from the model file before relying on it.</p>
 </li>
 <li>
-<p><strong>An intrinsically disordered protein</strong> (e.g. some transcription
-  factors, prion proteins): may show 60-90 % <code>very low</code>. → The
-  AlphaFold model is essentially a guess; do not run docking on it,
-  do not interpret a single-residue contact.</p>
+<p><strong>A protein with a large low-confidence fraction</strong> may contain
+  disordered or context-dependent regions. Do not use coordinates of
+  those regions for residue contacts or docking without independent
+  validation. The global fraction alone does not identify which
+  residues are affected.</p>
 </li>
 <li>
-<p><strong>A typical enzyme</strong> (e.g. CYP450, kinase): often 90 %+ <code>very high</code>.
-  → Publication-grade. Structural reasoning, sidechain analysis,
-  surface-pocket identification are all on solid ground.</p>
+<p><strong>A high-confidence model</strong> can still have uncertain loops,
+  interfaces, ligands, or domain orientations. A high global fraction
+  alone does not establish publication readiness or justify a binding
+  site, docking, or mutational-effect claim.</p>
 </li>
 </ul>
 <h2 id="pairing-with-the-per-residue-tools">Pairing with the per-residue tools<a class="headerlink" href="#pairing-with-the-per-residue-tools" title="Permanent link">&para;</a></h2>
@@ -1243,11 +1245,13 @@ zoom into a specific residue, pair with:</p>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>&gt; high-confidence region of the AlphaFold model?
 </code></pre></div>
 <p>Tool calls: <code>uniprot_features_at_position("P04637", 175)</code> plus the
-confidence summary above. Cross-reference: residue 175 sits in the
-DNA-binding domain (positions 102-292), which from the band
-distribution falls in the <code>very high</code> confidence range.</p>
-<p>The combination — feature context + structural confidence — is the
-<strong>evidence packet</strong> any structural-biology decision should rest on.</p>
+confidence summary above. The annotation places residue 175 in the
+DNA-binding region, but <strong>the global pLDDT distribution cannot tell
+which confidence band residue 175 occupies</strong>. Inspect the model's
+per-residue pLDDT before drawing any residue-specific structural conclusion.</p>
+<p>These sources provide annotation context and a model-wide confidence
+summary. Residue-specific or mechanistic claims require additional
+position-level evidence and, where appropriate, experimental validation.</p>
 <h2 id="what-this-tool-does-not-do">What this tool does <em>not</em> do<a class="headerlink" href="#what-this-tool-does-not-do" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Does not download the structure file.</strong> Structures are large
@@ -1258,24 +1262,25 @@ distribution falls in the <code>very high</code> confidence range.</p>
   aggregates pLDDT into the four bands; per-residue scores live in
   the structure file itself. For most decisions the bands are enough;
   if you need per-residue, parse the CIF (the B-factor column carries
-  pLDDT in AlphaFold-DB convention).</li>
+  pLDDT in AlphaFold-DB convention). For any residue-specific or
+  docking inference, do not substitute the global mean for these values.</li>
 <li><strong>Does not run AlphaFold.</strong> This is purely a confidence-summary
   retriever for models AlphaFold-DB has already published. Custom
   predictions live in <a href="https://alphafoldserver.com/">AlphaFold-3</a> or
   <a href="https://github.com/sokrypton/ColabFold">ColabFold</a>.</li>
 </ul>
 <h2 id="provenance-for-structural-claims">Provenance for structural claims<a class="headerlink" href="#provenance-for-structural-claims" title="Permanent link">&para;</a></h2>
-<p>Every confidence-summary response carries the standard provenance
-footer:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>_Source: AlphaFoldDB release v6 (2024-09-01) • Retrieved 2026-04-25T12:00:00Z_
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>_Query: https://alphafold.ebi.ac.uk/api/prediction/P04637_
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>_SHA-256: …_
-</code></pre></div>
-<p>A year later, you can call <code>uniprot_provenance_verify</code> with those
-fields. If AlphaFold-DB has issued a new model version (<code>v7</code>, <code>v8</code>),
-the verifier returns <code>release_drift</code> — useful, because new
-AlphaFold releases sometimes change structural predictions
-materially (e.g. when a new template lands).</p>
+<p>The returned confidence summary records the AlphaFold DB provider,
+retrieval URL, timestamp, and response digest; where available, it also
+records the prediction model version. The <a href="https://github.com/smaniches/uniprot-mcp/tree/main/examples/captures/2026-10-15_tp53_r175h">October 15, 2026
+capture</a>
+contains dated source bytes for independent inspection.</p>
+<p><code>uniprot_provenance_verify</code> currently verifies <strong>UniProt REST URLs only</strong>.
+It does not re-fetch or validate the AlphaFold DB prediction endpoint.
+To check a later AlphaFold result, retrieve the same accession from
+AlphaFold DB, compare the response, model identity, and version with the
+recorded source, and separately evaluate the scientific interpretation.
+A digest match proves source-byte consistency, not structure accuracy.</p>
 <h2 id="operational-note">Operational note<a class="headerlink" href="#operational-note" title="Permanent link">&para;</a></h2>
 <p>This tool calls a different origin from the main UniProt surface
 (<code>alphafold.ebi.ac.uk</code>). The cross-origin allowlist is documented
