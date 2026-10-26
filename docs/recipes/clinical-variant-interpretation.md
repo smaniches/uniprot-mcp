@@ -1,9 +1,6 @@
 # Recipe: Clinical variant interpretation
 
-A clinician received a sequencing report that includes a missense
-variant `TP53 R175H`. The clinical question: **how confident should
-they be that this is pathogenic, and what does the molecular evidence
-look like?**
+A research workflow starts with a reported `TP53 R175H` substitution. The task is to **retrieve and distinguish upstream molecular and clinical annotations**, not to assign pathogenicity or make a clinical decision.
 
 Walk-through:
 
@@ -55,7 +52,7 @@ seven PubMed references on the feature). It is distinct from codes for
 evidence inferred by sequence similarity, but the code alone does not say
 which experiment supports which clause of the annotation.
 
-## Step 4 — what does ClinVar say at the population level?
+## Step 4 — what human variant classifications does ClinVar report?
 
 ```text
 > Look up ClinVar records for this variant.
@@ -63,19 +60,22 @@ which experiment supports which clause of the annotation.
 
 Tool call: `uniprot_resolve_clinvar("P04637", change="R175H", size=5)`.
 
-Output (captured 2026-10-15): the gene-plus-variant-name query matches
+Output (captured 2026-10-15): the gene-plus-variant-name search returned
 **one ClinVar variation record**, `VCV000012374`,
 NM_000546.6(TP53):c.524G>A (p.Arg175His), with germline classification
 *Pathogenic* and review status *reviewed by expert panel*; molecular
 consequence **missense variant**. A variation record aggregates the
 individual submissions; the tool reports records, not submission counts.
-The classification shown is ClinVar's germline classification, which is
-not the same question as somatic (tumor) actionability.
+A gene/protein-change text search produces candidate records, not a verified
+match to a caller's genomic allele, transcript, or protein isoform. Compare
+identifiers and the submitted HGVS expression before interpreting a result.
+The classification shown is ClinVar's germline classification, not somatic
+(tumor) actionability or an independent conclusion by this MCP.
 
 A clinician now has both:
 
 - **UniProt side**: literature-anchored functional annotation.
-- **ClinVar side**: population-level clinical-lab classifications.
+- **ClinVar side**: source-reported human germline variant classifications.
 
 ## Step 5 — how confident is the structural prediction at this residue?
 
@@ -112,7 +112,7 @@ in a clinical-genetics workflow.
 
 ## Step 7 — sealed provenance for the report
 
-Every tool response above carries a footer like:
+Each tool response carries source-specific provenance. A recorded **UniProt** response has a footer like:
 
 ```
 ---
@@ -140,30 +140,34 @@ Later, the clinician (or a reviewer) can call:
 
 Tool call: `uniprot_provenance_verify(url, release, response_sha256)`.
 
-If the verdict is `verified`, the report's UniProt evidence is
-unchanged. If it's `release_drift`, UniProt has moved on (typically
-fine — the underlying biology is stable across recent releases). If
-it's `hash_drift`, the entry has been edited within the same release
-— that's an alert worth investigating.
+If the verdict is `verified`, the fetched UniProt response matches the
+recorded release and digest; this does not validate the biological
+interpretation. A drift verdict means the recorded UniProt response and
+the current retrieval differ and require examination. This verifier
+supports UniProt REST origins, not the separate ClinVar or AlphaFold DB
+responses, which must be checked against their own recorded source bytes.
 
 ## What this recipe demonstrates
 
-- **Composition over passthrough**: six tool calls produce a complete
-  variant-interpretation packet — UniProt evidence, ClinVar evidence,
-  structural confidence, disease associations, and a
-  cryptographically-verifiable audit trail.
+- **Composition over passthrough**: six tool calls assemble a bounded
+  evidence packet — UniProt annotations, a ClinVar search result,
+  model-level structural confidence, disease associations, and a
+  source-integrity audit trail. This is not a complete clinical
+  interpretation or confirmation of allele identity.
 - **Evidence-aware**: the ECO code distinguishes experimental from
   inferred annotations; the AlphaFold summary reports model-level
   confidence and states that it is not per-residue confidence.
-- **Reproducible**: every datum carries a SHA-256 footer; six months
-  later the same clinician (or a different one) can verify the
-  evidence base hasn't drifted.
+- **Reproducible source binding**: recorded responses carry source URLs
+  and hashes. UniProt REST responses can be compared with a later live
+  retrieval; other providers require their own checks. Source hashes
+  do not independently validate parsed scientific statements.
 
 ## What's deliberately absent
 
 - We don't predict pathogenicity. The agent reports the evidence;
-  the clinical decision is the clinician's. ClinVar is the closest
-  thing to a curated answer; everything else is supporting context.
+  the clinical decision is the clinician's. ClinVar reports submitted
+  classifications and review statuses, not an interpretation generated
+  or independently validated by this MCP.
 - We don't dive into population frequency. gnomAD is the right
   source for that and is out of scope for `uniprot-mcp`.
 - We don't model the structural impact of R175H specifically. That

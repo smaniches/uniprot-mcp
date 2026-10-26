@@ -19,7 +19,7 @@
 
 Produce verifiable, release-aware protein evidence packages from UniProt and linked scientific sources.
 
-Use this MCP server to find proteins, assemble protein, target, and variant evidence, and keep a checkable record of where each result came from. Each successful response records the UniProt release, retrieval time, resolved source URL, and a SHA-256 digest. `uniprot_provenance_verify` can later determine whether the upstream record is unchanged or has drifted.
+Use this MCP server to find proteins, assemble protein, target, and variant evidence, and keep a checkable record of where each result came from. Responses preserve source-specific provenance, including the provider, retrieval time, source URL, and a SHA-256 digest. A release identifier is present when the provider supplies one. `uniprot_provenance_verify` can compare recorded UniProt REST records with current UniProt data; it does not independently verify ClinVar or AlphaFold DB results.
 
 The complete tool catalog remains available for specialized research workflows.
 
@@ -113,8 +113,8 @@ Issues / corrections welcome at https://github.com/smaniches/uniprot-mcp/issues.
 | | uniprot-mcp | Vanilla LLM + WebFetch | A typical bio-MCP |
 |---|---|---|---|
 | Tool surface | **41 tools, 8 families** | none — caller writes URLs | usually 5–10 |
-| Provenance on every response | release • date • URL • SHA-256 | none | sometimes URL only |
-| Per-query auditability | `uniprot_provenance_verify` re-checks any prior response | not possible | not possible |
+| Source provenance | provider • date • URL • SHA-256 (release where available) | none | sometimes URL only |
+| UniProt REST verification | `uniprot_provenance_verify` compares recorded UniProt REST responses; external ClinVar/AlphaFold origins are outside its scope | varies | varies |
 | Release pinning | `--pin-release=YYYY_MM` raises on drift | n/a | n/a |
 | Pre-registered benchmark | 30 prompts, SHA-256 committed on `main` + reproducible verifier | n/a | n/a |
 | Local provenance cache | `uniprot_replay_from_cache` read primitive (automatic cache write-through is not wired into the request path — see [§Provenance & verification](#provenance--verification)) | n/a | n/a |

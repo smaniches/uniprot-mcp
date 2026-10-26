@@ -2,7 +2,7 @@
 
 Produce verifiable, release-aware protein evidence packages from UniProt and linked scientific sources.
 
-Use `uniprot-mcp` to find proteins, assemble protein, target, and variant evidence, and retain a checkable record of where each result came from. Every successful response records the UniProt release, retrieval time, resolved source URL, and canonical SHA-256 digest.
+Use `uniprot-mcp` to find proteins, assemble protein, target, and variant evidence, and retain a checkable record of where each result came from. Successful retrievals carry source-specific provenance: provider, retrieval time, resolved source URL, and canonical SHA-256 digest. The UniProt release is recorded for UniProt responses when supplied; ClinVar and AlphaFold DB use their own provenance fields.
 
 The complete tool catalog remains available for specialized research workflows.
 
