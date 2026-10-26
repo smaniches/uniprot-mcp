@@ -1,94 +1,34 @@
 # Recipe: Drug-target dossier in one call
 
-A drug-discovery team is evaluating a new oncology target. The
-question: **what does the curated literature already say about this
-protein, and is it tractable as a drug target?**
+A research team wants to retrieve what UniProt records about a protein.
+These annotations alone cannot establish drug-target tractability.
 
 `uniprot_target_dossier(accession)` answers that in one call —
 internally it fetches the UniProt entry plus the FASTA (two upstream
 requests, not nine separate tool calls) and assembles a structured
 nine-section report.
 
-## Example: BRCA1 (P38398)
+## Request and result boundaries
 
-```text
-> Give me the target dossier for human BRCA1.
-```
+Call `uniprot_target_dossier(accession)` using a verified UniProtKB
+accession. Its nine views cover identity, function, derived sequence
+chemistry, PDB/AlphaFold/InterPro links, ChEMBL/DrugBank references,
+disease and variant annotations, GO evidence, and cross-references.
 
-Tool call: `uniprot_target_dossier("P38398")`.
-
-Sections returned (paraphrased for length):
-
-### Identity
-
-- **Protein:** Breast cancer type 1 susceptibility protein
-- **Gene:** BRCA1
-- **Organism:** Homo sapiens
-- **Length:** 1863 aa
-- **Curation:** Swiss-Prot (reviewed)
-
-### Function
-
-> E3 ubiquitin-protein ligase that specifically mediates the formation
-> of K6-linked polyubiquitin chains. Plays a central role in DNA
-> repair via homologous recombination. Required for the resolution of
-> DNA double-strand breaks following replication stress.
-
-### Sequence chemistry (derived)
-
-- Molecular weight: ~207,500 Da
-- Theoretical pI: ~5.3
-- GRAVY: ~−0.8 (hydrophilic)
-- Aromaticity: 6.5%
-- Net charge at pH 7: ~−40 (acidic)
-
-### Structural evidence
-
-- PDB structures: ~30 (best resolution e.g. 1JM7 at 1.85 Å)
-- AlphaFold model: `P38398` (call `uniprot_get_alphafold_confidence`
-  for the pLDDT bands — for BRCA1 the RING and BRCT domains are very
-  high but the central region is largely disordered)
-- InterPro signatures: ~12 (RING-type, BRCT, etc.)
-
-### Drug-target context
-
-- ChEMBL targets: typically a handful (ChEMBL5462, etc.)
-- DrugBank cross-references: present
-
-### Disease associations (10+)
-
-- **Breast-ovarian cancer susceptibility 1** (MIM:604370)
-- **Pancreatic cancer 4** (MIM:614320)
-- **Fanconi anemia complementation group S** (MIM:617883)
-- ... more
-
-### Variants
-
-- Natural variants annotated: 1500+ (one of UniProt's most-annotated
-  cancer-driver entries)
-
-### Functional annotations
-
-- **GO Molecular Function:** ubiquitin-protein transferase activity,
-  DNA binding, transcription coactivator activity, …
-- **Subcellular locations:** Nucleus, Cytoplasm
-- **Evidence codes:** 35+ distinct ECO codes (call
-  `uniprot_get_evidence_summary` for the full breakdown)
-
-### Cross-references
-
-- 90+ databases, top: Ensembl, RefSeq, PDB, AlphaFoldDB, MIM, GO,
-  InterPro, Pfam, …
+The tool does not run docking, evaluate biological efficacy, or
+independently infer druggability. A missing PDB or ChEMBL cross-reference
+on the UniProt entry does not establish that no such data exist
+elsewhere. Current numerical values require a live source retrieval;
+this repository does not maintain a separate drug-target atlas.
 
 ## Why this composition matters
 
 A drug-discovery team typically wants to answer:
 
-1. **Is the protein druggable?** ChEMBL targets present, structural
-   evidence (PDB or confident AlphaFold regions) — **yes/no in one
-   line**.
-2. **Is it disease-relevant?** Disease associations with MIM IDs —
-   **yes/no with cross-references**.
+1. **Which target-related records exist?** ChEMBL/PDB cross-references
+   guide research but cannot establish binding, druggability, or efficacy.
+2. **Which disease annotations are present?** UniProt disease records
+   and MIM links are context, not independent clinical validation.
 3. **Is it well-characterised?** Cross-reference count + variant
    count + ECO-code diversity — **rough completeness signal**.
 4. **What's the basic chemistry?** MW / pI / hydrophobicity for
@@ -106,21 +46,22 @@ quality-of-evidence picture).
 | Question | Follow-up tool |
 |---|---|
 | "Show me the actual structures" | `uniprot_resolve_pdb` |
-| "Can I trust the AlphaFold model at residue X?" | `uniprot_get_alphafold_confidence` |
+| "What model-wide pLDDT distribution is reported?" | `uniprot_get_alphafold_confidence` |
 | "What variants are in ClinVar?" | `uniprot_resolve_clinvar` |
 | "What papers cite this entry?" | `uniprot_get_publications` |
 | "What do KEGG / OMA say about orthologs?" | `uniprot_resolve_orthology` |
 
 ## Reproducibility
 
-Every dossier response carries the standard provenance footer.
-Re-verify a dossier from six months ago by calling
-`uniprot_provenance_verify` with the recorded URL + release +
-SHA-256. If the dossier was generated against UniProt release
-`2026_01` and the underlying entry hasn't been edited, the verifier
-returns `verified`. If UniProt has rolled forward, the verifier
-returns `release_drift` and you decide whether to refresh or treat
-the old answer as a release-pinned record.
+The dossier may use **two** UniProtKB responses: the entry JSON and a
+FASTA sequence for derived chemistry. The main footer binds the entry;
+when chemistry succeeds, its section separately reports the FASTA URL
+and SHA-256. Machine-readable output carries `chemistry_status` and,
+when applicable, `chemistry_provenance`.
+
+Use `uniprot_provenance_verify` for each UniProt REST input separately,
+with the original Accept header. A digest match establishes source
+integrity, not independent scientific validation of derived values.
 
 ## What this recipe is **not**
 
@@ -131,5 +72,5 @@ the old answer as a release-pinned record.
   knows; whether your specific drug-discovery program can translate
   that into a credible target hypothesis is a separate question.
 
-The dossier is a **fast, defensible first pass** — one call instead of
-nine, and every fact has a provenance footer and a UniProt entry behind it.
+The dossier is a **source-attributed research overview**, not a
+validated druggability or clinical interpretation.

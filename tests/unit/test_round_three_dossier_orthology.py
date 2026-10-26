@@ -298,9 +298,10 @@ async def test_target_dossier_renders_full_markdown() -> None:
     assert "Natural variants annotated: 2" in out
     assert "DNA-binding transcription factor activity" in out
     assert "Nucleus" in out
-    # Provenance footer attests the ENTRY fetch (release 2026_01), not the
-    # subsequent FASTA fetch (which carries no release header).
+    # Entry provenance and FASTA chemistry provenance bind different inputs.
     assert "2026_01" in out
+    assert "FASTA source URL:" in out
+    assert "FASTA SHA-256:" in out
 
 
 async def test_target_dossier_rejects_bad_accession() -> None:
@@ -330,6 +331,8 @@ async def test_target_dossier_json_shape() -> None:
     assert dossier["identity"]["gene"] == "TP53"
     assert dossier["structure"]["pdb_count"] == 2
     assert dossier["drug_target"]["chembl_ids"] == ["CHEMBL3712"]
+    assert dossier["chemistry_status"] == "available"
+    assert dossier["chemistry_provenance"]["accept_header"] == "text/plain;format=fasta"
 
 
 async def test_target_dossier_tolerates_fasta_failure(caplog: pytest.LogCaptureFixture) -> None:
@@ -351,7 +354,8 @@ async def test_target_dossier_tolerates_fasta_failure(caplog: pytest.LogCaptureF
         md = await uniprot_target_dossier("P04637", "markdown")
         assert len(router.calls) == 2
     assert "# Target dossier: P04637" in md
-    assert "## Sequence chemistry (derived)" not in md
+    assert "## Sequence chemistry (derived)" in md
+    assert "Unavailable: FASTA retrieval or validation failed" in md
     assert "## Structural evidence" in md
     assert "2026_01" in md
     warnings = [r for r in caplog.records if r.levelname == "WARNING"]
@@ -364,4 +368,32 @@ async def test_target_dossier_tolerates_fasta_failure(caplog: pytest.LogCaptureF
         router.get("/uniprotkb/P04637").mock(side_effect=_handler)
         payload = json.loads(await uniprot_target_dossier("P04637", "json"))
     assert payload["data"]["dossier"]["chemistry"] == {}
+    assert payload["data"]["dossier"]["chemistry_status"] == "unavailable"
+    assert "chemistry_provenance" not in payload["data"]["dossier"]
     assert payload["data"]["dossier"]["identity"]["gene"] == "TP53"
+
+
+
+async def test_target_dossier_invalid_fasta_is_explicitly_unavailable() -> None:
+    """Malformed successful-HTTP FASTA does not produce fictional chemistry."""
+    json_resp = httpx.Response(200, json=_TP53_RICH_ENTRY)
+    bad_fasta = httpx.Response(200, text="<html>upstream error</html>")
+    seq = iter([json_resp, bad_fasta])
+
+    def _handler(request: httpx.Request) -> httpx.Response:
+        return next(seq)
+
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/P04637").mock(side_effect=_handler)
+        payload = json.loads(await uniprot_target_dossier("P04637", "json"))
+    dossier = payload["data"]["dossier"]
+    assert dossier["chemistry"] == {}
+    assert dossier["chemistry_status"] == "unavailable"
+    assert dossier["identity"]["gene"] == "TP53"
+
+
+def test_target_dossier_unrecognized_review_status_is_not_trembl() -> None:
+    """Unknown upstream entry types do not establish unreviewed status."""
+    data = {"primaryAccession": "P04637", "entryType": "Unknown entry type"}
+    out = _assemble_target_dossier(data, {})
+    assert out["identity"]["reviewed"] is None

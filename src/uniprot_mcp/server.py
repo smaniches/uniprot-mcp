@@ -1003,9 +1003,11 @@ async def uniprot_target_dossier(
         # entry JSON, and the FASTA fetch below would otherwise overwrite
         # last_provenance on the shared client and mis-attribute the footer.
         entry_provenance = client.last_provenance
-        # Sequence chemistry needs the FASTA. One extra request.
+        # Sequence chemistry comes from a second, independent FASTA response.
+        chemistry_provenance: Provenance | None = None
         try:
             fasta = await client.get_fasta(accession)
+            chemistry_provenance = client.last_provenance
             sequence = "".join(
                 line
                 for line in fasta.splitlines()
@@ -1014,8 +1016,8 @@ async def uniprot_target_dossier(
             chemistry = dict(compute_protein_properties(sequence))
             chemistry.pop("amino_acid_counts", None)  # too verbose for the dossier
         except Exception as exc:
-            # Non-fatal: the dossier degrades to an empty chemistry section
-            # rather than failing outright, but the cause must not vanish.
+            # Preserve the verified entry but make missing chemistry visible to
+            # downstream callers, not merely to an internal log.
             logger.warning(
                 "uniprot_target_dossier: FASTA fetch for %s failed (%s); "
                 "omitting sequence chemistry",
@@ -1024,6 +1026,9 @@ async def uniprot_target_dossier(
             )
             chemistry = {}
         dossier = _assemble_target_dossier(data, chemistry)
+        dossier["chemistry_status"] = "available" if chemistry else "unavailable"
+        if chemistry_provenance is not None and chemistry:
+            dossier["chemistry_provenance"] = chemistry_provenance
         return fmt_target_dossier(dossier, accession, response_format, provenance=entry_provenance)
     except Exception as exc:
         _raise_tool_error("uniprot_target_dossier", exc)
@@ -1059,7 +1064,7 @@ def _assemble_target_dossier(entry: dict[str, Any], chemistry: dict[str, Any]) -
         "Swiss-Prot (reviewed)"
         if entry_type.startswith("UniProtKB reviewed")
         else "TrEMBL (unreviewed)"
-        if entry_type
+        if entry_type.startswith("UniProtKB unreviewed")
         else None
     )
 
