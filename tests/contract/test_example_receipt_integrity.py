@@ -16,21 +16,8 @@ LIVE = EXAMPLES / "01_clinical_variant_interpretation.jsonl"
 LEGACY_DIGEST = "0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e"
 CAPTURED_DIGEST = "112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf"
 
-# Hatch source distributions deliberately omit the research capture and most
-# documentation, but include repository contract tests. Only a source archive
-# contains PKG-INFO at its root; GitHub checkouts must enforce full binding.
-IS_SDIST = (ROOT / "PKG-INFO").is_file()
-
 
 def test_only_source_bound_example_is_published() -> None:
-    if IS_SDIST:
-        # Release archives intentionally ship no example transcripts or
-        # recorded patient/variant source bodies. Never pretend to verify
-        # bytes that are absent from the archive.
-        assert not list(EXAMPLES.glob("*.jsonl"))
-        assert not (CAPTURE / "capture_manifest.json").exists()
-        return
-
     assert sorted(p.name for p in EXAMPLES.glob("*.jsonl")) == [LIVE.name]
     assert (CAPTURE / "capture_manifest.json").is_file()
     assert (CAPTURE / "tool_outputs.json").is_file()
@@ -66,14 +53,10 @@ def test_unverifiable_april_receipt_is_withdrawn_everywhere() -> None:
         ROOT / "tests/benchmark/run-2026-04-25-roundtrip/transcript.md",
     ]
     for path in sources:
-        if IS_SDIST and not path.exists():
-            # Most repository audit documents are not included in the sdist.
-            continue
         assert path.is_file(), path
         assert LEGACY_DIGEST not in path.read_text(encoding="utf-8"), path
 
-    if not IS_SDIST:
-        withdrawn = sources[-1].read_text(encoding="utf-8").lower()
-        assert "withdrawn as verification evidence" in withdrawn
-        assert "upstream response bodies" in withdrawn
+    withdrawn = sources[-1].read_text(encoding="utf-8").lower()
+    assert "withdrawn as verification evidence" in withdrawn
+    assert "upstream response bodies" in withdrawn
     assert not (ROOT / "tests/benchmark/demo_roundtrip.py").exists()

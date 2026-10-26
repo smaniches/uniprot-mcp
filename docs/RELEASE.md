@@ -73,6 +73,13 @@ The tag triggers `.github/workflows/release.yml`. Watch the run at
 | `publish-mcp-registry` | `server.json` published to the official MCP Registry (`registry.modelcontextprotocol.io`); runs after `publish-pypi`; GitHub OIDC auth, no secret |
 | `sign-and-release` | Sigstore signatures (`*.sigstore.json`); GitHub Release created with all assets |
 
+The **source distribution** is an installable package archive, not a complete
+research checkout. It includes the package, metadata, license, and core
+documents; the repository-only tests, benchmark records, and source-capture
+fixtures remain in the GitHub tag. Those tests must be run against the tagged
+repository checkout, where their required source files are available.
+The offline CI test suite verifies this actual sdist inventory before release.
+
 The `publish-mcp-registry` job authenticates to the registry with GitHub
 OIDC for the `io.github.smaniches` namespace, and the registry verifies
 control of the PyPI package via the `mcp-name: io.github.smaniches/uniprot-mcp`
