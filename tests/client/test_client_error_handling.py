@@ -128,6 +128,87 @@ async def test_get_entry_accepts_canonical_or_confirmed_secondary_accession(
 
 
 # ---------------------------------------------------------------------------
+# UniProtKB FASTA integrity: reject invalid responses and verify aliases
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "<html>Temporary proxy error</html>",
+        "Not FASTA\nMEEPQ",
+        ">P04637\nMEEPQ",
+        ">xx|P04637|P53_HUMAN\nMEEPQ",
+        ">sp|BAD|P53_HUMAN\nMEEPQ",
+        ">sp|P04637|P53_HUMAN\n",
+        ">sp|P04637|P53_HUMAN\nMEEPQ?",
+        ">sp|P04637|P53_HUMAN\nMEEPQ\n>sp|P38398|BRCA1_HUMAN\nMVK",
+    ],
+)
+@respx.mock
+async def test_get_fasta_rejects_non_sequence_or_invalid_headers(body: str) -> None:
+    """Malformed HTTP-200 content must not become biological chemistry."""
+    route = respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
+        return_value=httpx.Response(200, text=body)
+    )
+    c = UniProtClient()
+    try:
+        with pytest.raises(ValueError, match="UniProtKB"):
+            await c.get_fasta("P04637")
+    finally:
+        await c.close()
+    assert route.called
+
+
+@respx.mock
+async def test_get_fasta_accepts_sequence_with_comments() -> None:
+    body = ">sp|P04637|P53_HUMAN test\nMEEPQ\n; provenance comment\n\nAAFG\n"
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(200, text=body))
+    c = UniProtClient()
+    try:
+        result = await c.get_fasta("P04637")
+    finally:
+        await c.close()
+    assert result == body
+
+
+@pytest.mark.parametrize("alias_matches", [True, False])
+@respx.mock
+async def test_get_fasta_resolves_secondary_alias_and_keeps_fasta_provenance(
+    alias_matches: bool,
+) -> None:
+    """Synthetic identifiers only, not a claim about actual protein aliases."""
+    request_id = "Q9ABC1"
+    primary_id = "Q9ABC2"
+    entry_id = primary_id if alias_matches else request_id
+    route = respx.get(f"{BASE_URL}/uniprotkb/{request_id}").mock(
+        side_effect=[
+            httpx.Response(200, text=f">tr|{primary_id}|TEST_HUMAN\nMEQQ\n"),
+            httpx.Response(
+                200,
+                json={
+                    "primaryAccession": entry_id,
+                    "secondaryAccessions": [request_id] if alias_matches else [],
+                },
+            ),
+        ]
+    )
+    c = UniProtClient()
+    try:
+        if alias_matches:
+            result = await c.get_fasta(request_id)
+            assert result.startswith(f">tr|{primary_id}")
+            assert c.last_provenance is not None
+            assert c.last_provenance["accept_header"] == "text/plain;format=fasta"
+        else:
+            with pytest.raises(ValueError, match="FASTA accession"):
+                await c.get_fasta(request_id)
+    finally:
+        await c.close()
+    assert route.call_count == 2
+
+
+# ---------------------------------------------------------------------------
 # parse_retry_after numeric branch: non-finite + negative
 # ---------------------------------------------------------------------------
 

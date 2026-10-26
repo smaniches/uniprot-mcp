@@ -507,9 +507,34 @@ class UniProtClient:
         return data
 
     async def get_fasta(self, accession: str) -> str:
-        """Fetch the canonical FASTA record for ``accession`` as raw text."""
+        """Fetch and validate a single UniProtKB protein FASTA record."""
         resp = await self._req("GET", f"/uniprotkb/{accession}", accept="text/plain;format=fasta")
-        return resp.text
+        body = resp.text
+        lines = body.splitlines()
+        if len(lines) < 2 or not lines[0].startswith(">"):
+            raise ValueError("UniProtKB returned an invalid FASTA record")
+        header = lines[0][1:].split(maxsplit=1)[0].split("|")
+        if (
+            len(header) < 2
+            or header[0] not in ("sp", "tr")
+            or not ACCESSION_RE.fullmatch(header[1])
+        ):
+            raise ValueError("UniProtKB FASTA returned an invalid accession header")
+        residues = [line.strip() for line in lines[1:] if line.strip() and not line.startswith(";")]
+        if not residues or any(
+            not re.fullmatch("[ACDEFGHIKLMNPQRSTVWYBXZJUO]+", line, flags=re.IGNORECASE)
+            for line in residues
+        ):
+            raise ValueError("UniProtKB FASTA returned an invalid amino acid sequence")
+        # UniProt secondary IDs can resolve to a different primary accession.
+        # Check the claimed alias against the independent entry response.
+        if header[1] != accession:
+            fasta_provenance = self.last_provenance
+            entry = await self.get_entry(accession)
+            if entry["primaryAccession"] != header[1]:
+                raise ValueError("UniProtKB FASTA accession does not match the requested entry")
+            _request_provenance.set(fasta_provenance)
+        return body
 
     async def id_mapping_submit(self, from_db: str, to_db: str, ids: list[str]) -> str:
         """Submit an ID mapping job. Retries on 429 / 5xx / timeout."""

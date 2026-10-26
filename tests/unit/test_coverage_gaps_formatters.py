@@ -577,9 +577,9 @@ def test_fmt_target_dossier_empty_structure_and_drug_sections() -> None:
         "drug_target": {"chembl_ids": []},
     }
     out = fmt_target_dossier(dossier, "P04637")
-    assert "PDB structures: 0 (no experimental structure on file)" in out
+    assert "PDB cross-references: none listed on this UniProt entry" in out
     assert "AlphaFold model: not cross-referenced from UniProt" in out
-    assert "ChEMBL targets: none" in out
+    assert "ChEMBL cross-references: none listed on this UniProt entry" in out
 
 
 def test_fmt_target_dossier_json() -> None:

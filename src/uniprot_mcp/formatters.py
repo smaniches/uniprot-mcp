@@ -1232,8 +1232,9 @@ def fmt_target_dossier(
         "",
         (
             "_Comprehensive single-call characterisation. "
-            "Each section is a structured view of the UniProt entry. Provenance "
-            "footer carries the underlying entry's release tag and SHA-256._"
+            "Entry-derived sections are bound to the UniProt entry provenance "
+            "footer. Derived sequence chemistry has a separate FASTA source "
+            "and digest when available._"
         ),
         "",
     ]
@@ -1281,7 +1282,19 @@ def fmt_target_dossier(
                 f"- Extinction coefficient (280 nm): "
                 f"{chem['extinction_coefficient_280nm']} M⁻¹·cm⁻¹"
             )
+        fasta_provenance = dossier.get("chemistry_provenance")
+        if isinstance(fasta_provenance, dict):
+            lines.append(f"- FASTA source URL: {fasta_provenance['url']}")
+            lines.append(f"- FASTA SHA-256: {fasta_provenance['response_sha256']}")
         lines.append("")
+    elif dossier.get("chemistry_status") == "unavailable":
+        lines.extend(
+            [
+                "## Sequence chemistry (derived)",
+                "_Unavailable: FASTA retrieval or validation failed; no chemistry calculated._",
+                "",
+            ]
+        )
 
     # === Structural evidence ===
     structure = dossier.get("structure") or {}
@@ -1300,7 +1313,7 @@ def fmt_target_dossier(
                 )
             lines.append(f"- PDB structures: {n_pdb}{tail}")
         else:
-            lines.append("- PDB structures: 0 (no experimental structure on file)")
+            lines.append("- PDB cross-references: none listed on this UniProt entry")
         af_id = structure.get("alphafold_model_id")
         if af_id:
             lines.append(
@@ -1324,7 +1337,7 @@ def fmt_target_dossier(
             extra = f" (+{len(chembls) - 5} more)" if len(chembls) > 5 else ""
             lines.append(f"- ChEMBL targets: {shown}{extra}")
         else:
-            lines.append("- ChEMBL targets: none — no documented bioactivity data on this protein")
+            lines.append("- ChEMBL cross-references: none listed on this UniProt entry")
         if drug.get("drugbank_count") is not None:
             lines.append(f"- DrugBank cross-references: {drug['drugbank_count']}")
         lines.append("")
