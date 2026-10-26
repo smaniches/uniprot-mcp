@@ -52,7 +52,7 @@ jobs:
           # the push-tag fallback, inputs.tag is empty and github.ref is the
           # tag ref, so the same checkout is correct either way.
           ref: ${{ inputs.tag || github.ref }}
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: "3.12"
           cache: pip
@@ -105,7 +105,7 @@ jobs:
           # Same tag semantics as the build job: the SBOM describes the
           # released commit's pyproject/root metadata and binder script.
           ref: ${{ inputs.tag || github.ref }}
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: "3.12"
           cache: pip
@@ -204,7 +204,7 @@ jobs:
           name: release-artifacts
           path: dist
       - name: Publish to PyPI (Trusted Publishing, OIDC)
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # release/v1
         with:
           packages-dir: dist
           print-hash: true
