@@ -14,14 +14,14 @@ This document exists because the [Anthropic Connectors Directory](https://suppor
 | **"I think this is a bug."** | Open a [GitHub Issue](https://github.com/smaniches/uniprot-mcp/issues/new) using the bug template. Include the version (`uniprot-mcp --version`), Python version, OS, and the smallest input that reproduces. |
 | **"This is a security vulnerability."** | **Do not open a public issue.** See [`SECURITY.md`](SECURITY.md). |
 | **"I'd like to contribute."** | See [`CONTRIBUTING.md`](CONTRIBUTING.md). PRs welcome; small PRs land faster than large ones. |
-| **"Commercial / enterprise / regulated-environment support."** | Email `santiago.maniches@gmail.com` with subject `[uniprot-mcp commercial]`. The orchestrator tier (`topologica-bio`) is the commercial product; commercial licensing of `uniprot-mcp` itself is not necessary because the project is permissively Apache-2.0. |
+| **"Commercial / enterprise / regulated-environment support."** | Email `santiago.maniches@gmail.com` with subject `[uniprot-mcp commercial]`. The code is licensed under Apache-2.0; no companion software or commercial license is required to use this package. Regulatory suitability and external services are outside the project's guarantees. |
 
 ---
 
 ## Response expectations
 
 - **Bug reports**: triaged within 7 days. Critical correctness bugs (wrong UniProt data, security implications, broken release artefacts) are prioritised over polish.
-- **Feature requests**: read within 7 days; not all are accepted. Scope is bounded by the [project goals](README.md#design-goals): a narrow-and-deep MCP for UniProt. Cross-database orchestration belongs in `topologica-bio`, not here.
+- **Feature requests**: read within 7 days; not all are accepted. Scope is bounded by the [project goals](README.md#design-goals): a narrow-and-deep MCP for UniProt and the explicitly documented linked sources. General-purpose orchestration is not implemented here.
 - **Pull requests**: reviewed within 14 days. Squash-merge to keep `main` history readable.
 - **Security reports**: see `SECURITY.md` for the dedicated SLA.
 

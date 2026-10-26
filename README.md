@@ -554,13 +554,11 @@ repository" button). Always also cite the UniProt Consortium:
 
 Apache-2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
-This project is the **gateway** layer of the planned [Topologica
-Bio](https://github.com/smaniches) MCP suite. Multi-source orchestration
-and tamper-evident provenance ledgers will live in a companion
-`topologica-bio` repository under BUSL-1.1 (Change Date 2030-04-19,
-auto-reverts to Apache-2.0). That companion repository is currently
-private; this README will be updated with a public link when it ships.
-`uniprot-mcp` itself is and will remain permissively Apache-2.0
-regardless of the Topologica Bio side.
+This is a standalone, Apache-2.0-licensed UniProt MCP maintained
+by TOPOLOGICA LLC. It does not require a companion product. Its source
+provenance and replay features should not be mistaken for a
+tamper-evident audit ledger or independent scientific validation.
+Integrations that require persistent, trusted audit records must
+implement and assess that functionality separately.
 
 Copyright © 2026 Santiago Maniches. TOPOLOGICA LLC.

@@ -18,7 +18,11 @@ License: Apache-2.0 · Version: tracks the release this file shipped with. Cite 
 | Upstream rate-limit fairness | Abusing public UniProt REST endpoints harms every other caller and risks a global IP ban for the user. |
 | The release pipeline itself | SLSA/Sigstore claims downstream consumers verify against. A break here breaks every consumer's trust in everything we ever ship. |
 
-This server is a **gateway**, not a ledger or orchestrator. Provenance is *reported* on every response (release, retrieved-at, URL) but is **not** stored. Tamper-evident provenance lives in the orchestrator tier (`topologica-bio/packages/provenance-mcp`), not here.
+This server is a **source-retrieval gateway**, not a tamper-evident audit ledger.
+Successful retrievals return source-specific provenance where available,
+including a URL, retrieval timestamp, and content digest. Optional local
+cache/replay features are not an independently trusted, append-only
+record. The package does not require or verify any companion service.
 
 ---
 
@@ -124,7 +128,13 @@ We **do not** defend against full host compromise (root on the user's machine). 
 
 **Scenario.** Caller wants to prove a citation came from UniProt release `2026_02` retrieved at a specific time, and the LLM cannot lie about that.
 
-**Position.** `uniprot-mcp` *reports* provenance on every response (`Provenance` TypedDict, surfaced in Markdown footer / JSON envelope / PIR-style FASTA header) but does not *store* it. Tamper-evident, hash-chained ledgers live in `topologica-bio/packages/provenance-mcp`. A regulated user who needs full non-repudiation should pair this gateway with that orchestrator.
+**Position.** The MCP reports source-attributed provenance on successful
+retrievals (Markdown footer, JSON envelope, or FASTA header, as applicable).
+It does not provide a trusted timestamp, cryptographic signature of a
+scientific conclusion, immutable audit-log retention, or legal
+non-repudiation. A regulated workflow must separately design and
+verify its evidence retention, provenance integrity, and scientific
+review controls; this repository does not supply or require them.
 
 ### T8 — Supply-chain compromise
 
