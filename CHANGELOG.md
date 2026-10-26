@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.15](https://github.com/smaniches/uniprot-mcp/compare/v1.3.14...v1.3.15) (2026-10-26)
+
+
+### Bug Fixes
+
+* **clinvar:** fail closed on malformed or misattributed NCBI responses ([#231](https://github.com/smaniches/uniprot-mcp/issues/231)) ([9f9b339](https://github.com/smaniches/uniprot-mcp/commit/9f9b339beba96eab30c3dd23597da03b23e959a7))
+* **package:** keep checkout-bound tests and captures out of sdist ([#237](https://github.com/smaniches/uniprot-mcp/issues/237)) ([22d8aac](https://github.com/smaniches/uniprot-mcp/commit/22d8aacc53eb8f8e81ca0d255cbad9a176bbd209))
+* **science:** bind UniProtKB records to requested accession ([#234](https://github.com/smaniches/uniprot-mcp/issues/234)) ([2b3e410](https://github.com/smaniches/uniprot-mcp/commit/2b3e410ac0f711ba24a797fcabb6d0a6da7cb3d0))
+* **science:** prevent cross-species ClinVar attribution ([#229](https://github.com/smaniches/uniprot-mcp/issues/229)) ([cd294dc](https://github.com/smaniches/uniprot-mcp/commit/cd294dc960645aaa8023ee27d787a8066fea6392))
+* **science:** reject unusable UniProtKB entries and uncertain review labels ([#232](https://github.com/smaniches/uniprot-mcp/issues/232)) ([b0d196a](https://github.com/smaniches/uniprot-mcp/commit/b0d196ac7ec9d8cfaaae4711158ce311b7591a15))
+* **science:** validate FASTA chemistry and bound dossier provenance ([#235](https://github.com/smaniches/uniprot-mcp/issues/235)) ([87c81db](https://github.com/smaniches/uniprot-mcp/commit/87c81db7102de3b4feac0a1414720505be899459))
+
 ## [1.3.14](https://github.com/smaniches/uniprot-mcp/compare/v1.3.13...v1.3.14) (2026-10-25)
 
 
