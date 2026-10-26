@@ -97,6 +97,9 @@ uniprot-mcp-server = "uniprot_mcp.server:main"
 packages = ["src/uniprot_mcp"]
 
 [tool.hatch.build.targets.sdist]
+# Checkout-bound contract tests need source captures, docs, scripts and CI
+# configuration that are intentionally outside the installable sdist.
+# Keep the complete test/evidence suite in the immutable Git tag instead.
 include = [
     "src/uniprot_mcp/**",
     "README.md",
@@ -105,7 +108,6 @@ include = [
     "CHANGELOG.md",
     "CITATION.cff",
     "ARCHITECTURE.md",
-    "tests/**",
 ]
 exclude = [
     "**/__pycache__",
