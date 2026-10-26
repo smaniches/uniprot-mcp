@@ -739,11 +739,18 @@ class UniProtClient:
         uids = result_block.get("uids")
         if not isinstance(uids, list) or not uids:
             raise ValueError("NCBI ClinVar esummary returned no usable identifier list")
+        if (
+            not all(isinstance(uid, str) for uid in uids)
+            or len(uids) != len(ids)
+            or set(uids) != set(ids)
+        ):
+            raise ValueError("NCBI ClinVar esummary identifiers do not match esearch")
         records: list[dict[str, Any]] = []
         for uid in uids:
             rec = result_block.get(uid)
-            if isinstance(rec, dict):
-                records.append(rec)
+            if not isinstance(rec, dict):
+                raise ValueError("NCBI ClinVar esummary returned an invalid or missing record")
+            records.append(rec)
         _request_provenance.set(
             Provenance(
                 source="NCBI ClinVar (eutils)",

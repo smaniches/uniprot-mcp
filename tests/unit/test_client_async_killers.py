@@ -837,7 +837,20 @@ async def test_clinvar_invalid_esearch_never_reports_zero_matches(payload: objec
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("payload", [[], {}, {"result": {}}, {"result": {"uids": []}}])
+@pytest.mark.parametrize(
+    "payload",
+    [
+        [],
+        {},
+        {"result": {}},
+        {"result": {"uids": []}},
+        {"result": {"uids": ["111"]}},
+        {"result": {"uids": ["111"], "111": None}},
+        {"result": {"uids": ["222"], "222": {"uid": "222"}}},
+        {"result": {"uids": [111], "111": {"uid": "111"}}},
+        {"result": {"uids": ["111"], "111": []}},
+    ],
+)
 @respx.mock
 async def test_clinvar_invalid_esummary_rejected(payload: object) -> None:
     """A malformed summary must not be presented as a successful lookup."""
