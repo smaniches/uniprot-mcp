@@ -10,17 +10,18 @@ from __future__ import annotations
 import tarfile
 from pathlib import Path
 
+import pytest
 from hatchling.build import build_sdist
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_sdist_contains_runtime_sources_but_no_checkout_tests(
-    tmp_path: Path, monkeypatch: object
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Exercise the actual PEP 517 backend, not merely the TOML declaration."""
     # pytest's monkeypatch fixture restores cwd after the build.
-    monkeypatch.chdir(ROOT)  # type: ignore[attr-defined]
+    monkeypatch.chdir(ROOT)
     archive_name = build_sdist(str(tmp_path))
     archive = tmp_path / archive_name
     assert archive.is_file()
