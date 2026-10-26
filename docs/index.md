@@ -39,9 +39,10 @@ uniprot-mcp --self-test
 
 ## What this project explicitly is not
 
-- **Not** an orchestrator across multiple bio data sources. That's the
-  BUSL-1.1 layer in `topologica-bio`. `uniprot-mcp` stays a permissive
-  Apache-2.0 gateway forever.
+- **Not** a general biomedical orchestration platform. It exposes
+  UniProtKB and the explicitly documented AlphaFold DB and ClinVar
+  retrieval paths, with no required companion product or clinical atlas.
+  This package is licensed under Apache-2.0.
 - **Not** a structure-prediction service. AlphaFold confidence is
   surfaced; structure files (CIF/PDB) are URLs the agent can fetch
   separately.
