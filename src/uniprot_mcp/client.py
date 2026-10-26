@@ -693,9 +693,24 @@ class UniProtClient:
             )
             r_search.raise_for_status()
             search_payload = r_search.json()
-            esearch_result = search_payload.get("esearchresult", {})
-            ids: list[str] = list(esearch_result.get("idlist") or [])
-            total = int(esearch_result.get("count") or 0)
+            if not isinstance(search_payload, dict):
+                raise ValueError("NCBI ClinVar esearch returned a non-object JSON response")
+            esearch_result = search_payload.get("esearchresult")
+            if not isinstance(esearch_result, dict):
+                raise ValueError("NCBI ClinVar esearch returned an invalid result envelope")
+            raw_ids = esearch_result.get("idlist")
+            raw_count = esearch_result.get("count")
+            if not isinstance(raw_ids, list) or not all(
+                isinstance(uid, str) and uid.isascii() and uid.isdecimal() for uid in raw_ids
+            ):
+                raise ValueError("NCBI ClinVar esearch returned an invalid idlist")
+            count_text = str(raw_count) if isinstance(raw_count, (str, int)) else ""
+            if not count_text.isascii() or not count_text.isdecimal():
+                raise ValueError("NCBI ClinVar esearch returned an invalid count")
+            ids: list[str] = raw_ids
+            total = int(count_text)
+            if total > 0 and not ids and retmax > 0:
+                raise ValueError("NCBI ClinVar esearch reported matches but no identifiers")
             if not ids:
                 _request_provenance.set(
                     Provenance(
@@ -716,9 +731,16 @@ class UniProtClient:
             )
             r_summary.raise_for_status()
             summary_payload: dict[str, Any] = r_summary.json()
-        result_block = summary_payload.get("result") or {}
+        if not isinstance(summary_payload, dict):
+            raise ValueError("NCBI ClinVar esummary returned a non-object JSON response")
+        result_block = summary_payload.get("result")
+        if not isinstance(result_block, dict):
+            raise ValueError("NCBI ClinVar esummary returned an invalid result envelope")
+        uids = result_block.get("uids")
+        if not isinstance(uids, list) or not uids:
+            raise ValueError("NCBI ClinVar esummary returned no usable identifier list")
         records: list[dict[str, Any]] = []
-        for uid in result_block.get("uids") or []:
+        for uid in uids:
             rec = result_block.get(uid)
             if isinstance(rec, dict):
                 records.append(rec)
