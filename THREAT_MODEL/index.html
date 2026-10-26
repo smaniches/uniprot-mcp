@@ -1441,7 +1441,11 @@
 </tr>
 </tbody>
 </table>
-<p>This server is a <strong>gateway</strong>, not a ledger or orchestrator. Provenance is <em>reported</em> on every response (release, retrieved-at, URL) but is <strong>not</strong> stored. Tamper-evident provenance lives in the orchestrator tier (<code>topologica-bio/packages/provenance-mcp</code>), not here.</p>
+<p>This server is a <strong>source-retrieval gateway</strong>, not a tamper-evident audit ledger.
+Successful retrievals return source-specific provenance where available,
+including a URL, retrieval timestamp, and content digest. Optional local
+cache/replay features are not an independently trusted, append-only
+record. The package does not require or verify any companion service.</p>
 <hr />
 <h2 id="attacker-capabilities">Attacker capabilities<a class="headerlink" href="#attacker-capabilities" title="Permanent link">&para;</a></h2>
 <ol>
@@ -1531,7 +1535,13 @@
 - Pinned by <code>tests/unit/test_server_validation.py::test_safe_error_hides_internal_exception_text</code>.</p>
 <h3 id="t7-provenance-integrity-out-of-scope-here-see-orchestrator">T7 — Provenance integrity (out-of-scope-here, see orchestrator)<a class="headerlink" href="#t7-provenance-integrity-out-of-scope-here-see-orchestrator" title="Permanent link">&para;</a></h3>
 <p><strong>Scenario.</strong> Caller wants to prove a citation came from UniProt release <code>2026_02</code> retrieved at a specific time, and the LLM cannot lie about that.</p>
-<p><strong>Position.</strong> <code>uniprot-mcp</code> <em>reports</em> provenance on every response (<code>Provenance</code> TypedDict, surfaced in Markdown footer / JSON envelope / PIR-style FASTA header) but does not <em>store</em> it. Tamper-evident, hash-chained ledgers live in <code>topologica-bio/packages/provenance-mcp</code>. A regulated user who needs full non-repudiation should pair this gateway with that orchestrator.</p>
+<p><strong>Position.</strong> The MCP reports source-attributed provenance on successful
+retrievals (Markdown footer, JSON envelope, or FASTA header, as applicable).
+It does not provide a trusted timestamp, cryptographic signature of a
+scientific conclusion, immutable audit-log retention, or legal
+non-repudiation. A regulated workflow must separately design and
+verify its evidence retention, provenance integrity, and scientific
+review controls; this repository does not supply or require them.</p>
 <h3 id="t8-supply-chain-compromise">T8 — Supply-chain compromise<a class="headerlink" href="#t8-supply-chain-compromise" title="Permanent link">&para;</a></h3>
 <p><strong>Scenario.</strong> <code>httpx</code>, <code>mcp</code>, <code>hatchling</code>, or any GitHub Action is typosquatted, backdoored, or its release moved to a malicious commit.</p>
 <p><strong>Mitigations.</strong>

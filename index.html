@@ -1191,9 +1191,10 @@
 </code></pre></div>
 <h2 id="what-this-project-explicitly-is-not">What this project explicitly is not<a class="headerlink" href="#what-this-project-explicitly-is-not" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Not</strong> an orchestrator across multiple bio data sources. That's the
-  BUSL-1.1 layer in <code>topologica-bio</code>. <code>uniprot-mcp</code> stays a permissive
-  Apache-2.0 gateway forever.</li>
+<li><strong>Not</strong> a general biomedical orchestration platform. It exposes
+  UniProtKB and the explicitly documented AlphaFold DB and ClinVar
+  retrieval paths, with no required companion product or clinical atlas.
+  This package is licensed under Apache-2.0.</li>
 <li><strong>Not</strong> a structure-prediction service. AlphaFold confidence is
   surfaced; structure files (CIF/PDB) are URLs the agent can fetch
   separately.</li>
