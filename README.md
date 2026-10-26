@@ -223,7 +223,7 @@ The only tools that consult origins outside `rest.uniprot.org`. Each is document
 | Tool | Origin | Purpose |
 |---|---|---|
 | `uniprot_get_alphafold_confidence` | `alphafold.ebi.ac.uk` | pLDDT mean + four-band distribution; lets the agent decide whether to trust the model. |
-| `uniprot_resolve_clinvar` | `eutils.ncbi.nlm.nih.gov` | ClinVar significance + condition + review status by gene + optional HGVS shorthand. |
+| `uniprot_resolve_clinvar` | `eutils.ncbi.nlm.nih.gov` | Human UniProt entries only (NCBI taxon 9606); ClinVar classifications by gene + optional protein change, not transferable to nonhuman orthologs. |
 | `uniprot_get_publications` | `rest.uniprot.org` | Pure-Python over the entry's references — listed here because it complements the cross-origin enrichment. |
 
 ### Composition + provenance (5)
