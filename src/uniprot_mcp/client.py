@@ -482,6 +482,18 @@ class UniProtClient:
             or not data["primaryAccession"].strip()
         ):
             raise ValueError("UniProtKB returned an invalid entry (missing primary accession)")
+        primary = data["primaryAccession"]
+        if not ACCESSION_RE.fullmatch(primary):
+            raise ValueError("UniProtKB returned an invalid primary accession")
+        # A legitimate secondary accession may resolve to the canonical primary
+        # ID. Unrelated entries must never be attributed to the requested ID.
+        if primary != accession:
+            secondary = data.get("secondaryAccessions")
+            if not isinstance(secondary, list) or accession not in secondary:
+                raise ValueError(
+                    "UniProtKB entry accession mismatch: requested identifier "
+                    "is neither primary nor a listed secondary accession"
+                )
         return data
 
     async def search(
