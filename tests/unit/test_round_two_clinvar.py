@@ -107,7 +107,8 @@ async def test_clinvar_rejects_nonhuman_or_unknown_taxonomy_without_ncbi_call(
         )
         with pytest.raises(ToolError, match="requires a confirmed human UniProt entry"):
             await uniprot_resolve_clinvar("P56424", change="R175H")
-    assert len(router.calls) == 1  # no NCBI request: fail before cross-species lookup
+        # respx clears its call log on context exit; assert while the mock is active.
+        assert len(router.calls) == 1  # UniProt fetch only, never NCBI
 
 
 # ---------------------------------------------------------------------------
