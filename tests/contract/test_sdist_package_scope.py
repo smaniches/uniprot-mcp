@@ -43,5 +43,6 @@ def test_sdist_contains_runtime_sources_but_no_checkout_tests(
     ):
         assert required in members, required
 
-    assert not any(name.startswith("tests/") for name in members)
+    included_tests = sorted(name for name in members if name.startswith("tests/"))
+    assert not included_tests, included_tests[:10]
     assert not any(name.startswith("examples/captures/") for name in members)

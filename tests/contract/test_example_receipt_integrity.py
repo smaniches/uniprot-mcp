@@ -16,6 +16,7 @@ LIVE = EXAMPLES / "01_clinical_variant_interpretation.jsonl"
 LEGACY_DIGEST = "0040d79bb39e2f7386d55f81071e87858ec2e5c2cd9552e93c3633897f78345e"
 CAPTURED_DIGEST = "112540dcb662c3ce2feba05272ce0e946ce76089a5bcf8346eb55141892f7fcf"
 
+
 def test_only_source_bound_example_is_published() -> None:
     assert sorted(p.name for p in EXAMPLES.glob("*.jsonl")) == [LIVE.name]
     assert (CAPTURE / "capture_manifest.json").is_file()
