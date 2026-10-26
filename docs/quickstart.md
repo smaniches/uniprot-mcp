@@ -102,14 +102,12 @@ later to verify the answer.
 > For human TP53, give me: (a) the canonical entry summary, (b) a
 > drug-target dossier, (c) a list of every disease association with
 > OMIM IDs, (d) the AlphaFold pLDDT confidence summary, (e) every
-> ClinVar pathogenic variant.
+> ClinVar record sample for the gene (not exhaustive and not restricted to pathogenic records).
 
 That's five tool calls — `uniprot_get_entry`,
 `uniprot_target_dossier`, `uniprot_get_disease_associations`,
 `uniprot_get_alphafold_confidence`, `uniprot_resolve_clinvar` — and
-the agent assembles the answer with provenance footers on every
-section. See [recipes](recipes/clinical-variant-interpretation.md)
-for worked examples.
+the agent assembles a source-attributed evidence overview, not a clinical classification. The ClinVar lookup returns up to 10 records by default (50 maximum per call), so it cannot enumerate every pathogenic variant. See [recipes](recipes/clinical-variant-interpretation.md) for the scope and limitations.
 
 ## Where to go next
 
