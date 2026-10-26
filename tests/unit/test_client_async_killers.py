@@ -842,9 +842,7 @@ async def test_clinvar_invalid_esearch_never_reports_zero_matches(payload: objec
 async def test_clinvar_invalid_esummary_rejected(payload: object) -> None:
     """A malformed summary must not be presented as a successful lookup."""
     respx.get(f"{NCBI_EUTILS_BASE}/esearch.fcgi").mock(
-        return_value=httpx.Response(
-            200, json={"esearchresult": {"count": "1", "idlist": ["111"]}}
-        )
+        return_value=httpx.Response(200, json={"esearchresult": {"count": "1", "idlist": ["111"]}})
     )
     summary = respx.get(f"{NCBI_EUTILS_BASE}/esummary.fcgi").mock(
         return_value=httpx.Response(200, json=payload)
