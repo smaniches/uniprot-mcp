@@ -2106,10 +2106,10 @@ async def uniprot_provenance_verify(
     guaranteed hash mismatch because the upstream serves different content
     depending on content negotiation.
 
-    This is the single tool that converts every prior uniprot-mcp
-    response into an independently auditable artefact — a year from
-    now, a third party can take the recorded provenance footer and
-    confirm the upstream still serves the exact same bytes."""
+    Verification applies to individual UniProt REST responses only.
+    It does not independently validate derived biological conclusions,
+    composite dossiers, or cross-origin ClinVar and AlphaFold DB responses.
+    Check the recorded source and digest for each upstream input separately."""
     try:
         _check_len("url", url, MAX_PROVENANCE_URL_LEN)
         _check_len("release", release, MAX_RELEASE_TAG_LEN)

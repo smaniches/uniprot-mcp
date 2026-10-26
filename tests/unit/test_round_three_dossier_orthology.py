@@ -373,7 +373,6 @@ async def test_target_dossier_tolerates_fasta_failure(caplog: pytest.LogCaptureF
     assert payload["data"]["dossier"]["identity"]["gene"] == "TP53"
 
 
-
 async def test_target_dossier_invalid_fasta_is_explicitly_unavailable() -> None:
     """Malformed successful-HTTP FASTA does not produce fictional chemistry."""
     json_resp = httpx.Response(200, json=_TP53_RICH_ENTRY)

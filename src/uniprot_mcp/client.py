@@ -520,9 +520,7 @@ class UniProtClient:
             or not ACCESSION_RE.fullmatch(header[1])
         ):
             raise ValueError("UniProtKB FASTA returned an invalid accession header")
-        residues = [
-            line.strip() for line in lines[1:] if line.strip() and not line.startswith(";")
-        ]
+        residues = [line.strip() for line in lines[1:] if line.strip() and not line.startswith(";")]
         if not residues or any(
             not re.fullmatch("[ACDEFGHIKLMNPQRSTVWYBXZJUO]+", line, flags=re.IGNORECASE)
             for line in residues

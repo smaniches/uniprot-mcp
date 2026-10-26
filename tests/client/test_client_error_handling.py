@@ -163,9 +163,7 @@ async def test_get_fasta_rejects_non_sequence_or_invalid_headers(body: str) -> N
 @respx.mock
 async def test_get_fasta_accepts_sequence_with_comments() -> None:
     body = ">sp|P04637|P53_HUMAN test\nMEEPQ\n; provenance comment\n\nAAFG\n"
-    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
-        return_value=httpx.Response(200, text=body)
-    )
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(200, text=body))
     c = UniProtClient()
     try:
         result = await c.get_fasta("P04637")
