@@ -1350,6 +1350,12 @@ forward.</p>
 </tr>
 </tbody>
 </table>
+<p>The <strong>source distribution</strong> is an installable package archive, not a complete
+research checkout. It includes the package, metadata, license, and core
+documents; the repository-only tests, benchmark records, and source-capture
+fixtures remain in the GitHub tag. Those tests must be run against the tagged
+repository checkout, where their required source files are available.
+The offline CI test suite verifies this actual sdist inventory before release.</p>
 <p>The <code>publish-mcp-registry</code> job authenticates to the registry with GitHub
 OIDC for the <code>io.github.smaniches</code> namespace, and the registry verifies
 control of the PyPI package via the <code>mcp-name: io.github.smaniches/uniprot-mcp</code>
