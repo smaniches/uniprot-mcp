@@ -118,9 +118,7 @@ async def test_get_entry_accepts_canonical_or_confirmed_secondary_accession(
     payload: dict[str, object],
 ) -> None:
     """A valid secondary alias can legitimately resolve to a new primary."""
-    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
-        return_value=httpx.Response(200, json=payload)
-    )
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(200, json=payload))
     client = UniProtClient()
     try:
         result = await client.get_entry("P04637")
