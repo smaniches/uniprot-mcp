@@ -425,7 +425,7 @@ async def test_req_retries_on_5xx_then_succeeds() -> None:
     route = respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
         side_effect=[
             httpx.Response(500),
-            httpx.Response(200, json={"ok": True}),
+            httpx.Response(200, json={"primaryAccession": "P04637", "ok": True}),
         ]
     )
     c = UniProtClient()
@@ -513,13 +513,15 @@ async def test_req_does_not_raise_when_pinned_release_matches() -> None:
     """Same release as the pin → no error, request succeeds."""
     respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
         return_value=httpx.Response(
-            200, json={"ok": True}, headers={"X-UniProt-Release": "2026_02"}
+            200,
+            json={"primaryAccession": "P04637", "ok": True},
+            headers={"X-UniProt-Release": "2026_02"},
         )
     )
     c = UniProtClient(pin_release="2026_02")
     try:
         result = await c.get_entry("P04637")
-        assert result == {"ok": True}
+        assert result == {"primaryAccession": "P04637", "ok": True}
     finally:
         await c.close()
 
@@ -960,7 +962,9 @@ async def test_close_is_idempotent_when_no_client_yet() -> None:
 async def test_close_is_idempotent_after_a_request() -> None:
     """After one request, close() works once and subsequent close()
     calls also work (the is_closed branch)."""
-    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(200, json={}))
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
+        return_value=httpx.Response(200, json={"primaryAccession": "P04637"})
+    )
     c = UniProtClient()
     await c.get_entry("P04637")
     await c.close()
@@ -979,7 +983,9 @@ async def test_provenance_records_canonical_hash_for_json_body() -> None:
     """A successful JSON request populates last_provenance with a
     SHA-256 hex digest of length 64 — exercises canonical_response_hash
     path (line 236) inside _req's success path."""
-    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(200, json={"a": 1}))
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
+        return_value=httpx.Response(200, json={"primaryAccession": "P04637", "a": 1})
+    )
     c = UniProtClient()
     try:
         await c.get_entry("P04637")
@@ -1000,7 +1006,9 @@ async def test_provenance_retrieved_at_is_recent() -> None:
     from datetime import UTC as _UTC
     from datetime import datetime
 
-    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(200, json={}))
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
+        return_value=httpx.Response(200, json={"primaryAccession": "P04637"})
+    )
     c = UniProtClient()
     try:
         await c.get_entry("P04637")

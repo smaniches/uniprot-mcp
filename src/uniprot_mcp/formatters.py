@@ -261,7 +261,13 @@ def fmt_entry(data: Entry, fmt: str = "markdown", *, provenance: Provenance | No
     name = _protein_name(data)
     gene = _gene_name(data)
     org = _organism(data)
-    reviewed = "Swiss-Prot" if is_swissprot(data) else "TrEMBL"
+    entry_type = data.get("entryType")
+    if is_swissprot(data):
+        reviewed = "Swiss-Prot"
+    elif isinstance(entry_type, str) and entry_type.startswith("UniProtKB unreviewed"):
+        reviewed = "TrEMBL"
+    else:
+        reviewed = "Unknown"
     seq: dict[str, Any] = data.get("sequence", {}) or {}
     lines: list[str] = [f"## {acc}: {name}", ""]
     if gene:

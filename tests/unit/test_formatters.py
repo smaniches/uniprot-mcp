@@ -26,6 +26,17 @@ def test_fmt_entry_markdown_contains_core_fields(fixture_loader) -> None:
     assert "Swiss-Prot" in out
 
 
+def test_fmt_entry_missing_review_metadata_does_not_invent_trembl() -> None:
+    """Absent or unrecognized review metadata must not imply TrEMBL."""
+    for entry_type in (None, "", "unknown upstream classification"):
+        record: dict[str, object] = {"primaryAccession": "P04637"}
+        if entry_type is not None:
+            record["entryType"] = entry_type
+        output = fmt_entry(record, "markdown")
+        assert "**Reviewed:** Unknown" in output
+        assert "TrEMBL" not in output
+
+
 def test_fmt_entry_json_roundtrips(fixture_loader) -> None:
     import json as _json
 
