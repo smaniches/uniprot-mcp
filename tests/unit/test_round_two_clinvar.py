@@ -25,6 +25,7 @@ _BRCA1_ENTRY = {
     "primaryAccession": "P38398",
     "entryType": "UniProtKB reviewed (Swiss-Prot)",
     "genes": [{"geneName": {"value": "BRCA1"}}],
+    "organism": {"scientificName": "Homo sapiens", "taxonId": 9606},
 }
 
 _BRCA1_ESEARCH = {
@@ -79,6 +80,35 @@ async def test_clinvar_rejects_bad_change() -> None:
     with pytest.raises(ToolError) as exc_info:
         await uniprot_resolve_clinvar("P38398", change="p.R175H")
     assert "Input error" in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "organism",
+    [
+        {"scientificName": "Macaca mulatta", "taxonId": 9544},
+        {"scientificName": "Homo sapiens"},
+        {"scientificName": "Homo sapiens", "taxonId": "9606"},
+        {"scientificName": "Homo sapiens", "taxonId": True},
+        None,
+    ],
+)
+async def test_clinvar_rejects_nonhuman_or_unknown_taxonomy_without_ncbi_call(
+    organism: dict[str, object] | None,
+) -> None:
+    """Do not attribute human TP53 classifications to macaque P56424."""
+    entry = {
+        "primaryAccession": "P56424",
+        "genes": [{"geneName": {"value": "TP53"}}],
+        "organism": organism,
+    }
+    with respx.mock(assert_all_called=False) as router:
+        router.get("https://rest.uniprot.org/uniprotkb/P56424").mock(
+            return_value=httpx.Response(200, json=entry)
+        )
+        with pytest.raises(ToolError, match="requires a confirmed human UniProt entry"):
+            await uniprot_resolve_clinvar("P56424", change="R175H")
+        # respx clears its call log on context exit; assert while the mock is active.
+        assert len(router.calls) == 1  # UniProt fetch only, never NCBI
 
 
 # ---------------------------------------------------------------------------

@@ -50,7 +50,7 @@ _ENTRY = {
         "recommendedName": {"fullName": {"value": "Cellular tumor antigen p53"}}
     },
     "genes": [{"geneName": {"value": "TP53"}}],
-    "organism": {"scientificName": "Homo sapiens"},
+    "organism": {"scientificName": "Homo sapiens", "taxonId": 9606},
     "sequence": {"length": 393, "molWeight": 43653},
     "comments": [],
     "features": [],

@@ -1301,18 +1301,16 @@ async def uniprot_resolve_clinvar(
     response_format: ResponseFormatParam = "markdown",
 ) -> str:
     """Look up ClinVar records for the gene encoded by a UniProt entry.
-    First fetches the entry to extract the canonical gene symbol, then
-    queries NCBI eutils ClinVar by gene (and optional protein-change
-    filter, e.g. ``R175H``). Returns clinical-significance classification,
-    review status, condition list (trait_set), molecular consequence,
-    and the protein-change list per record.
+    First fetches the human UniProt entry to extract its gene symbol,
+    then queries NCBI eutils ClinVar by gene (and optional protein-change
+    filter, e.g. ``R175H``). Returns submitted human variant records
+    with their classifications, review status, conditions, molecular
+    consequences, and protein changes where present.
 
-    Critical for clinical workflows — UniProt's natural-variant
-    annotations stop at literature-described variants. ClinVar carries
-    every variant submitted by clinical labs, with curated significance
-    classifications. Combine ``uniprot_lookup_variant`` (UniProt side)
-    with ``uniprot_resolve_clinvar`` (population side) for a full
-    variant-effect picture.
+    ClinVar is a human variation archive. Gene symbols are not species-
+    specific identifiers, so nonhuman or taxonomically unverified entries
+    must not inherit human ClinVar classifications. ClinVar coverage is
+    submission-dependent; a missing record does not establish benignity.
 
     Calls https://eutils.ncbi.nlm.nih.gov — declared in PRIVACY.md."""
     try:
@@ -1335,6 +1333,17 @@ async def uniprot_resolve_clinvar(
             raise _InputError(
                 f"UniProt entry {accession} has no canonical gene name; "
                 "ClinVar resolution requires a gene symbol."
+            )
+        # Gene symbols are shared by orthologs; ClinVar classifications apply
+        # to human variants, not to a nonhuman protein with the same symbol.
+        organism = entry.get("organism")
+        taxon_id = organism.get("taxonId") if isinstance(organism, dict) else None
+        if not isinstance(taxon_id, int) or isinstance(taxon_id, bool) or taxon_id != 9606:
+            raise _InputError(
+                "ClinVar resolution requires a confirmed human UniProt entry "
+                f"(NCBI taxon 9606); {accession} is not confirmed as human. "
+                "Use a human accession; clinical classifications cannot be "
+                "transferred between species by gene symbol."
             )
         # Phase 2: query ClinVar.
         payload = await client.get_clinvar_records(gene, change=change, retmax=size)
