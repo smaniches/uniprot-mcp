@@ -74,6 +74,60 @@ async def test_get_entry_rejects_missing_identity_in_successful_http_response(
 
 
 # ---------------------------------------------------------------------------
+# Validate fetched UniProtKB entry identity without breaking secondary accessions
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"primaryAccession": "P38398"},
+        {"primaryAccession": "P38398", "secondaryAccessions": []},
+        {"primaryAccession": "P38398", "secondaryAccessions": ["Q99999"]},
+        {"primaryAccession": "P38398", "secondaryAccessions": "P04637"},
+        {"primaryAccession": "P38398", "secondaryAccessions": None},
+        {"primaryAccession": "not-a-uniprot-id"},
+    ],
+)
+@respx.mock
+async def test_get_entry_rejects_unrelated_or_invalid_upstream_accession(
+    payload: dict[str, object],
+) -> None:
+    """A wrong or malformed accession must not be attributed to human TP53."""
+    route = respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(
+        return_value=httpx.Response(200, json=payload)
+    )
+    client = UniProtClient()
+    try:
+        with pytest.raises(ValueError, match="accession"):
+            await client.get_entry("P04637")
+    finally:
+        await client.close()
+    assert route.called
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"primaryAccession": "P04637"},
+        {"primaryAccession": "P38398", "secondaryAccessions": ["P04637"]},
+    ],
+)
+@respx.mock
+async def test_get_entry_accepts_canonical_or_confirmed_secondary_accession(
+    payload: dict[str, object],
+) -> None:
+    """A valid secondary alias can legitimately resolve to a new primary."""
+    respx.get(f"{BASE_URL}/uniprotkb/P04637").mock(return_value=httpx.Response(200, json=payload))
+    client = UniProtClient()
+    try:
+        result = await client.get_entry("P04637")
+    finally:
+        await client.close()
+    assert result == payload
+
+
+# ---------------------------------------------------------------------------
 # parse_retry_after numeric branch: non-finite + negative
 # ---------------------------------------------------------------------------
 
