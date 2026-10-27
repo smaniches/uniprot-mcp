@@ -73,11 +73,10 @@ Verify the provenance for P04637 using URL
 https://rest.uniprot.org/uniprotkb/P04637
 ```
 
-The agent calls `uniprot_provenance_verify` and returns one of five
-verdicts. If the UniProt release has not changed since the recorded
-provenance, the verdict is `verified`. If UniProt has released a new
-version, the verdict is `release_drift` or `release_and_hash_drift`
-with an advice string explaining next steps.
+The agent calls `uniprot_provenance_verify` and returns one of six
+verdicts. `verified` requires both recorded UniProt release and SHA-256
+to match. Missing reference values yield `incomplete_evidence` if no
+mismatch was observed. Release drift retains its existing drift verdict.
 
 ## 5. Run the offline test suite (~2 min)
 

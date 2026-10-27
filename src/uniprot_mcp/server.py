@@ -2097,8 +2097,9 @@ async def uniprot_provenance_verify(
     returns the same release identifier and the same canonical response
     body (SHA-256). Pass the values from a prior response's provenance
     footer (`url`, `release`, `response_sha256`, `accept_header`); empty
-    optional fields skip the corresponding check. Returns a verification
-    report with explicit pass / drift / unreachable verdicts per check.
+    optional fields skip the corresponding check. Only both matches earn
+    `verified`; absent checks return `incomplete_evidence` if nothing drifted.
+    Reachability, mismatch and per-check fields remain available.
 
     ``accept_header`` must match the Accept header used for the original
     request (default ``application/json``; use ``text/plain;format=fasta``
@@ -2193,8 +2194,11 @@ async def _provenance_verify_impl(
             report["status"] = "release_drift"
         elif hash_match is False:
             report["status"] = "hash_drift"
-        else:
+        elif release_match is True and hash_match is True:
             report["status"] = "verified"
+        else:
+            # A reachable URL or a single successful comparison is not full verification.
+            report["status"] = "incomplete_evidence"
 
     return _format_verify_report(report, response_format)
 
@@ -2236,25 +2240,24 @@ def _verify_advice(status: str, checks_run: int = 2) -> str:
     """Return the human-readable advice string for a verification ``status``.
 
     ``checks_run`` (0-2) is how many of release / hash were actually
-    compared, so a ``verified`` verdict with nothing to compare is not
-    oversold.
+    compared. A ``verified`` verdict requires both checks to pass.
     """
     if status == "verified":
+        return (
+            "Both checks passed. The recorded provenance is reproducible against the "
+            "live UniProt API."
+        )
+    if status == "incomplete_evidence":
         if checks_run == 0:
             return (
                 "The URL is reachable, but no recorded release or response hash was "
                 "supplied, so content reproducibility was not verified. Re-run with "
-                "the recorded release and response_sha256 to confirm the bytes are "
+                "the recorded release and response_sha256 to confirm the content is "
                 "unchanged."
             )
-        if checks_run == 1:
-            return (
-                "The one supplied check passed, but only release or hash was provided. "
-                "Supply both for full byte-level reproducibility assurance."
-            )
         return (
-            "Both checks passed. The recorded provenance is reproducible against the "
-            "live UniProt API."
+            "The one supplied check passed, but only release or hash was provided. "
+            "Supply both for full provenance verification."
         )
     return {
         "release_drift": (
@@ -2264,9 +2267,9 @@ def _verify_advice(status: str, checks_run: int = 2) -> str:
             "snapshot archive."
         ),
         "hash_drift": (
-            "The release tag still matches but the canonical response body has "
-            "changed. Investigate: UniProt may have edited the entry within the "
-            "release, or our canonicalisation differs."
+            "The canonical response body differs from the recorded hash. "
+            "Investigate an upstream change or canonicalisation difference; "
+            "the release was checked only if a recorded release was supplied."
         ),
         "release_and_hash_drift": (
             "Both the release tag and the response body have moved on. Use a "

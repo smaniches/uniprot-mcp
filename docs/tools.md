@@ -100,7 +100,7 @@ and in [the threat model](THREAT_MODEL.md#t3b-cross-origin-allowlist-for-non-uni
 | `uniprot_resolve_orthology` | Group orthology cross-references by source DB (KEGG / OMA / OrthoDB / eggNOG / 8 more). |
 | `uniprot_get_evidence_summary` | Summarize UniProt ECO annotation evidence and assertion methods, with a weighted 0-100 descriptive mix index. The index is uncalibrated, not a probability of annotation correctness and not comparable to AlphaFold pLDDT. |
 | `uniprot_target_dossier` | One-call comprehensive characterisation: nine sections in one structured report. |
-| `uniprot_provenance_verify` | Re-fetch a previously recorded URL and compare release + canonical SHA-256. Five verdicts (`verified` / `release_drift` / `hash_drift` / `release_and_hash_drift` / `url_unreachable`). |
+| `uniprot_provenance_verify` | Re-fetch a previously recorded URL and compare release + canonical SHA-256. Six verdicts (`verified` / `incomplete_evidence` / `release_drift` / `hash_drift` / `release_and_hash_drift` / `url_unreachable`). |
 | `uniprot_replay_from_cache` | Read a cached UniProt response without hitting the upstream. Opt-in via `UNIPROT_MCP_CACHE_DIR`. |
 
 ## Cross-cutting input validation

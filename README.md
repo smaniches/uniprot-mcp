@@ -233,7 +233,7 @@ The only tools that consult origins outside `rest.uniprot.org`. Each is document
 | `uniprot_resolve_orthology` | Group orthology cross-references by source DB (KEGG / OMA / OrthoDB / eggNOG / 8 more). |
 | `uniprot_get_evidence_summary` | Summarize UniProt ECO annotation evidence and assertion methods, with a weighted 0-100 descriptive mix index. The index is uncalibrated, not a probability of annotation correctness and not comparable to AlphaFold pLDDT. |
 | `uniprot_target_dossier` | One-call comprehensive characterisation: nine sections — identity / function / chemistry / structure / drug-target / disease / variants / functional annotations / cross-refs. |
-| `uniprot_provenance_verify` | Re-fetch a previously recorded URL and compare release tag + canonical response SHA-256. Five verdicts (`verified`, `release_drift`, `hash_drift`, `release_and_hash_drift`, `url_unreachable`) each with an advice string. |
+| `uniprot_provenance_verify` | Re-fetch a previously recorded URL and compare release tag + canonical response SHA-256. Six verdicts (`verified`, `incomplete_evidence`, `release_drift`, `hash_drift`, `release_and_hash_drift`, `url_unreachable`) each with an advice string. |
 | `uniprot_replay_from_cache` | Read a cached UniProt response without hitting the upstream. Opt-in via `UNIPROT_MCP_CACHE_DIR`. |
 
 ---
@@ -256,6 +256,7 @@ If UniProt has moved on, the tool tells you exactly how:
 | Verdict | Meaning | Advice |
 |---|---|---|
 | `verified` | Both release and hash match | The provenance is reproducible |
+| `incomplete_evidence` | URL reachable, but reference checks missing | Supply recorded release and SHA-256 |
 | `release_drift` | UniProt released a new version | Pin via the FTP snapshot if you need the historical answer |
 | `hash_drift` | Same release, body changed | An in-release edit; investigate or re-fetch |
 | `release_and_hash_drift` | Both moved on | Use a release-specific FTP snapshot |

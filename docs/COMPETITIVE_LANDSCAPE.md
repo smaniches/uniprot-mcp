@@ -42,7 +42,7 @@ ClinVar-specific MCP and a ChEMBL-only MCP were not found as standalone servers 
 ## What `uniprot-mcp` does that no server in the reviewed set does (as of 2026-04-26)
 
 1. **Per-response SHA-256 + canonicalised `Provenance` footer** on every tool result (release tag, retrieval timestamp, resolved URL, body digest). No other bio-MCP in the reviewed set attaches a body digest. BioMCP attaches an installer SHA-256 only.
-2. **`uniprot_provenance_verify` re-fetch primitive** with five enumerated verdicts (`verified`, `release_drift`, `hash_drift`, `release_and_hash_drift`, `url_unreachable`) and per-verdict advice. GitHub code search across repos finds zero other implementations of `provenance_verify` / `hash_drift` / `release_drift` semantics.
+2. **`uniprot_provenance_verify` re-fetch primitive** with six enumerated verdicts (`verified`, `incomplete_evidence`, `release_drift`, `hash_drift`, `release_and_hash_drift`, `url_unreachable`) and per-verdict advice. GitHub code search across repos finds zero other implementations of `provenance_verify` / `hash_drift` / `release_drift` semantics.
 3. **`UNIPROT_PIN_RELEASE` / `--pin-release=YYYY_MM` release pinning** that raises on drift inside the running server. Not present in any competitor README.
 4. **`uniprot_target_dossier` nine-section composition** (identity / function / chemistry / structure / drug-target / disease / variants / functional annotations / cross-refs) in one call.
 5. **`uniprot_lookup_variant` (HGVS) + `uniprot_features_at_position` + `uniprot_get_alphafold_confidence` (pLDDT bands) + `uniprot_resolve_clinvar`**, all chained with the same provenance envelope.
