@@ -78,12 +78,12 @@ canonical hash may differ. This is documented in
 
 ---
 
-## C3. `uniprot_provenance_verify` with five enumerated verdicts
+## C3. `uniprot_provenance_verify` with six enumerated verdicts
 
 **Claim (README, OVERVIEW.md).** The `uniprot_provenance_verify` tool
 re-fetches a previously recorded URL and compares the release tag and
-canonical response SHA-256, returning one of five verdicts:
-`verified`, `release_drift`, `hash_drift`, `release_and_hash_drift`,
+canonical response SHA-256, returning one of six verdicts:
+`verified`, `incomplete_evidence`, `release_drift`, `hash_drift`, `release_and_hash_drift`,
 `url_unreachable`.
 
 **Evidence.**
@@ -324,7 +324,7 @@ end-to-end requires network access to both PyPI and GitHub.
 ## C10. Provenance+verify stack absent from every other surveyed bio-MCP
 
 **Claim (README, COMPETITIVE_LANDSCAPE.md).** The combination of
-per-response SHA-256, a verify primitive with five verdicts, release
+per-response SHA-256, a verify primitive with six verdicts, release
 pinning, offline replay, pre-registered benchmark, and SLSA/Sigstore
 supply chain is, in the reviewed set, absent from every other bio-MCP
 server surveyed.
