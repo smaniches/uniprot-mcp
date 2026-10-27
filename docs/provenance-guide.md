@@ -79,15 +79,18 @@ content negotiation, and compares:
 3. Canonical response SHA-256 — only checked if `response_sha256` is
    supplied.
 
-### Five verdicts
+### Six verdicts
 
 | Verdict | Meaning | What to do |
 |---|---|---|
 | `verified` | Both checks passed | The recorded provenance is reproducible against the live API. |
+| `incomplete_evidence` | URL reachable with no mismatch, but one or both recorded comparison values missing | Supply both recorded values for full verification. |
 | `release_drift` | UniProt has released a new version; body unchanged | If you need byte-level reproducibility, fetch from the FTP snapshot for the recorded release; otherwise the live answer is current and equivalent. |
 | `hash_drift` | Same release, different body | An in-release edit. Investigate: UniProt may have edited the entry within the release, or our canonicalisation differs. |
 | `release_and_hash_drift` | Both moved on | Use a release-specific FTP snapshot for the historical answer. |
 | `url_unreachable` | Endpoint dropped, rate-limited, or 4xx | Retry, or report to UniProt if the endpoint should still exist. |
+
+URL-only and single-check verification remain supported. Neither can return `verified` without both comparisons; an observed mismatch retains its applicable drift status.
 
 Each verdict carries an **advice** string — a one-sentence next-step
 recommendation included in the markdown output.
