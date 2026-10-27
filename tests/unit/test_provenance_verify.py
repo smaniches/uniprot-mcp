@@ -137,9 +137,7 @@ async def test_verify_matching_release_alone_is_incomplete() -> None:
         router.get("/uniprotkb/P04637").mock(
             return_value=_fake_response(dict(_TP53_BODY), release="2026_02")
         )
-        out = await uniprot_provenance_verify(
-            _TP53_URL, release="2026_02", response_format="json"
-        )
+        out = await uniprot_provenance_verify(_TP53_URL, release="2026_02", response_format="json")
     payload = json.loads(out)
     assert payload["status"] == "incomplete_evidence"
     assert payload["release_match"] is True
@@ -164,9 +162,7 @@ async def test_verify_missing_release_header_cannot_pass_full_check() -> None:
     body = dict(_TP53_BODY)
     recorded_hash = canonical_response_hash(_fake_response(body))
     with respx.mock(base_url="https://rest.uniprot.org") as router:
-        router.get("/uniprotkb/P04637").mock(
-            return_value=_fake_response(body, release=None)
-        )
+        router.get("/uniprotkb/P04637").mock(return_value=_fake_response(body, release=None))
         out = await uniprot_provenance_verify(
             _TP53_URL,
             release="2026_02",
@@ -181,16 +177,13 @@ async def test_verify_missing_release_header_cannot_pass_full_check() -> None:
 
 async def test_verify_hash_only_drift_does_not_assume_release_match() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
-        router.get("/uniprotkb/P04637").mock(
-            return_value=_fake_response(dict(_TP53_BODY))
-        )
+        router.get("/uniprotkb/P04637").mock(return_value=_fake_response(dict(_TP53_BODY)))
         out = await uniprot_provenance_verify(
             _TP53_URL, response_sha256="0" * 64, response_format="markdown"
         )
     assert "**Status:** hash_drift" in out
     assert "release was checked only if" in out
     assert "Release: recorded" not in out
-
 
 
 # ---------------------------------------------------------------------------
