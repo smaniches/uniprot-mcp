@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.16](https://github.com/smaniches/uniprot-mcp/compare/v1.3.15...v1.3.16) (2026-10-27)
+
+
+### Bug Fixes
+
+* **provenance:** report verified only with two matching references ([#239](https://github.com/smaniches/uniprot-mcp/issues/239)) ([d46071a](https://github.com/smaniches/uniprot-mcp/commit/d46071aff0cb2fdd6cb108c473577181d059844b))
+
 ## [1.3.15](https://github.com/smaniches/uniprot-mcp/compare/v1.3.14...v1.3.15) (2026-10-26)
 
 
