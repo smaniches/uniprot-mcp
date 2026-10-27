@@ -935,10 +935,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#c3-uniprot_provenance_verify-with-five-enumerated-verdicts" class="md-nav__link">
+  <a href="#c3-uniprot_provenance_verify-with-six-enumerated-verdicts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        C3. uniprot_provenance_verify with five enumerated verdicts
+        C3. uniprot_provenance_verify with six enumerated verdicts
       
     </span>
   </a>
@@ -1129,11 +1129,11 @@ canonical hash may differ. This is documented in
 <code>docs/provenance-guide.md</code>.</p>
 <p><strong>Last reviewed:</strong> 2026-05-26.</p>
 <hr />
-<h2 id="c3-uniprot_provenance_verify-with-five-enumerated-verdicts">C3. <code>uniprot_provenance_verify</code> with five enumerated verdicts<a class="headerlink" href="#c3-uniprot_provenance_verify-with-five-enumerated-verdicts" title="Permanent link">&para;</a></h2>
+<h2 id="c3-uniprot_provenance_verify-with-six-enumerated-verdicts">C3. <code>uniprot_provenance_verify</code> with six enumerated verdicts<a class="headerlink" href="#c3-uniprot_provenance_verify-with-six-enumerated-verdicts" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, OVERVIEW.md).</strong> The <code>uniprot_provenance_verify</code> tool
 re-fetches a previously recorded URL and compares the release tag and
-canonical response SHA-256, returning one of five verdicts:
-<code>verified</code>, <code>release_drift</code>, <code>hash_drift</code>, <code>release_and_hash_drift</code>,
+canonical response SHA-256, returning one of six verdicts:
+<code>verified</code>, <code>incomplete_evidence</code>, <code>release_drift</code>, <code>hash_drift</code>, <code>release_and_hash_drift</code>,
 <code>url_unreachable</code>.</p>
 <p><strong>Evidence.</strong>
 - <code>src/uniprot_mcp/server.py</code> — the tool registration and verdict
@@ -1316,7 +1316,7 @@ end-to-end requires network access to both PyPI and GitHub.</p>
 <hr />
 <h2 id="c10-provenanceverify-stack-absent-from-every-other-surveyed-bio-mcp">C10. Provenance+verify stack absent from every other surveyed bio-MCP<a class="headerlink" href="#c10-provenanceverify-stack-absent-from-every-other-surveyed-bio-mcp" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, COMPETITIVE_LANDSCAPE.md).</strong> The combination of
-per-response SHA-256, a verify primitive with five verdicts, release
+per-response SHA-256, a verify primitive with six verdicts, release
 pinning, offline replay, pre-registered benchmark, and SLSA/Sigstore
 supply chain is, in the reviewed set, absent from every other bio-MCP
 server surveyed.</p>

@@ -739,10 +739,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#five-verdicts" class="md-nav__link">
+  <a href="#six-verdicts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Five verdicts
+        Six verdicts
       
     </span>
   </a>
@@ -1150,10 +1150,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#five-verdicts" class="md-nav__link">
+  <a href="#six-verdicts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Five verdicts
+        Six verdicts
       
     </span>
   </a>
@@ -1299,7 +1299,7 @@ content negotiation, and compares:</p>
 <li>Canonical response SHA-256 — only checked if <code>response_sha256</code> is
    supplied.</li>
 </ol>
-<h3 id="five-verdicts">Five verdicts<a class="headerlink" href="#five-verdicts" title="Permanent link">&para;</a></h3>
+<h3 id="six-verdicts">Six verdicts<a class="headerlink" href="#six-verdicts" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -1313,6 +1313,11 @@ content negotiation, and compares:</p>
 <td><code>verified</code></td>
 <td>Both checks passed</td>
 <td>The recorded provenance is reproducible against the live API.</td>
+</tr>
+<tr>
+<td><code>incomplete_evidence</code></td>
+<td>URL reachable with no mismatch, but one or both recorded comparison values missing</td>
+<td>Supply both recorded values for full verification.</td>
 </tr>
 <tr>
 <td><code>release_drift</code></td>
@@ -1336,6 +1341,7 @@ content negotiation, and compares:</p>
 </tr>
 </tbody>
 </table>
+<p>URL-only and single-check verification remain supported. Neither can return <code>verified</code> without both comparisons; an observed mismatch retains its applicable drift status.</p>
 <p>Each verdict carries an <strong>advice</strong> string — a one-sentence next-step
 recommendation included in the markdown output.</p>
 <h2 id="strict-release-pinning">Strict release pinning<a class="headerlink" href="#strict-release-pinning" title="Permanent link">&para;</a></h2>
