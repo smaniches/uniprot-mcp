@@ -125,11 +125,72 @@ async def test_verify_passes_with_no_optional_fields() -> None:
         router.get("/uniprotkb/P04637").mock(return_value=_fake_response(body, release="2026_02"))
         out = await uniprot_provenance_verify(_TP53_URL, response_format="json")
     payload = json.loads(out)
-    assert payload["status"] == "verified"
+    assert payload["status"] == "incomplete_evidence"
     assert payload["url_resolves"] is True
     # No release / hash check requested -> not present in the report
     assert "release_match" not in payload
     assert "hash_match" not in payload
+
+
+async def test_verify_matching_release_alone_is_incomplete() -> None:
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/P04637").mock(
+            return_value=_fake_response(dict(_TP53_BODY), release="2026_02")
+        )
+        out = await uniprot_provenance_verify(
+            _TP53_URL, release="2026_02", response_format="json"
+        )
+    payload = json.loads(out)
+    assert payload["status"] == "incomplete_evidence"
+    assert payload["release_match"] is True
+    assert "hash_match" not in payload
+
+
+async def test_verify_matching_hash_alone_is_incomplete() -> None:
+    body = dict(_TP53_BODY)
+    recorded_hash = canonical_response_hash(_fake_response(body))
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/P04637").mock(return_value=_fake_response(body))
+        out = await uniprot_provenance_verify(
+            _TP53_URL, response_sha256=recorded_hash, response_format="json"
+        )
+    payload = json.loads(out)
+    assert payload["status"] == "incomplete_evidence"
+    assert payload["hash_match"] is True
+    assert "release_match" not in payload
+
+
+async def test_verify_missing_release_header_cannot_pass_full_check() -> None:
+    body = dict(_TP53_BODY)
+    recorded_hash = canonical_response_hash(_fake_response(body))
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/P04637").mock(
+            return_value=_fake_response(body, release=None)
+        )
+        out = await uniprot_provenance_verify(
+            _TP53_URL,
+            release="2026_02",
+            response_sha256=recorded_hash,
+            response_format="json",
+        )
+    payload = json.loads(out)
+    assert payload["status"] == "release_drift"
+    assert payload["release_match"] is False
+    assert payload["hash_match"] is True
+
+
+async def test_verify_hash_only_drift_does_not_assume_release_match() -> None:
+    with respx.mock(base_url="https://rest.uniprot.org") as router:
+        router.get("/uniprotkb/P04637").mock(
+            return_value=_fake_response(dict(_TP53_BODY))
+        )
+        out = await uniprot_provenance_verify(
+            _TP53_URL, response_sha256="0" * 64, response_format="markdown"
+        )
+    assert "**Status:** hash_drift" in out
+    assert "release was checked only if" in out
+    assert "Release: recorded" not in out
+
 
 
 # ---------------------------------------------------------------------------
@@ -262,7 +323,7 @@ async def test_verify_markdown_url_only_advice_does_not_claim_both() -> None:
     with respx.mock(base_url="https://rest.uniprot.org") as router:
         router.get("/uniprotkb/P04637").mock(return_value=_fake_response(body, release="2026_02"))
         out = await uniprot_provenance_verify(_TP53_URL, response_format="markdown")
-    assert "**Status:** verified" in out
+    assert "**Status:** incomplete_evidence" in out
     assert "Both checks passed" not in out
     assert "no recorded release or response hash was supplied" in out
 
@@ -276,7 +337,7 @@ async def test_verify_markdown_single_check_advice_does_not_claim_both() -> None
         out = await uniprot_provenance_verify(
             _TP53_URL, release="2026_02", response_format="markdown"
         )
-    assert "**Status:** verified" in out
+    assert "**Status:** incomplete_evidence" in out
     assert "Both checks passed" not in out
     assert "only release or hash was provided" in out
 
