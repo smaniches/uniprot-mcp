@@ -102,12 +102,6 @@ jobs:
           python -m pip install --no-build-isolation --no-deps -e .
       - name: Run offline test suite
         run: pytest tests/unit tests/property tests/client tests/contract -v --cov --cov-report=xml
-      - name: Upload coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
-        with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
 
   lock:
     name: Dev lock in sync
