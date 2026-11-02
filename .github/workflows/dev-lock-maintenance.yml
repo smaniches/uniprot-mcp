@@ -53,6 +53,17 @@ on:
     # locks are low-urgency (CI/dev/release tooling); for an urgent CVE use
     # workflow_dispatch.
     - cron: "0 13 1 * *"
+  # Rehearse the complete monthly refresh on code/configuration changes.
+  # pull_request runs with a read-only token; open-pr is explicitly excluded.
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/dev-lock-maintenance.yml"
+      - "pyproject.toml"
+      - "constraints/**"
+      - ".pre-commit-config.yaml"
+      - "scripts/regenerate-locks.sh"
+      - "scripts/check_precommit_lockstep.py"
   workflow_dispatch:
 
 permissions:
@@ -281,7 +292,9 @@ jobs:
   open-pr:
     name: Open or update the refresh PR
     needs: validate
-    if: needs.validate.outputs.changed == 'true'
+    # Never push or create a PR from a pull-request rehearsal. Only the
+    # scheduled or explicitly dispatched, trusted event may use write scope.
+    if: ${{ github.event_name != 'pull_request' && needs.validate.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write       # push the chore/dev-lock-refresh branch
