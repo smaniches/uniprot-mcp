@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.17](https://github.com/smaniches/uniprot-mcp/compare/v1.3.16...v1.3.17) (2026-11-02)
+
+
+### Bug Fixes
+
+* **ci:** enforce explicit pytest-asyncio scope and remove unused Codecov upload ([#242](https://github.com/smaniches/uniprot-mcp/issues/242)) ([a99bfa8](https://github.com/smaniches/uniprot-mcp/commit/a99bfa84714dd492aba635ad9eb7ec7ddee06468))
+
 ## [1.3.16](https://github.com/smaniches/uniprot-mcp/compare/v1.3.15...v1.3.16) (2026-10-27)
 
 
