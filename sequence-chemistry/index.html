@@ -1,0 +1,1776 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, a pre-registered benchmark protocol with a sealed answer key, and SLSA + Sigstore + SBOM supply-chain hygiene.">
+      
+      
+        <meta name="author" content="Santiago Maniches">
+      
+      
+        <link rel="canonical" href="https://smaniches.github.io/uniprot-mcp/sequence-chemistry/">
+      
+      
+        <link rel="prev" href="../tools/">
+      
+      
+        <link rel="next" href="../recipes/clinical-variant-interpretation/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Sequence chemistry - uniprot-mcp</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/custom.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sequence-chemistry-scope-methods-and-checks" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="uniprot-mcp" class="md-header__button md-logo" aria-label="uniprot-mcp" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            uniprot-mcp
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Sequence chemistry
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/smaniches/uniprot-mcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    smaniches/uniprot-mcp
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../quickstart/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../tools/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tools
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Sequence chemistry
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../recipes/clinical-variant-interpretation/" class="md-tabs__link">
+          
+  
+  
+  Recipes
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../provenance-guide/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Provenance & verification
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../THREAT_MODEL/" class="md-tabs__link">
+          
+  
+  
+  Operations
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="uniprot-mcp" class="md-nav__button md-logo" aria-label="uniprot-mcp" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    uniprot-mcp
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/smaniches/uniprot-mcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    smaniches/uniprot-mcp
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequence chemistry
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequence chemistry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#which-sequence-is-used" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which sequence is used
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-pk-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pK set
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The pK set">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-rule-differs-from-biopython" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One rule differs from Biopython
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-results-were-checked-against" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the results were checked against
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-of-the-estimates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits of the estimates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recipes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Recipes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recipes/clinical-variant-interpretation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clinical variant interpretation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recipes/drug-target-dossier/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Drug-target dossier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recipes/structural-confidence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Structural confidence (AlphaFold pLDDT)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provenance-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provenance & verification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY-AUDIT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MUTATION_SCORES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mutation testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../COMPETITIVE_LANDSCAPE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Competitive landscape
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INCIDENT_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Incident policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INCIDENT_LOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Incident log
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#which-sequence-is-used" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which sequence is used
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-pk-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pK set
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The pK set">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-rule-differs-from-biopython" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One rule differs from Biopython
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-results-were-checked-against" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the results were checked against
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-of-the-estimates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits of the estimates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/smaniches/uniprot-mcp/edit/main/docs/sequence-chemistry.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="sequence-chemistry-scope-methods-and-checks">Sequence chemistry: scope, methods and checks<a class="headerlink" href="#sequence-chemistry-scope-methods-and-checks" title="Permanent link">&para;</a></h1>
+<p><code>uniprot_compute_properties</code> and the "Sequence chemistry" section of
+<code>uniprot_target_dossier</code> derive seven properties from a UniProt sequence.
+This page says which sequence they use, how each property is computed,
+what the results were checked against, and where the estimates stop
+being reliable.</p>
+<h2 id="which-sequence-is-used">Which sequence is used<a class="headerlink" href="#which-sequence-is-used" title="Permanent link">&para;</a></h2>
+<p>Both tools take the <strong>canonical sequence of the entry's FASTA record as
+it is</strong>. Nothing is removed. A signal peptide, a propeptide, a transit
+peptide or an initiator methionine annotated on the entry is part of the
+calculation, so for a secreted or otherwise processed protein the values
+describe the precursor and not the mature chain. Every result says so:
+<code>sequence_scope</code> in JSON, "Sequence basis" in Markdown.</p>
+<p>Human insulin shows the size of the difference. For <code>P01308</code> the tools
+report 110 residues, 11,980.9 Da and a pI of 5.22. Those are the figures
+for preproinsulin. The entry annotates a signal peptide (residues 1 to
+24), the B chain (25 to 54), the C peptide (57 to 87) and the A chain (90
+to 110); mature insulin is the B and A chains only.</p>
+<p><code>uniprot_get_processing_features</code> lists these boundaries for any entry.
+The server has no tool that computes properties for part of a sequence.
+To characterise a mature chain, take its residues from
+<code>uniprot_get_sequence</code> and use a tool that accepts a sequence.</p>
+<p>Two further points about the input:</p>
+<ul>
+<li>Letters other than the 20 standard amino acids (<code>U</code>, <code>O</code>, <code>B</code>, <code>Z</code>, <code>X</code>)
+  are counted under <code>other</code> in the composition and left out of every
+  property, the length included.</li>
+<li>ExPASy Compute pI/Mw, when it is given UniProtKB identifiers, computes
+  for the mature chains and peptides of the entries or for a region the
+  user selects
+  (<a href="https://web.expasy.org/compute_pi/pi_tool-doc.html">documentation</a>),
+  so the value it shows for an accession is not the value this server
+  reports for a processed protein. To compare like with like, give both
+  the same sequence.</li>
+</ul>
+<h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Length</td>
+<td>Number of standard residues.</td>
+</tr>
+<tr>
+<td>Molecular weight</td>
+<td>Sum of average residue masses plus one water.</td>
+</tr>
+<tr>
+<td>Net charge at pH 7</td>
+<td>Henderson-Hasselbalch sum over the amino terminus, the carboxyl terminus and the ionizable side chains, each treated as independent with the fixed pK listed below.</td>
+</tr>
+<tr>
+<td>Theoretical pI</td>
+<td>The pH at which that net charge is zero, found by bisection over pH 0 to 14 and reported to two decimals.</td>
+</tr>
+<tr>
+<td>GRAVY</td>
+<td>Mean Kyte-Doolittle hydropathy of the residues (Kyte and Doolittle 1982).</td>
+</tr>
+<tr>
+<td>Aromaticity</td>
+<td>Fraction of Phe, Trp and Tyr.</td>
+</tr>
+<tr>
+<td>Extinction coefficient at 280 nm</td>
+<td>5500 per Trp plus 1490 per Tyr, in M⁻¹·cm⁻¹ (Pace et al. 1995). All cysteines are taken as reduced; the tools do not add the 125 per cystine of that formula.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-pk-set">The pK set<a class="headerlink" href="#the-pk-set" title="Permanent link">&para;</a></h2>
+<p>The theoretical pI and the net charge use the Bjellqvist pK set.</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>pK</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Amino terminus</td>
+<td>7.50. When the first residue is one of the following, its own value applies: Ala 7.59, Glu 7.70, Met 7.00, Pro 8.36, Ser 6.93, Thr 6.82, Val 7.44.</td>
+</tr>
+<tr>
+<td>Carboxyl terminus</td>
+<td>3.55</td>
+</tr>
+<tr>
+<td>Asp side chain</td>
+<td>4.05</td>
+</tr>
+<tr>
+<td>Glu side chain</td>
+<td>4.45</td>
+</tr>
+<tr>
+<td>His side chain</td>
+<td>5.98</td>
+</tr>
+<tr>
+<td>Cys side chain</td>
+<td>9.00</td>
+</tr>
+<tr>
+<td>Tyr side chain</td>
+<td>10.00</td>
+</tr>
+<tr>
+<td>Lys side chain</td>
+<td>10.00</td>
+</tr>
+<tr>
+<td>Arg side chain</td>
+<td>12.00</td>
+</tr>
+</tbody>
+</table>
+<p>The numbers are those tabulated in Biopython 1.88
+(<code>Bio.SeqUtils.IsoelectricPoint</code>), which attributes them to Bjellqvist et
+al. 1993 and 1994. The table was taken from that source file; the two
+papers were not consulted for the individual values. ExPASy states that
+its Compute pI/Mw tool calculates the pI with pK values described by
+Bjellqvist et al., and that ProtParam calculates the pI as Compute pI/Mw
+does.</p>
+<p>Every result names the set and the terminal values applied to that
+sequence: <code>charge_model</code> in JSON, "pI and charge model" in Markdown.</p>
+<h3 id="one-rule-differs-from-biopython">One rule differs from Biopython<a class="headerlink" href="#one-rule-differs-from-biopython" title="Permanent link">&para;</a></h3>
+<p>After a C-terminal Asp or Glu, Biopython 1.88 raises the pK of the
+carboxyl terminus from 3.55 to 4.55 or 4.75. ExPASy ProtParam and Compute
+pI/Mw both return 3.80 for <code>GGGGGGGGGD</code> and for <code>GGGGGGGGDG</code>, the same
+composition with the Asp one position earlier. Biopython, searched over
+the whole pH scale, returns 4.30 for the first and 3.80 for the second.
+This server keeps a single C-terminal pK and so follows the ExPASy
+result. On the proteins below the difference from Biopython is at most
+0.05 pH and appears only for acidic proteins that end in Asp or Glu.</p>
+<p>Biopython's <code>pi()</code> searches pH 4.05 to 12 by default and returns the
+bound when the root lies outside. For prothymosin alpha it returns 4.05;
+searched over the whole scale (<code>pi(7.0, 0.0, 14.0)</code>) it returns 3.69.
+This server always searches pH 0 to 14.</p>
+<h2 id="what-the-results-were-checked-against">What the results were checked against<a class="headerlink" href="#what-the-results-were-checked-against" title="Permanent link">&para;</a></h2>
+<p>Measured on 2026-11-11 with UniProt release 2026_04 sequences, ExPASy
+ProtParam as served that day and Biopython 1.88.</p>
+<p><strong>Theoretical pI, 27 proteins.</strong> Equal to ProtParam for 27 of 27. The
+last column is the value that server versions up to and including 1.3.17
+returned with their earlier pK table: it differs from ProtParam by more
+than 0.01 for 25 of the 27, by 0.92 at most.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Sequence version</th>
+<th>Residues</th>
+<th>ProtParam</th>
+<th>This server</th>
+<th>Biopython 1.88</th>
+<th>Server up to 1.3.17</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>P04637</code> P53_HUMAN</td>
+<td>4</td>
+<td>393</td>
+<td>6.33</td>
+<td>6.33</td>
+<td>6.33</td>
+<td>6.36</td>
+</tr>
+<tr>
+<td><code>P01308</code> INS_HUMAN</td>
+<td>1</td>
+<td>110</td>
+<td>5.22</td>
+<td>5.22</td>
+<td>5.22</td>
+<td>4.93</td>
+</tr>
+<tr>
+<td><code>P69905</code> HBA_HUMAN</td>
+<td>2</td>
+<td>142</td>
+<td>8.72</td>
+<td>8.72</td>
+<td>8.72</td>
+<td>9.32</td>
+</tr>
+<tr>
+<td><code>P68871</code> HBB_HUMAN</td>
+<td>2</td>
+<td>147</td>
+<td>6.74</td>
+<td>6.74</td>
+<td>6.74</td>
+<td>6.92</td>
+</tr>
+<tr>
+<td><code>P00918</code> CAH2_HUMAN</td>
+<td>2</td>
+<td>260</td>
+<td>6.87</td>
+<td>6.87</td>
+<td>6.87</td>
+<td>7.07</td>
+</tr>
+<tr>
+<td><code>P62942</code> FKB1A_HUMAN</td>
+<td>2</td>
+<td>108</td>
+<td>7.89</td>
+<td>7.89</td>
+<td>7.89</td>
+<td>8.81</td>
+</tr>
+<tr>
+<td><code>P02768</code> ALBU_HUMAN</td>
+<td>2</td>
+<td>609</td>
+<td>5.92</td>
+<td>5.92</td>
+<td>5.92</td>
+<td>5.85</td>
+</tr>
+<tr>
+<td><code>P61626</code> LYSC_HUMAN</td>
+<td>1</td>
+<td>148</td>
+<td>9.38</td>
+<td>9.38</td>
+<td>9.38</td>
+<td>9.55</td>
+</tr>
+<tr>
+<td><code>P0DP23</code> CALM1_HUMAN</td>
+<td>1</td>
+<td>149</td>
+<td>4.09</td>
+<td>4.09</td>
+<td>4.09</td>
+<td>3.81</td>
+</tr>
+<tr>
+<td><code>P01112</code> RASH_HUMAN</td>
+<td>1</td>
+<td>189</td>
+<td>5.16</td>
+<td>5.16</td>
+<td>5.16</td>
+<td>4.90</td>
+</tr>
+<tr>
+<td><code>P38398</code> BRCA1_HUMAN</td>
+<td>2</td>
+<td>1863</td>
+<td>5.29</td>
+<td>5.29</td>
+<td>5.29</td>
+<td>5.03</td>
+</tr>
+<tr>
+<td><code>P00533</code> EGFR_HUMAN</td>
+<td>2</td>
+<td>1210</td>
+<td>6.26</td>
+<td>6.26</td>
+<td>6.26</td>
+<td>6.26</td>
+</tr>
+<tr>
+<td><code>P10636</code> TAU_HUMAN</td>
+<td>5</td>
+<td>758</td>
+<td>6.25</td>
+<td>6.25</td>
+<td>6.25</td>
+<td>6.26</td>
+</tr>
+<tr>
+<td><code>P68431</code> H31_HUMAN</td>
+<td>2</td>
+<td>136</td>
+<td>11.13</td>
+<td>11.13</td>
+<td>11.13</td>
+<td>11.62</td>
+</tr>
+<tr>
+<td><code>P02144</code> MYG_HUMAN</td>
+<td>2</td>
+<td>154</td>
+<td>7.14</td>
+<td>7.14</td>
+<td>7.14</td>
+<td>7.72</td>
+</tr>
+<tr>
+<td><code>P42212</code> GFP_AEQVI</td>
+<td>1</td>
+<td>238</td>
+<td>5.67</td>
+<td>5.67</td>
+<td>5.67</td>
+<td>5.62</td>
+</tr>
+<tr>
+<td><code>P00698</code> LYSC_CHICK</td>
+<td>1</td>
+<td>147</td>
+<td>9.36</td>
+<td>9.36</td>
+<td>9.36</td>
+<td>9.40</td>
+</tr>
+<tr>
+<td><code>P0CG48</code> UBC_HUMAN</td>
+<td>3</td>
+<td>685</td>
+<td>7.16</td>
+<td>7.16</td>
+<td>7.16</td>
+<td>7.83</td>
+</tr>
+<tr>
+<td><code>P05067</code> A4_HUMAN</td>
+<td>3</td>
+<td>770</td>
+<td>4.73</td>
+<td>4.73</td>
+<td>4.73</td>
+<td>4.43</td>
+</tr>
+<tr>
+<td><code>P12931</code> SRC_HUMAN</td>
+<td>3</td>
+<td>536</td>
+<td>7.10</td>
+<td>7.10</td>
+<td>7.10</td>
+<td>7.27</td>
+</tr>
+<tr>
+<td><code>P07900</code> HS90A_HUMAN</td>
+<td>5</td>
+<td>732</td>
+<td>4.94</td>
+<td>4.94</td>
+<td>4.94</td>
+<td>4.63</td>
+</tr>
+<tr>
+<td><code>P08238</code> HS90B_HUMAN</td>
+<td>4</td>
+<td>724</td>
+<td>4.96</td>
+<td>4.96</td>
+<td>4.97</td>
+<td>4.65</td>
+</tr>
+<tr>
+<td><code>P0DMV8</code> HS71A_HUMAN</td>
+<td>1</td>
+<td>641</td>
+<td>5.47</td>
+<td>5.47</td>
+<td>5.48</td>
+<td>5.24</td>
+</tr>
+<tr>
+<td><code>P06454</code> PTMA_HUMAN</td>
+<td>2</td>
+<td>111</td>
+<td>3.66</td>
+<td>3.66</td>
+<td>3.69</td>
+<td>3.37</td>
+</tr>
+<tr>
+<td><code>P04271</code> S100B_HUMAN</td>
+<td>2</td>
+<td>92</td>
+<td>4.52</td>
+<td>4.52</td>
+<td>4.57</td>
+<td>4.21</td>
+</tr>
+<tr>
+<td><code>P37840</code> SYUA_HUMAN</td>
+<td>1</td>
+<td>140</td>
+<td>4.67</td>
+<td>4.67</td>
+<td>4.67</td>
+<td>4.33</td>
+</tr>
+<tr>
+<td><code>P27797</code> CALR_HUMAN</td>
+<td>1</td>
+<td>417</td>
+<td>4.29</td>
+<td>4.29</td>
+<td>4.29</td>
+<td>4.02</td>
+</tr>
+</tbody>
+</table>
+<p>The Biopython column is <code>pi(7.0, 0.0, 14.0)</code>. The first 20 rows are the
+sample of the November 2026 audit that reported the earlier
+disagreement; the last seven are acidic proteins, five of them ending in
+Asp or Glu.</p>
+<p><strong>Theoretical pI, 24 probe peptides.</strong> Short sequences that each isolate
+one rule: the amino terminus with each first residue that has its own
+value, Asp or Glu at and next to the carboxyl terminus, compositions with
+a pI below 4 or above 12, and the Cys and Tyr side chains. Equal to
+ProtParam for 23 of 24. The remaining one is ten glycines, whose root is
+exactly 5.525: ProtParam prints 5.52 and this server 5.53.</p>
+<p><strong>Net charge at pH 7.</strong> ProtParam does not report it. Against Biopython
+1.88 the value is equal to four decimals for the 20 proteins that do not
+end in Asp or Glu, and within 0.006 for the seven that do, which is the
+effect of the C-terminal rule above.</p>
+<p><strong>Properties this comparison did not change.</strong> On the same 27 proteins
+the molecular weight equals ProtParam's at its two decimals for all 27,
+the extinction coefficient equals ProtParam's reduced-cysteine value for
+the 26 where it reports one (prothymosin alpha has no Trp or Tyr), and
+GRAVY is within 0.0005 of ProtParam's three-decimal value for all 27.</p>
+<p>The checks are frozen in <code>tests/unit/test_proteinchem_pi_reference.py</code>.
+To repeat one by hand, paste the canonical sequence of an entry into
+<a href="https://web.expasy.org/protparam/">ProtParam</a>, or run
+<code>Bio.SeqUtils.IsoelectricPoint.IsoelectricPoint(sequence).pi(7.0, 0.0, 14.0)</code>.</p>
+<p>Agreement is established for these 51 sequences and no further. The
+ExPASy tools are web services, and their output can change.</p>
+<h2 id="limits-of-the-estimates">Limits of the estimates<a class="headerlink" href="#limits-of-the-estimates" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Sequence only.</strong> Each ionizable group gets one fixed pK. The
+  calculation knows nothing of folding, of bound ligands or metals, or of
+  post-translational modification. Bjellqvist et al. 1994 report that
+  N-terminal blocking in particular is a major obstacle to calculating a
+  pI from sequence. Every cysteine is counted as a free thiol, including
+  those that form disulfide bonds.</li>
+<li><strong>Where the pK set comes from.</strong> Bjellqvist et al. 1993 determined the
+  focusing positions of polypeptides under denaturing conditions.
+  ExPASy's documentation describes the pK values as defined from
+  migration between pH 4.5 and 7.3 in immobilised pH gradient gels with
+  9.2 M and 9.8 M urea, cautions that predictions for highly basic
+  proteins may not be adequate, and notes that small proteins with little
+  buffer capacity are predicted less accurately.</li>
+<li><strong>Extinction coefficient.</strong> Pace et al. 1995 find the prediction quite
+  reliable for proteins that contain Trp and less so for those that do
+  not, and recommend measuring.</li>
+<li><strong>Precursor, not mature chain.</strong> See the first section.</li>
+<li><strong>Earlier values.</strong> A pI or net charge obtained from version 1.3.17 or
+  earlier used a different pK table and is not comparable with current
+  output. Molecular weight, GRAVY, aromaticity and the extinction
+  coefficient are computed exactly as before.</li>
+</ul>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Bjellqvist B, Hughes GJ, Pasquali C, Paquet N, Ravier F, Sanchez JC,
+  Frutiger S, Hochstrasser D. The focusing positions of polypeptides in
+  immobilized pH gradients can be predicted from their amino acid
+  sequences. <em>Electrophoresis</em> 14, 1023-1031 (1993).
+  <a href="https://doi.org/10.1002/elps.11501401163">doi:10.1002/elps.11501401163</a></li>
+<li>Bjellqvist B, Basse B, Olsen E, Celis JE. Reference points for
+  comparisons of two-dimensional maps of proteins from different human
+  cell types defined in a pH scale where isoelectric points correlate
+  with polypeptide compositions. <em>Electrophoresis</em> 15, 529-539 (1994).
+  <a href="https://doi.org/10.1002/elps.1150150171">doi:10.1002/elps.1150150171</a></li>
+<li>Kyte J, Doolittle RF. A simple method for displaying the hydropathic
+  character of a protein. <em>J Mol Biol</em> 157, 105-132 (1982).
+  <a href="https://doi.org/10.1016/0022-2836(82)90515-0">doi:10.1016/0022-2836(82)90515-0</a></li>
+<li>Pace CN, Vajdos F, Fee L, Grimsley G, Gray T. How to measure and
+  predict the molar absorption coefficient of a protein. <em>Protein Sci</em> 4,
+  2411-2423 (1995).
+  <a href="https://doi.org/10.1002/pro.5560041120">doi:10.1002/pro.5560041120</a></li>
+<li>ExPASy ProtParam documentation:
+  <a href="https://web.expasy.org/protparam/protparam-doc.html">https://web.expasy.org/protparam/protparam-doc.html</a></li>
+<li>ExPASy Compute pI/Mw documentation:
+  <a href="https://web.expasy.org/compute_pi/pi_tool-doc.html">https://web.expasy.org/compute_pi/pi_tool-doc.html</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/smaniches/uniprot-mcp" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://orcid.org/0009-0005-6480-1987" target="_blank" rel="noopener" title="orcid.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M294.7 188.2h-45.9V342h47.5c67.6 0 83.1-51.3 83.1-76.9 0-41.6-26.5-76.9-84.7-76.9M256 8a248 248 0 1 0 0 496 248 248 0 1 0 0-496m-80.8 360.8h-29.8V161.3h29.8zM160.3 98.5a19.6 19.6 0 1 1 0 39.2 19.6 19.6 0 1 1 0-39.2M300 369h-81V161.3h80.6c76.7 0 110.4 54.8 110.4 103.9 0 53.3-41.7 103.9-110 103.9z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

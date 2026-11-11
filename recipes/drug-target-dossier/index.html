@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, sealed pre-registered benchmark, and SLSA + Sigstore + SBOM supply-chain hygiene.">
+        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, a pre-registered benchmark protocol with a sealed answer key, and SLSA + Sigstore + SBOM supply-chain hygiene.">
       
       
         <meta name="author" content="Santiago Maniches">
@@ -284,6 +284,25 @@
   
   
   
+  
+    <li class="md-tabs__item">
+      <a href="../../sequence-chemistry/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Sequence chemistry
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
     
   
   
@@ -471,6 +490,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sequence-chemistry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequence chemistry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -492,10 +538,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -513,8 +559,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -764,10 +810,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -785,8 +831,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1133,7 +1179,10 @@ this repository does not maintain a separate drug-target atlas.</p>
    count + ECO-code diversity — <strong>rough completeness signal</strong>.</li>
 <li><strong>What's the basic chemistry?</strong> MW / pI / hydrophobicity for
    buffer selection, expression-system choice — <strong>derived from the
-   FASTA without an external tool</strong>.</li>
+   FASTA without an external tool</strong>. The values are for the full
+   canonical sequence, signal peptide and propeptides included, so for
+   a secreted protein they describe the precursor; see
+   <a href="../../sequence-chemistry/">Sequence chemistry</a>.</li>
 </ol>
 <p>The dossier puts all four on one page. The agent can then decide
 which deeper tool calls are warranted (e.g. <code>uniprot_get_variants</code>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, sealed pre-registered benchmark, and SLSA + Sigstore + SBOM supply-chain hygiene.">
+        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, a pre-registered benchmark protocol with a sealed answer key, and SLSA + Sigstore + SBOM supply-chain hygiene.">
       
       
         <meta name="author" content="Santiago Maniches">
@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://smaniches.github.io/uniprot-mcp/recipes/clinical-variant-interpretation/">
       
       
-        <link rel="prev" href="../../tools/">
+        <link rel="prev" href="../../sequence-chemistry/">
       
       
         <link rel="next" href="../drug-target-dossier/">
@@ -284,6 +284,25 @@
   
   
   
+  
+    <li class="md-tabs__item">
+      <a href="../../sequence-chemistry/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Sequence chemistry
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
     
   
   
@@ -471,6 +490,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sequence-chemistry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequence chemistry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -492,10 +538,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -513,8 +559,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -808,10 +854,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -829,8 +875,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1224,6 +1270,11 @@ particular substitution is damaging.</p>
 mutation; does not induce SNAI1 degradation; reduces interaction with
 ZNF385A; dbSNP:rs28934578. Evidence: ECO:0000269.</p>
 </blockquote>
+<p>The tool also checks the stated reference against the canonical
+sequence and prints the outcome above the match, here that residue 175
+is Arg. A change with the wrong reference residue (<code>K175H</code>) or a
+position beyond the end of the sequence (<code>R999H</code>) is reported as a
+mismatch or as out of range, not as a variant without annotation.</p>
 <p><code>ECO:0000269</code> is <strong>experimental evidence used in manual assertion</strong>: a
 curator attributed the statement to published experimental work (here,
 seven PubMed references on the feature). It is distinct from codes for

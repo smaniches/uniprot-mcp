@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, sealed pre-registered benchmark, and SLSA + Sigstore + SBOM supply-chain hygiene.">
+        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, a pre-registered benchmark protocol with a sealed answer key, and SLSA + Sigstore + SBOM supply-chain hygiene.">
       
       
         <meta name="author" content="Santiago Maniches">
@@ -285,6 +285,25 @@
   
   
   
+    <li class="md-tabs__item">
+      <a href="../sequence-chemistry/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Sequence chemistry
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
     
     
       <li class="md-tabs__item">
@@ -473,6 +492,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../sequence-chemistry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequence chemistry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -487,10 +533,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -508,8 +554,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -662,10 +708,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   
@@ -683,8 +729,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1329,7 +1375,7 @@ about, so an adopter can pick the right tool for their workflow.</p>
 <li><strong><code>uniprot_lookup_variant</code> (HGVS) + <code>uniprot_features_at_position</code> + <code>uniprot_get_alphafold_confidence</code> (pLDDT bands) + <code>uniprot_resolve_clinvar</code></strong>, all chained with the same provenance envelope.</li>
 <li><strong><code>UNIPROT_MCP_CACHE_DIR</code> offline replay</strong> (<code>uniprot_replay_from_cache</code>) for air-gapped re-runs.</li>
 <li><strong>SLSA build provenance + Sigstore keyless signatures + CycloneDX SBOM</strong> on every release artefact. PyPI Trusted Publishing (OIDC) — no long-lived API tokens. Not present in any competitor scanned.</li>
-<li><strong>Pre-registered benchmark with SHA-256 commitments on <code>main</code></strong> (<code>tests/benchmark/expected.hashes.jsonl</code>) — reviewer cannot rewrite "correct" answers post-hoc. 30 prompts; v1.1.0 measured run at 30/30.</li>
+<li><strong>Pre-registered benchmark with SHA-256 commitments on <code>main</code></strong> (<code>tests/benchmark/expected.hashes.jsonl</code>) — reviewer cannot rewrite "correct" answers post-hoc. 30 prompts; the answer key was re-derived 30/30 from live UniProt on 2026-04-26. No server or baseline has been run against the prompts yet.</li>
 </ol>
 <h2 id="honest-weaknesses-vs-alternatives">Honest weaknesses vs alternatives<a class="headerlink" href="#honest-weaknesses-vs-alternatives" title="Permanent link">&para;</a></h2>
 <ul>

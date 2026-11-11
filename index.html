@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, sealed pre-registered benchmark, and SLSA + Sigstore + SBOM supply-chain hygiene.">
+        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, a pre-registered benchmark protocol with a sealed answer key, and SLSA + Sigstore + SBOM supply-chain hygiene.">
       
       
         <meta name="author" content="Santiago Maniches">
@@ -274,6 +274,25 @@
     
   
   Tools
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="sequence-chemistry/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Sequence chemistry
 
       </a>
     </li>
@@ -584,6 +603,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="sequence-chemistry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequence chemistry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -598,10 +644,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -619,8 +665,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -768,10 +814,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -789,8 +835,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1219,7 +1265,7 @@
 </tr>
 <tr>
 <td>Tests</td>
-<td><strong>1005 offline + 45 live integration</strong></td>
+<td>Offline suite on every push plus an opt-in live integration suite; current counts via <code>pytest --collect-only</code></td>
 </tr>
 <tr>
 <td>Static analysis</td>
@@ -1230,12 +1276,12 @@
 <td><strong>Live round-trip-tested against real UniProt</strong></td>
 </tr>
 <tr>
-<td>Pre-registered benchmark</td>
-<td><strong>30 SHA-256 commitments on <code>main</code></strong></td>
+<td>Benchmark protocol</td>
+<td>30 prompts with a SHA-256-sealed answer key on <code>main</code>; the answer key was re-derived 30/30 from live UniProt on 2026-04-26. <strong>No system has been run against it yet.</strong></td>
 </tr>
 <tr>
 <td>Mutation testing</td>
-<td>Workflow shipped (<code>.github/workflows/mutation.yml</code>); measurement-first per-module baseline in <a href="MUTATION_SCORES/"><code>docs/MUTATION_SCORES.md</code></a>. ≥ 95 % kill rate is the v1.2.0 target, not the current state.</td>
+<td>Workflow shipped (<code>.github/workflows/mutation.yml</code>); measurement-only per-module results in <a href="MUTATION_SCORES/"><code>docs/MUTATION_SCORES.md</code></a>, last recorded in April 2026. No kill-rate threshold is enforced.</td>
 </tr>
 <tr>
 <td>3 × 3 CI matrix on <code>main</code></td>

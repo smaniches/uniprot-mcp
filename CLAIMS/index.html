@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, sealed pre-registered benchmark, and SLSA + Sigstore + SBOM supply-chain hygiene.">
+        <meta name="description" content="Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, a pre-registered benchmark protocol with a sealed answer key, and SLSA + Sigstore + SBOM supply-chain hygiene.">
       
       
         <meta name="author" content="Santiago Maniches">
@@ -281,6 +281,25 @@
   
   
   
+    <li class="md-tabs__item">
+      <a href="../sequence-chemistry/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Sequence chemistry
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
     
     
       <li class="md-tabs__item">
@@ -467,6 +486,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../sequence-chemistry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequence chemistry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -481,10 +527,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -502,8 +548,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -651,10 +697,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -672,8 +718,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -968,10 +1014,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#c6-1005-offline-45-live-integration-tests" class="md-nav__link">
+  <a href="#c6-offline-and-live-integration-test-suites" class="md-nav__link">
     <span class="md-ellipsis">
       
-        C6. 1005 offline + 45 live integration tests
+        C6. Offline and live-integration test suites
       
     </span>
   </a>
@@ -990,10 +1036,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#c8-3030-sealed-prompt-benchmark-verified-against-live-uniprot" class="md-nav__link">
+  <a href="#c8-sealed-30-prompt-benchmark-answer-key-re-derived-3030-from-live-uniprot" class="md-nav__link">
     <span class="md-ellipsis">
       
-        C8. 30/30 sealed-prompt benchmark verified against live UniProt
+        C8. Sealed 30-prompt benchmark answer key, re-derived 30/30 from live UniProt
       
     </span>
   </a>
@@ -1038,6 +1084,28 @@
     <span class="md-ellipsis">
       
         C12. PyPI wheel built from this exact repo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c13-sequence-chemistry-states-its-basis-theoretical-pi-equals-expasy-protparam-on-the-regression-sequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C13. Sequence chemistry states its basis; theoretical pI equals ExPASy ProtParam on the regression sequences
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c14-uniprot_lookup_variant-checks-the-stated-reference-against-the-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C14. uniprot_lookup_variant checks the stated reference against the sequence
       
     </span>
   </a>
@@ -1184,33 +1252,33 @@ UniProt.</p>
 <p><strong>Verify.</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pytest<span class="w"> </span>tests/unit/test_cache.py<span class="w"> </span>-v
 </code></pre></div></p>
-<p><strong>Limitation.</strong> This is a <strong>read primitive</strong> in v1.1.x. The cache
-directory must be populated externally (e.g., by the benchmark capture
-script or by a user wrapper). Automatic cache write-through is not
-currently wired into the request path; cache entries must be populated
-explicitly or by an external capture workflow. The earlier claim that
+<p><strong>Limitation.</strong> This is a <strong>read primitive</strong>. The server never writes
+to the cache: automatic write-through is not wired into the request
+path. The directory has to be populated by user code that calls
+<code>ProvenanceCache.write</code> or writes the documented JSON shape; the
+repository ships no capture script. The earlier claim that
 every successful response is mirrored to disk was explicitly retracted
 in v1.1.3 (see CHANGELOG.md).</p>
-<p><strong>Last reviewed:</strong> 2026-05-26.</p>
+<p><strong>Last reviewed:</strong> 2026-11-11.</p>
 <hr />
-<h2 id="c6-1005-offline-45-live-integration-tests">C6. 1005 offline + 45 live integration tests<a class="headerlink" href="#c6-1005-offline-45-live-integration-tests" title="Permanent link">&para;</a></h2>
-<p><strong>Claim (README badge, testing section).</strong> The offline test suite
-contains 1005 tests; the live integration suite contains 45 tests.</p>
+<h2 id="c6-offline-and-live-integration-test-suites">C6. Offline and live-integration test suites<a class="headerlink" href="#c6-offline-and-live-integration-test-suites" title="Permanent link">&para;</a></h2>
+<p><strong>Claim (README testing section, docs/index.md).</strong> CI runs an offline
+test suite on every push, and a live integration suite is available on
+request. Neither document states a count; the count is whatever
+<code>pytest --collect-only</code> reports. On 2026-11-11 that was 1258 offline
+tests and 46 live integration tests.</p>
 <p><strong>Evidence.</strong>
 - <code>pytest --collect-only --ignore=tests/integration -q</code> — offline
   count.
-- <code>pytest --collect-only tests/integration -q</code> — integration count.
-- Counts last reconciled on <code>main</code> (README testing section documents
-  the jump from 446 at v1.1.0).</p>
+- <code>pytest --collect-only tests/integration -q</code> — integration count.</p>
 <p><strong>Verify.</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pytest<span class="w"> </span>--collect-only<span class="w"> </span>--ignore<span class="o">=</span>tests/integration<span class="w"> </span>-q<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-1
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pytest<span class="w"> </span>--collect-only<span class="w"> </span>tests/integration<span class="w"> </span>-q<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-1
 </code></pre></div></p>
-<p><strong>Limitation.</strong> Test counts change with each release. The README
-badge is a static shield; it is manually updated and may lag by one
-patch release. The authoritative count is always
+<p><strong>Limitation.</strong> Test counts change with each release, so the figures
+above are a dated observation. The authoritative count is always
 <code>pytest --collect-only</code>.</p>
-<p><strong>Last reviewed:</strong> 2026-07-12.</p>
+<p><strong>Last reviewed:</strong> 2026-11-11.</p>
 <hr />
 <h2 id="c7-100-line-branch-coverage-gate-enforced">C7. 100% line + branch coverage (gate-enforced)<a class="headerlink" href="#c7-100-line-branch-coverage-gate-enforced" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, OVERVIEW.md).</strong> Measured coverage is 100.00% line +
@@ -1242,15 +1310,18 @@ fails CI. The two <code># pragma: no cover</code> branches are unreachable in
 normal operation, not untested behaviour.</p>
 <p><strong>Last reviewed:</strong> 2026-07-12.</p>
 <hr />
-<h2 id="c8-3030-sealed-prompt-benchmark-verified-against-live-uniprot">C8. 30/30 sealed-prompt benchmark verified against live UniProt<a class="headerlink" href="#c8-3030-sealed-prompt-benchmark-verified-against-live-uniprot" title="Permanent link">&para;</a></h2>
-<p><strong>Claim (README, OVERVIEW.md).</strong> A 30-prompt benchmark with
-SHA-256-committed expected answers was verified 30/30 against live
-UniProt on 2026-04-26 at v1.1.0.</p>
+<h2 id="c8-sealed-30-prompt-benchmark-answer-key-re-derived-3030-from-live-uniprot">C8. Sealed 30-prompt benchmark answer key, re-derived 30/30 from live UniProt<a class="headerlink" href="#c8-sealed-30-prompt-benchmark-answer-key-re-derived-3030-from-live-uniprot" title="Permanent link">&para;</a></h2>
+<p><strong>Claim (README, OVERVIEW.md).</strong> A 30-prompt benchmark protocol with
+SHA-256-committed expected answers exists on <code>main</code>, and its answer key
+was re-derived 30/30 from live UniProt on 2026-04-26 at v1.1.0. <strong>No
+system has been evaluated:</strong> neither this server nor a baseline has
+been run against the prompts.</p>
 <p><strong>Evidence.</strong>
 - <code>tests/benchmark/expected.hashes.jsonl</code> — committed SHA-256
   commitments.
-- <code>tests/benchmark/run-2026-04-26-v1.1.0/</code> — transcript of the
-  verification run.
+- <code>tests/benchmark/run-2026-04-26-v1.1.0/</code> — record of the
+  answer-key verification (corrected 2026-11-11; it is not a benchmark
+  run).
 - <code>tests/benchmark/verify_answers.py</code> + <code>tests/benchmark/verify.py</code> —
   the maintainer cryptographic verification path (run with the local
   <code>expected.jsonl</code>; this is what produced the 30/30 result above).
@@ -1276,7 +1347,10 @@ a cryptographic match (the committed digest is sealed over
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python<span class="w"> </span>tests/benchmark/verify_against_hashes.py<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>tests/benchmark/expected.hashes.jsonl
 </code></pre></div></p>
-<p><strong>Limitation.</strong> The 30/30 result was obtained by the maintainer
+<p><strong>Limitation.</strong> The 30/30 figure counts expected answers confirmed
+against UniProt. It is not a score for this server: the verifiers query
+the UniProt REST API directly and call no <code>uniprot-mcp</code> tool. The
+30/30 result was obtained by the maintainer
 cryptographic path at UniProt release <code>2026_01</code>. If UniProt has since
 released a new version, the maintainer re-derivation
 (<code>verify_answers.py</code>) may legitimately report drift for some prompts;
@@ -1287,10 +1361,11 @@ committed digest binds the withheld rationale, so a third party
 confirms answer-reproducibility, not a cryptographic match (a true
 third-party crypto path would require sealing <code>{prompt_id, answer}</code>
 only — an owner methodology decision, not implemented; see
-<code>tests/benchmark/AUDIT.md</code>). <code>run.py</code> and <code>score.py</code> are scaffolded
-(argparse-wired, stubbed bodies); the full comparative scoring driver
-is a v2 benchmark item.</p>
-<p><strong>Last reviewed:</strong> 2026-05-26.</p>
+<code>tests/benchmark/AUDIT.md</code>). <code>run.py</code> and <code>score.py</code> are scaffolds
+(argparse-wired; they print a notice and exit with status 1), so no
+comparator has answered the prompts and nothing has been scored. A
+comparative run remains future work.</p>
+<p><strong>Last reviewed:</strong> 2026-11-11.</p>
 <hr />
 <h2 id="c9-slsa-sigstore-cyclonedx-sbom-on-every-release">C9. SLSA + Sigstore + CycloneDX SBOM on every release<a class="headerlink" href="#c9-slsa-sigstore-cyclonedx-sbom-on-every-release" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, OVERVIEW.md, COMPETITIVE_LANDSCAPE.md).</strong> Every
@@ -1317,8 +1392,8 @@ end-to-end requires network access to both PyPI and GitHub.</p>
 <h2 id="c10-provenanceverify-stack-absent-from-every-other-surveyed-bio-mcp">C10. Provenance+verify stack absent from every other surveyed bio-MCP<a class="headerlink" href="#c10-provenanceverify-stack-absent-from-every-other-surveyed-bio-mcp" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, COMPETITIVE_LANDSCAPE.md).</strong> The combination of
 per-response SHA-256, a verify primitive with six verdicts, release
-pinning, offline replay, pre-registered benchmark, and SLSA/Sigstore
-supply chain is, in the reviewed set, absent from every other bio-MCP
+pinning, offline replay, a pre-registered benchmark protocol with a
+sealed answer key, and SLSA/Sigstore supply chain is, in the reviewed set, absent from every other bio-MCP
 server surveyed.</p>
 <p><strong>Evidence.</strong>
 - <code>docs/COMPETITIVE_LANDSCAPE.md</code> — 14-server survey conducted
@@ -1352,13 +1427,15 @@ mutation kill rates measured via mutmut.</p>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>mutmut<span class="w"> </span>run<span class="w"> </span>--paths-to-mutate<span class="o">=</span>src/uniprot_mcp/cache.py
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>mutmut<span class="w"> </span>results
 </code></pre></div></p>
-<p><strong>Limitation.</strong> The gate threshold is currently 0.0
-(measurement-first). The &gt;=95% gate is the v1.2.0 target, not the
-current state. <code>formatters</code> and <code>server</code> modules timed out mid-pass
-and have only partial measurements. The scores are from specific CI
-runs dated 2026-04-28; subsequent code changes could shift the
-numbers.</p>
-<p><strong>Last reviewed:</strong> 2026-05-26.</p>
+<p><strong>Limitation.</strong> No kill-rate threshold is enforced: the summary
+script reports a threshold of 0.0 (measurement only), and the workflow
+fails only when a shard does not complete. &gt;=95% is an aspiration
+without a release commitment. The recorded <code>formatters</code> and <code>server</code>
+figures are partial (those runs timed out). The scores are from specific
+CI runs dated 2026-04-27 and 2026-04-28 and describe the code of that
+time; the table has not been updated since, and <code>proteinchem.py</code> and its
+tests changed in November 2026 (pK table).</p>
+<p><strong>Last reviewed:</strong> 2026-11-11.</p>
 <hr />
 <h2 id="c12-pypi-wheel-built-from-this-exact-repo">C12. PyPI wheel built from this exact repo<a class="headerlink" href="#c12-pypi-wheel-built-from-this-exact-repo" title="Permanent link">&para;</a></h2>
 <p><strong>Claim (README, OVERVIEW.md).</strong> The published PyPI wheel can be
@@ -1379,6 +1456,60 @@ network access to PyPI and GitHub. The script verifies a single
 version (default in the <code>VERSION</code> variable); override to check other
 releases.</p>
 <p><strong>Last reviewed:</strong> 2026-05-26.</p>
+<hr />
+<h2 id="c13-sequence-chemistry-states-its-basis-theoretical-pi-equals-expasy-protparam-on-the-regression-sequences">C13. Sequence chemistry states its basis; theoretical pI equals ExPASy ProtParam on the regression sequences<a class="headerlink" href="#c13-sequence-chemistry-states-its-basis-theoretical-pi-equals-expasy-protparam-on-the-regression-sequences" title="Permanent link">&para;</a></h2>
+<p><strong>Claim (README, docs/sequence-chemistry.md).</strong> <code>uniprot_compute_properties</code>
+and the dossier's chemistry section compute on the full canonical
+sequence, say so in every result, and name the pK values behind the pI
+and net charge. The theoretical pI uses the Bjellqvist pK set and equals
+the value ExPASy ProtParam reports for 27 UniProt canonical sequences
+and 23 of 24 probe peptides; the remaining probe differs by 0.01 at an
+exact rounding tie.</p>
+<p><strong>Evidence.</strong>
+- <code>src/uniprot_mcp/proteinchem.py</code> — the pK table and the calculation.
+- <code>tests/unit/test_proteinchem_pi_reference.py</code> — the reference values
+  (ExPASy ProtParam queried 2026-11-11; Biopython 1.88 for the net
+  charge) and the comparison.
+- <code>tests/unit/test_chemistry_disclosure.py</code> — the sequence-basis and
+  pK-model statements in Markdown and JSON output.
+- <code>docs/sequence-chemistry.md</code> — methods, the per-protein table and the
+  limits.</p>
+<p><strong>Verify.</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>pytest<span class="w"> </span>tests/unit/test_proteinchem_pi_reference.py<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span>tests/unit/test_chemistry_disclosure.py<span class="w"> </span>-v
+</code></pre></div>
+To repeat a reference value by hand, paste the canonical sequence of an
+entry into https://web.expasy.org/protparam/.</p>
+<p><strong>Limitation.</strong> Agreement is established for those 51 sequences and no
+further; the ExPASy tools are web services and their output can change.
+Biopython 1.88 differs from ProtParam by up to 0.05 pH for acidic
+proteins that end in Asp or Glu, and this server follows ProtParam
+there. The pI and net charge are sequence-only estimates that ignore
+post-translational modification, disulfide bonds and folding. For a
+secreted or otherwise processed protein every value describes the
+precursor, not the mature chain. A pI or net charge from version 1.3.17
+or earlier used a different pK table and is not comparable.</p>
+<p><strong>Last reviewed:</strong> 2026-11-11.</p>
+<hr />
+<h2 id="c14-uniprot_lookup_variant-checks-the-stated-reference-against-the-sequence">C14. <code>uniprot_lookup_variant</code> checks the stated reference against the sequence<a class="headerlink" href="#c14-uniprot_lookup_variant-checks-the-stated-reference-against-the-sequence" title="Permanent link">&para;</a></h2>
+<p><strong>Claim (README, docs/tools.md).</strong> A lookup reports whether the stated
+reference residue is confirmed by the canonical sequence, differs from
+it, or lies beyond its end, so a wrong reference is not presented as a
+variant without annotation.</p>
+<p><strong>Evidence.</strong>
+- <code>src/uniprot_mcp/server.py</code> — <code>_check_variant_reference</code>.
+- <code>tests/unit/test_variant_reference_check.py</code> — the four outcomes in
+  Markdown and JSON.</p>
+<p><strong>Verify.</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>pytest<span class="w"> </span>tests/unit/test_variant_reference_check.py<span class="w"> </span>-v
+</code></pre></div></p>
+<p><strong>Limitation.</strong> The check is against the canonical sequence only. A
+change given in isoform, mature-chain or legacy numbering is reported
+as a mismatch or as out of range; the tool does not try to renumber it.
+<code>reference_confirmed</code> with no match means UniProt has no natural-variant
+annotation for that exact change, which says nothing about its clinical
+significance.</p>
+<p><strong>Last reviewed:</strong> 2026-11-11.</p>
 
 
 
