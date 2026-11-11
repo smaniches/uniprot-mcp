@@ -175,9 +175,8 @@ Each release mints a Zenodo version DOI that is only known *after*
 the deposit lands. The convention: the v1.1.6 release adds the
 v1.1.6 changelog entry; the *following* release cycle (v1.1.7)
 appends the v1.1.6 version DOI to `CITATION.cff` `identifiers:`.
-This is why the file currently lists DOIs for v1.1.1 and v1.1.2
-but not v1.1.5 — that entry will be added with v1.1.6's polish
-work.
+This is why the `identifiers:` list always trails the releases and
+does not carry a version DOI for every one of them.
 
 ## When a release goes wrong
 

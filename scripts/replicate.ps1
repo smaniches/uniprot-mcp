@@ -1,4 +1,5 @@
-# One-command beta-lab replication of the sealed benchmark (Windows).
+# One-command beta-lab verification of the latest published release, with a
+# re-derivation of the sealed benchmark answer key (Windows).
 #
 # See scripts/replicate.sh for the canonical narrative; this is the
 # PowerShell port for Windows beta-labs.
@@ -70,10 +71,10 @@ try {
     # drift between expected.hashes.jsonl and the derivation pipeline.
     # $ErrorActionPreference="Stop" does NOT trap a native exe's non-zero
     # exit on Windows PowerShell, so check $LASTEXITCODE explicitly — else
-    # "replication complete" would print over an incomplete reproduction.
+    # "re-derivation complete" would print over an incomplete reproduction.
     & "$WORK\venv\Scripts\python.exe" tests\benchmark\verify_against_hashes.py tests\benchmark\expected.hashes.jsonl
     if ($LASTEXITCODE -ne 0) { Fail "benchmark re-derivation did not reproduce every committed prompt" }
-    OK "benchmark replication complete"
+    OK "benchmark answer re-derivation complete"
 
     Write-Host "`n==== REPLICATION SUCCESS ====" -ForegroundColor Green
     Write-Host "Source commit (per SLSA):  see 'gh attestation verify' output above"

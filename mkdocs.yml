@@ -1,5 +1,5 @@
 site_name: uniprot-mcp
-site_description: Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, sealed pre-registered benchmark, and SLSA + Sigstore + SBOM supply-chain hygiene.
+site_description: Model Context Protocol server for the UniProt protein knowledgebase, with per-query provenance verification, a pre-registered benchmark protocol with a sealed answer key, and SLSA + Sigstore + SBOM supply-chain hygiene.
 site_author: Santiago Maniches
 site_url: https://smaniches.github.io/uniprot-mcp/
 repo_url: https://github.com/smaniches/uniprot-mcp
@@ -49,6 +49,7 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Tools: tools.md
+  - Sequence chemistry: sequence-chemistry.md
   - Recipes:
       - Clinical variant interpretation: recipes/clinical-variant-interpretation.md
       - Drug-target dossier: recipes/drug-target-dossier.md

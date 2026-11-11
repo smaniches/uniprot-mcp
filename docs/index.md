@@ -57,11 +57,11 @@ uniprot-mcp --self-test
 | Layer | State |
 |---|---|
 | Tool surface | **41 tools** across 8 families |
-| Tests | **1005 offline + 45 live integration** |
+| Tests | Offline suite on every push plus an opt-in live integration suite; current counts via `pytest --collect-only` |
 | Static analysis | **mypy strict** + **ruff** + **bandit** + **pip-audit** clean |
 | Provenance verification | **Live round-trip-tested against real UniProt** |
-| Pre-registered benchmark | **30 SHA-256 commitments on `main`** |
-| Mutation testing | Workflow shipped (`.github/workflows/mutation.yml`); measurement-first per-module baseline in [`docs/MUTATION_SCORES.md`](MUTATION_SCORES.md). ≥ 95 % kill rate is the v1.2.0 target, not the current state. |
+| Benchmark protocol | 30 prompts with a SHA-256-sealed answer key on `main`; the answer key was re-derived 30/30 from live UniProt on 2026-04-26. **No system has been run against it yet.** |
+| Mutation testing | Workflow shipped (`.github/workflows/mutation.yml`); measurement-only per-module results in [`docs/MUTATION_SCORES.md`](MUTATION_SCORES.md), last recorded in April 2026. No kill-rate threshold is enforced. |
 | 3 × 3 CI matrix on `main` | **Green** (Ubuntu / Windows / macOS × Python 3.11 / 3.12 / 3.13) |
 
 [Read the release runbook →](RELEASE.md)

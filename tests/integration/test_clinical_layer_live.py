@@ -85,6 +85,12 @@ async def test_compute_properties_for_p04637_live() -> None:
     assert 6.0 < props["theoretical_pi"] < 7.5
     assert -1.0 < props["gravy"] < 0.0
     assert payload["provenance"]["source"] == "UniProt"
+    # The result names its sequence basis and its pK set. 6.33 is the value
+    # ExPASy ProtParam returns for the 393-residue canonical sequence.
+    assert props["theoretical_pi"] == 6.33
+    assert "Full canonical sequence" in props["sequence_scope"]
+    assert props["charge_model"]["pk_set"] == "Bjellqvist"
+    assert props["charge_model"]["n_terminal_residue"] == "M"
 
 
 async def test_features_at_position_175_of_p04637_live() -> None:
@@ -104,6 +110,28 @@ async def test_lookup_variant_R175H_live() -> None:
     assert "R175H" in out
     # Must produce a non-zero match against the live UniProt entry.
     assert "0 match(es)" not in out
+    assert "**Reference residue confirmed:**" in out
+
+
+async def test_lookup_variant_reference_check_live() -> None:
+    """Residue 175 of the live entry is Arg and the sequence has 393
+    residues, so a Lys reference is a mismatch and position 999 is out of
+    range. Neither may read as a variant that lacks an annotation."""
+    wrong = json.loads(await uniprot_lookup_variant("P04637", "K175H", "json"))["data"]
+    assert wrong["matches"] == []
+    assert wrong["reference_check"] == {
+        "status": "reference_mismatch",
+        "position": 175,
+        "stated_residue": "K",
+        "sequence_length": 393,
+        "sequence_residue": "R",
+    }
+    beyond = json.loads(await uniprot_lookup_variant("P04637", "R999H", "json"))["data"]
+    assert beyond["reference_check"]["status"] == "position_out_of_range"
+    assert beyond["reference_check"]["sequence_length"] == 393
+    markdown = await uniprot_lookup_variant("P04637", "K175H", "markdown")
+    assert "**Reference residue mismatch:**" in markdown
+    assert "No UniProt natural-variant feature matches" not in markdown
 
 
 async def test_disease_associations_for_p04637_live() -> None:
@@ -436,6 +464,9 @@ async def test_processing_features_live_human_insulin() -> None:
     # Insulin is the textbook example of signal+propeptide+chain
     # processing; at least one of these must appear in the bucket
     assert any(t in out for t in ("Signal peptide", "Chain", "Peptide"))
+    # The signal peptide itself: the REST JSON names that feature "Signal".
+    assert "### Signal (1)" in out
+    assert "- **1-24**" in out
 
 
 async def test_ptms_live_human_insulin_disulfides() -> None:

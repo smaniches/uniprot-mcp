@@ -33,7 +33,10 @@ A drug-discovery team typically wants to answer:
    count + ECO-code diversity — **rough completeness signal**.
 4. **What's the basic chemistry?** MW / pI / hydrophobicity for
    buffer selection, expression-system choice — **derived from the
-   FASTA without an external tool**.
+   FASTA without an external tool**. The values are for the full
+   canonical sequence, signal peptide and propeptides included, so for
+   a secreted protein they describe the precursor; see
+   [Sequence chemistry](../sequence-chemistry.md).
 
 The dossier puts all four on one page. The agent can then decide
 which deeper tool calls are warranted (e.g. `uniprot_get_variants`

@@ -156,6 +156,22 @@ The optional `tests/integration/test_provenance_roundtrip_live.py`
 remains the executable live-integration check for the verifier's
 current behavior; actual run results must be reported separately.
 
+### 2026-11-11 — scope of the 2026-04-26 record
+
+The directory `run-2026-04-26-v1.1.0/` was labelled a benchmark run, and
+its closing paragraph presented the 30 / 30 result as confirmation of
+the live `uniprot-mcp` tools. That reading is withdrawn. The record
+documents a verification of the **answer key**: `verify.py` and
+`verify_answers.py` compare the sealed answers with the committed
+digests and with the UniProt REST API. They do not call `uniprot-mcp`,
+and no comparator answered the prompts.
+
+No benchmark run exists. `run.py` and `score.py` are scaffolds, no
+comparator transcript has been captured and nothing has been graded.
+The sealed answers, their digests and `verify-output.txt` are untouched
+by this correction. The record's original wording remains at
+[the v1.3.17 revision](https://github.com/smaniches/uniprot-mcp/blob/ba34026d8c831a840ddee23c4c8c768d1d03d3e6/tests/benchmark/run-2026-04-26-v1.1.0/README.md).
+
 ## Independence statement (formal)
 
 I, Santiago Maniches, attest that during the authoring of `prompts.jsonl` v1 and the sealing of `expected.jsonl` v1, the system under test (`uniprot-mcp` versions 0.1.0 and 1.0.x) was **not** invoked. Every primary-source query in this audit table was executed against `https://rest.uniprot.org/...` directly, either by `curl` at authoring time or by `tests/benchmark/verify_answers.py` (which is itself reviewable Python — no opaque shortcuts). Any subsequent revision of this benchmark (v2, v3, …) carries an updated independence statement.

@@ -72,9 +72,9 @@ has no annotations of that kind.
 
 | Tool | Purpose |
 |---|---|
-| `uniprot_compute_properties` | Derived sequence chemistry: MW / pI / GRAVY / aromaticity / charge / ε₂₈₀. Pure-Python on the FASTA — no external API. |
+| `uniprot_compute_properties` | Derived sequence chemistry: MW / pI / GRAVY / aromaticity / charge / ε₂₈₀. Pure-Python on the FASTA — no external API. Uses the full canonical sequence, signal peptide and propeptides included, and says so in the result; pI and charge use the Bjellqvist pK set, which the result names. See [Sequence chemistry](sequence-chemistry.md). |
 | `uniprot_features_at_position` | Every feature overlapping a residue position (1-indexed). Critical for variant-effect interpretation. |
-| `uniprot_lookup_variant` | HGVS-shorthand match (`R175H`, `V600E`, `R248*`) against UniProt's natural-variant features. |
+| `uniprot_lookup_variant` | HGVS-shorthand match (`R175H`, `V600E`, `R248*`) against UniProt's natural-variant features. The stated residue and position are first checked against the canonical sequence: the result reports `reference_confirmed`, `reference_mismatch`, `position_out_of_range` or `not_checked`, so a wrong reference is not mistaken for a missing annotation. |
 | `uniprot_get_disease_associations` | Structured disease records from DISEASE-type comments: name + MIM cross-ref + description. |
 | `uniprot_get_active_sites` | Catalytic and ligand-binding residues: active sites, binding sites, sites, metal binding, DNA binding. The residue-level chemistry — input to enzyme drug-design and antibiotic-target-validation workflows. |
 | `uniprot_get_processing_features` | Maturation features: signal peptide, propeptide, transit peptide, initiator methionine, chain, peptide. Therapeutic-protein engineering and pathogen-secretion-system analysis. |

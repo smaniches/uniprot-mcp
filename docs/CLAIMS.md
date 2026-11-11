@@ -154,29 +154,30 @@ UniProt.
 pytest tests/unit/test_cache.py -v
 ```
 
-**Limitation.** This is a **read primitive** in v1.1.x. The cache
-directory must be populated externally (e.g., by the benchmark capture
-script or by a user wrapper). Automatic cache write-through is not
-currently wired into the request path; cache entries must be populated
-explicitly or by an external capture workflow. The earlier claim that
+**Limitation.** This is a **read primitive**. The server never writes
+to the cache: automatic write-through is not wired into the request
+path. The directory has to be populated by user code that calls
+`ProvenanceCache.write` or writes the documented JSON shape; the
+repository ships no capture script. The earlier claim that
 every successful response is mirrored to disk was explicitly retracted
 in v1.1.3 (see CHANGELOG.md).
 
-**Last reviewed:** 2026-05-26.
+**Last reviewed:** 2026-11-11.
 
 ---
 
-## C6. 1005 offline + 45 live integration tests
+## C6. Offline and live-integration test suites
 
-**Claim (README badge, testing section).** The offline test suite
-contains 1005 tests; the live integration suite contains 45 tests.
+**Claim (README testing section, docs/index.md).** CI runs an offline
+test suite on every push, and a live integration suite is available on
+request. Neither document states a count; the count is whatever
+`pytest --collect-only` reports. On 2026-11-11 that was 1258 offline
+tests and 46 live integration tests.
 
 **Evidence.**
 - `pytest --collect-only --ignore=tests/integration -q` — offline
   count.
 - `pytest --collect-only tests/integration -q` — integration count.
-- Counts last reconciled on `main` (README testing section documents
-  the jump from 446 at v1.1.0).
 
 **Verify.**
 ```bash
@@ -184,12 +185,11 @@ pytest --collect-only --ignore=tests/integration -q 2>/dev/null | tail -1
 pytest --collect-only tests/integration -q 2>/dev/null | tail -1
 ```
 
-**Limitation.** Test counts change with each release. The README
-badge is a static shield; it is manually updated and may lag by one
-patch release. The authoritative count is always
+**Limitation.** Test counts change with each release, so the figures
+above are a dated observation. The authoritative count is always
 `pytest --collect-only`.
 
-**Last reviewed:** 2026-07-12.
+**Last reviewed:** 2026-11-11.
 
 ---
 
@@ -231,17 +231,20 @@ normal operation, not untested behaviour.
 
 ---
 
-## C8. 30/30 sealed-prompt benchmark verified against live UniProt
+## C8. Sealed 30-prompt benchmark answer key, re-derived 30/30 from live UniProt
 
-**Claim (README, OVERVIEW.md).** A 30-prompt benchmark with
-SHA-256-committed expected answers was verified 30/30 against live
-UniProt on 2026-04-26 at v1.1.0.
+**Claim (README, OVERVIEW.md).** A 30-prompt benchmark protocol with
+SHA-256-committed expected answers exists on `main`, and its answer key
+was re-derived 30/30 from live UniProt on 2026-04-26 at v1.1.0. **No
+system has been evaluated:** neither this server nor a baseline has
+been run against the prompts.
 
 **Evidence.**
 - `tests/benchmark/expected.hashes.jsonl` — committed SHA-256
   commitments.
-- `tests/benchmark/run-2026-04-26-v1.1.0/` — transcript of the
-  verification run.
+- `tests/benchmark/run-2026-04-26-v1.1.0/` — record of the
+  answer-key verification (corrected 2026-11-11; it is not a benchmark
+  run).
 - `tests/benchmark/verify_answers.py` + `tests/benchmark/verify.py` —
   the maintainer cryptographic verification path (run with the local
   `expected.jsonl`; this is what produced the 30/30 result above).
@@ -272,7 +275,10 @@ python tests/benchmark/verify_against_hashes.py \
   tests/benchmark/expected.hashes.jsonl
 ```
 
-**Limitation.** The 30/30 result was obtained by the maintainer
+**Limitation.** The 30/30 figure counts expected answers confirmed
+against UniProt. It is not a score for this server: the verifiers query
+the UniProt REST API directly and call no `uniprot-mcp` tool. The
+30/30 result was obtained by the maintainer
 cryptographic path at UniProt release `2026_01`. If UniProt has since
 released a new version, the maintainer re-derivation
 (`verify_answers.py`) may legitimately report drift for some prompts;
@@ -283,11 +289,12 @@ committed digest binds the withheld rationale, so a third party
 confirms answer-reproducibility, not a cryptographic match (a true
 third-party crypto path would require sealing `{prompt_id, answer}`
 only — an owner methodology decision, not implemented; see
-`tests/benchmark/AUDIT.md`). `run.py` and `score.py` are scaffolded
-(argparse-wired, stubbed bodies); the full comparative scoring driver
-is a v2 benchmark item.
+`tests/benchmark/AUDIT.md`). `run.py` and `score.py` are scaffolds
+(argparse-wired; they print a notice and exit with status 1), so no
+comparator has answered the prompts and nothing has been scored. A
+comparative run remains future work.
 
-**Last reviewed:** 2026-05-26.
+**Last reviewed:** 2026-11-11.
 
 ---
 
@@ -325,8 +332,8 @@ end-to-end requires network access to both PyPI and GitHub.
 
 **Claim (README, COMPETITIVE_LANDSCAPE.md).** The combination of
 per-response SHA-256, a verify primitive with six verdicts, release
-pinning, offline replay, pre-registered benchmark, and SLSA/Sigstore
-supply chain is, in the reviewed set, absent from every other bio-MCP
+pinning, offline replay, a pre-registered benchmark protocol with a
+sealed answer key, and SLSA/Sigstore supply chain is, in the reviewed set, absent from every other bio-MCP
 server surveyed.
 
 **Evidence.**
@@ -371,14 +378,16 @@ mutmut run --paths-to-mutate=src/uniprot_mcp/cache.py
 mutmut results
 ```
 
-**Limitation.** The gate threshold is currently 0.0
-(measurement-first). The >=95% gate is the v1.2.0 target, not the
-current state. `formatters` and `server` modules timed out mid-pass
-and have only partial measurements. The scores are from specific CI
-runs dated 2026-04-28; subsequent code changes could shift the
-numbers.
+**Limitation.** No kill-rate threshold is enforced: the summary
+script reports a threshold of 0.0 (measurement only), and the workflow
+fails only when a shard does not complete. >=95% is an aspiration
+without a release commitment. The recorded `formatters` and `server`
+figures are partial (those runs timed out). The scores are from specific
+CI runs dated 2026-04-27 and 2026-04-28 and describe the code of that
+time; the table has not been updated since, and `proteinchem.py` and its
+tests changed in November 2026 (pK table).
 
-**Last reviewed:** 2026-05-26.
+**Last reviewed:** 2026-11-11.
 
 ---
 
@@ -407,3 +416,73 @@ version (default in the `VERSION` variable); override to check other
 releases.
 
 **Last reviewed:** 2026-05-26.
+
+---
+
+## C13. Sequence chemistry states its basis; theoretical pI equals ExPASy ProtParam on the regression sequences
+
+**Claim (README, docs/sequence-chemistry.md).** `uniprot_compute_properties`
+and the dossier's chemistry section compute on the full canonical
+sequence, say so in every result, and name the pK values behind the pI
+and net charge. The theoretical pI uses the Bjellqvist pK set and equals
+the value ExPASy ProtParam reports for 27 UniProt canonical sequences
+and 23 of 24 probe peptides; the remaining probe differs by 0.01 at an
+exact rounding tie.
+
+**Evidence.**
+- `src/uniprot_mcp/proteinchem.py` — the pK table and the calculation.
+- `tests/unit/test_proteinchem_pi_reference.py` — the reference values
+  (ExPASy ProtParam queried 2026-11-11; Biopython 1.88 for the net
+  charge) and the comparison.
+- `tests/unit/test_chemistry_disclosure.py` — the sequence-basis and
+  pK-model statements in Markdown and JSON output.
+- `docs/sequence-chemistry.md` — methods, the per-protein table and the
+  limits.
+
+**Verify.**
+```bash
+pytest tests/unit/test_proteinchem_pi_reference.py \
+  tests/unit/test_chemistry_disclosure.py -v
+```
+To repeat a reference value by hand, paste the canonical sequence of an
+entry into https://web.expasy.org/protparam/.
+
+**Limitation.** Agreement is established for those 51 sequences and no
+further; the ExPASy tools are web services and their output can change.
+Biopython 1.88 differs from ProtParam by up to 0.05 pH for acidic
+proteins that end in Asp or Glu, and this server follows ProtParam
+there. The pI and net charge are sequence-only estimates that ignore
+post-translational modification, disulfide bonds and folding. For a
+secreted or otherwise processed protein every value describes the
+precursor, not the mature chain. A pI or net charge from version 1.3.17
+or earlier used a different pK table and is not comparable.
+
+**Last reviewed:** 2026-11-11.
+
+---
+
+## C14. `uniprot_lookup_variant` checks the stated reference against the sequence
+
+**Claim (README, docs/tools.md).** A lookup reports whether the stated
+reference residue is confirmed by the canonical sequence, differs from
+it, or lies beyond its end, so a wrong reference is not presented as a
+variant without annotation.
+
+**Evidence.**
+- `src/uniprot_mcp/server.py` — `_check_variant_reference`.
+- `tests/unit/test_variant_reference_check.py` — the four outcomes in
+  Markdown and JSON.
+
+**Verify.**
+```bash
+pytest tests/unit/test_variant_reference_check.py -v
+```
+
+**Limitation.** The check is against the canonical sequence only. A
+change given in isoform, mature-chain or legacy numbering is reported
+as a mismatch or as out of range; the tool does not try to renumber it.
+`reference_confirmed` with no match means UniProt has no natural-variant
+annotation for that exact change, which says nothing about its clinical
+significance.
+
+**Last reviewed:** 2026-11-11.

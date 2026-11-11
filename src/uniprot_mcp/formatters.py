@@ -96,6 +96,10 @@ place."""
 
 PROCESSING_FEATURE_TYPES: frozenset[str] = frozenset(
     {
+        # The REST JSON names a signal peptide feature "Signal" (seen on
+        # release 2026_04). "Signal peptide" is the spelling this set has
+        # always accepted and stays accepted.
+        "Signal",
         "Signal peptide",
         "Propeptide",
         "Transit peptide",
@@ -1210,6 +1214,26 @@ def fmt_orthology(
     return "\n".join(lines)
 
 
+def _charge_model_text(model: Any) -> str:
+    """Name the pK values behind a theoretical pI and net charge.
+
+    ``model`` is the ``charge_model`` record of
+    :func:`uniprot_mcp.proteinchem.compute_protein_properties`. An absent
+    record yields an empty string, so output built from data without one
+    makes no statement about a model.
+    """
+    if not isinstance(model, dict):
+        return ""
+    first = model["n_terminal_residue"]
+    n_terminus = f"N-terminus {model['n_terminus_pk']:.2f}" + (f" for {first}" if first else "")
+    side_chains = ", ".join(f"{aa} {pk:.2f}" for aa, pk in model["side_chain_pk"].items())
+    return (
+        f"{model['pk_set']} pK set ({n_terminus}, C-terminus {model['c_terminus_pk']:.2f}; "
+        f"side chains {side_chains}). Estimated from the sequence alone: "
+        "post-translational modifications, disulfide bonds and folding are not considered."
+    )
+
+
 def fmt_target_dossier(
     dossier: dict[str, Any],
     accession: str,
@@ -1267,6 +1291,8 @@ def fmt_target_dossier(
     chem = dossier.get("chemistry") or {}
     if chem:
         lines.append("## Sequence chemistry (derived)")
+        if chem.get("sequence_scope"):
+            lines.append(f"- Sequence basis: {chem['sequence_scope']}")
         if chem.get("molecular_weight") is not None:
             lines.append(f"- Molecular weight: {chem['molecular_weight']:.1f} Da")
         if chem.get("theoretical_pi") is not None:
@@ -1277,6 +1303,9 @@ def fmt_target_dossier(
             lines.append(f"- Aromaticity (F+W+Y): {chem['aromaticity'] * 100:.1f}%")
         if chem.get("net_charge_pH7") is not None:
             lines.append(f"- Net charge at pH 7: {chem['net_charge_pH7']:+.1f}")
+        charge_model = _charge_model_text(chem.get("charge_model"))
+        if charge_model:
+            lines.append(f"- pI and charge model: {charge_model}")
         if chem.get("extinction_coefficient_280nm") is not None:
             lines.append(
                 f"- Extinction coefficient (280 nm): "
@@ -1669,6 +1698,8 @@ def fmt_properties(
     if fmt == "json":
         return _json_envelope({"accession": accession, "properties": data}, provenance)
     lines: list[str] = [f"## Sequence properties: {accession}", ""]
+    if data.get("sequence_scope"):
+        lines.append(f"**Sequence basis:** {data['sequence_scope']}")
     lines.append(f"**Length:** {data['length']} residues")
     lines.append(f"**Molecular weight:** {data['molecular_weight']:.1f} Da")
     lines.append(f"**Theoretical pI:** {data['theoretical_pi']:.2f}")
@@ -1676,6 +1707,9 @@ def fmt_properties(
         f"**Net charge at pH 7:** {data['net_charge_pH7']:+.1f} "
         f"(positive = basic, negative = acidic)"
     )
+    charge_model = _charge_model_text(data.get("charge_model"))
+    if charge_model:
+        lines.append(f"**pI and charge model:** {charge_model}")
     lines.append(
         f"**GRAVY (Kyte-Doolittle hydropathy):** {data['gravy']:+.3f} "
         f"({'hydrophobic' if data['gravy'] > 0 else 'hydrophilic'})"
@@ -1740,6 +1774,41 @@ def fmt_features_at_position(
     return "\n".join(lines)
 
 
+_NUMBERING_HINT = (
+    "Check the residue, the position and the numbering scheme: isoform, "
+    "mature-chain and legacy numbering can differ from the canonical sequence."
+)
+
+
+def _reference_check_text(check: dict[str, Any], accession: str, change: str) -> str:
+    """Say how the stated reference residue compares with the canonical sequence."""
+    status = check.get("status")
+    position = check.get("position")
+    if status == "reference_confirmed":
+        return (
+            f"**Reference residue confirmed:** the canonical sequence of {accession} "
+            f"has {check.get('stated_residue')} at position {position}."
+        )
+    if status == "reference_mismatch":
+        return (
+            f"**Reference residue mismatch:** the canonical sequence of {accession} has "
+            f"{check.get('sequence_residue')} at position {position}, not "
+            f"{check.get('stated_residue')}. `{change}` does not describe a change to this "
+            f"sequence, so the absence of a match is not information about the variant. "
+            f"{_NUMBERING_HINT}"
+        )
+    if status == "position_out_of_range":
+        return (
+            f"**Position out of range:** the canonical sequence of {accession} has "
+            f"{check.get('sequence_length')} residues, so position {position} does not exist. "
+            f"`{change}` cannot be looked up on this sequence. {_NUMBERING_HINT}"
+        )
+    return (
+        "**Reference residue not checked:** the entry carried no sequence to compare "
+        f"`{change}` with."
+    )
+
+
 def fmt_variant_lookup(
     matches: list[Feature],
     accession: str,
@@ -1747,22 +1816,40 @@ def fmt_variant_lookup(
     fmt: str = "markdown",
     *,
     provenance: Provenance | None = None,
+    reference_check: dict[str, Any] | None = None,
 ) -> str:
-    """Render UniProt natural-variant matches for an HGVS-style change."""
+    """Render UniProt natural-variant matches for an HGVS-style change.
+
+    ``reference_check`` is the comparison of the stated reference residue
+    and position with the entry's canonical sequence. With it, a wrong
+    residue or an out-of-range position is reported as such instead of as
+    a change that merely has no annotation.
+    """
     if fmt == "json":
-        return _json_envelope(
-            {"accession": accession, "change": change, "matches": matches}, provenance
-        )
+        payload: dict[str, Any] = {"accession": accession, "change": change, "matches": matches}
+        if reference_check is not None:
+            payload["reference_check"] = reference_check
+        return _json_envelope(payload, provenance)
     lines: list[str] = [
         f"## Variant lookup: {accession} {change} ({len(matches)} match(es))",
         "",
     ]
-    if not matches:
-        lines.append(
-            f"_No UniProt natural-variant feature matches `{change}`. "
-            f"This does not mean the variant is benign — UniProt only annotates "
-            f"variants from the literature. See ClinVar / dbSNP for population data._"
+    invalid_reference = False
+    if reference_check is not None:
+        lines.extend([_reference_check_text(reference_check, accession, change), ""])
+        invalid_reference = reference_check.get("status") in (
+            "reference_mismatch",
+            "position_out_of_range",
         )
+    if not matches:
+        # After a mismatch or out-of-range notice the stated change does not
+        # exist on this sequence, so the "no annotation" advisory would mislead.
+        if not invalid_reference:
+            lines.append(
+                f"_No UniProt natural-variant feature matches `{change}`. "
+                f"This does not mean the variant is benign — UniProt only annotates "
+                f"variants from the literature. See ClinVar / dbSNP for population data._"
+            )
     else:
         for m in matches:
             loc = m.get("location") or {}

@@ -21,17 +21,17 @@ Source: [github.com/smaniches/uniprot-mcp](https://github.com/smaniches/uniprot-
 | Per-response provenance with SHA-256. | `src/uniprot_mcp/client.py` `_extract_provenance` + `canonical_response_hash`; source-bound 2026-10-15 TP53 capture at `examples/01_clinical_variant_interpretation.jsonl`, with upstream bytes and a binding test. |
 | A `uniprot_provenance_verify` tool with six enumerated verdicts. | `src/uniprot_mcp/server.py` (the tool registration); unit tests in `tests/unit/test_provenance_verify.py`. |
 | Offline + live-integration test suites (exact counts via `pytest --collect-only`). | `pytest --collect-only --ignore=tests/integration -q` for the offline suite; `pytest --collect-only tests/integration -q` for the live-integration suite. |
-| 30/30 sealed-prompt benchmark verified against live UniProt 2026-04-26 (maintainer cryptographic path: `verify.py` + `verify_answers.py` with the local `expected.jsonl`). | `tests/benchmark/run-2026-04-26-v1.1.0/` (transcript) + the cryptographic seals at `tests/benchmark/expected.hashes.jsonl`. Third-party reproducibility tool (re-derives + prints answers live; does not recompute the seal): `tests/benchmark/verify_against_hashes.py`. |
+| The sealed 30-prompt benchmark answer key was re-derived 30/30 from live UniProt on 2026-04-26 (maintainer cryptographic path: `verify.py` + `verify_answers.py` with the local `expected.jsonl`). This validates the answer key only: no server or baseline has been run against the prompts, and `run.py` / `score.py` are scaffolds. | `tests/benchmark/run-2026-04-26-v1.1.0/` (transcript) + the cryptographic seals at `tests/benchmark/expected.hashes.jsonl`. Third-party reproducibility tool (re-derives + prints answers live; does not recompute the seal): `tests/benchmark/verify_against_hashes.py`. |
 | The PyPI wheel was built from this exact repo. | SLSA build provenance attestation on every [GitHub Release](https://github.com/smaniches/uniprot-mcp/releases); `gh attestation verify` confirms. End-to-end script: `scripts/replicate.sh`. |
-| Coverage gate enforced at 100% line + branch. | `pyproject.toml` `[tool.coverage.report]` block sets `fail_under = 100`; the suite measures 100.00% line + branch across all seven source files (three branches carry justified `# pragma: no cover` for genuinely-unreachable import-time / defensive fallbacks). Reproduce: `pytest tests/unit tests/property tests/client tests/contract --cov=uniprot_mcp --cov-branch --cov-report=term-missing`. |
-| Mutation testing infrastructure ships; per-module raw kill rates measured for `cache` 82 % (≈100 % behavioural, the 5 survivors are docstring), `proteinchem` 92 % (228/249), `client` 70 % (259/370 after the two-phase sync + async killer uplift); `formatters` and `server` partial pending bisection. | `.github/workflows/mutation.yml` (matrix per src/ file); `docs/MUTATION_SCORES.md` carries the full per-module table + survivor breakdown + v1.2.0 uplift action items. The ≥ 95 % gate is the v1.2.0 target, not the current state. |
+| Coverage gate enforced at 100% line + branch. | `pyproject.toml` `[tool.coverage.report]` block sets `fail_under = 100`; the suite measures 100.00% line + branch across all seven source files (two branches carry justified `# pragma: no cover` for genuinely-unreachable import-time fallbacks). Reproduce: `pytest tests/unit tests/property tests/client tests/contract --cov=uniprot_mcp --cov-branch --cov-report=term-missing`. |
+| Mutation testing infrastructure ships; per-module raw kill rates last recorded in April 2026 for `cache` 82 % (≈100 % behavioural, the 5 survivors are docstring), `proteinchem` 92 % (228/249), `client` 70 % (259/370 after the two-phase sync + async killer uplift); `formatters` and `server` partial pending bisection. | `.github/workflows/mutation.yml` (matrix per src/ file); `docs/MUTATION_SCORES.md` carries the full per-module table + survivor breakdown + open follow-up items. No kill-rate threshold is enforced; ≥ 95 % is an aspiration without a release commitment. |
 
 ## What is honest about this project
 
 | Limitation | Disclosure |
 |---|---|
 | Coverage dipped from the v1.0.0 100% across the v1.1.x clinical/biomedical work (down to 92.20% on `main`); it is now restored to 100% line + branch with the gate enforcing it. | `pyproject.toml` `[tool.coverage.report]` (`fail_under = 100`) + the coverage-gap test files under `tests/unit/`. |
-| Mutation testing gate is 0.0 today, not 95%. Per-module raw rates as of `0403c0e` are `cache` 82 %, `proteinchem` 92 %, `client` 70 %; `formatters` + `server` partial. | `docs/MUTATION_SCORES.md` carries the full table + the v1.2.0 path to ≥ 95 %. |
+| Mutation testing gate is 0.0 today, not 95%. Per-module raw rates as of `0403c0e` are `cache` 82 %, `proteinchem` 92 %, `client` 70 %; `formatters` + `server` partial. | `docs/MUTATION_SCORES.md` carries the full table + the open follow-up items toward ≥ 95 %. |
 | No separately maintained clinical disease narratives or manually assembled therapeutic indices are distributed. | Only source-attributed MCP retrieval tools and reproducibility tests are maintained. |
 | Protein residue numbering and clinical interpretation must be resolved from the current source records, not from historical examples. | The live UniProt tools preserve accessions, feature coordinates and provenance; the curated interpretation pages were withdrawn. |
 | `uniprot-mcp` does not replace UniProt; it is a client of it. | `docs/COMPETITIVE_LANDSCAPE.md` honest survey of where this fits. |
@@ -46,7 +46,7 @@ no other bio-MCP server has all of:
 2. A `provenance_verify` primitive with six enumerated verdicts
 3. `--pin-release=YYYY_MM` strict release pinning
 4. Local cache + offline replay
-5. Pre-registered SHA-256-committed benchmark on `main`
+5. Pre-registered benchmark protocol with a SHA-256-sealed answer key on `main` (not yet run against any system)
 6. SLSA + Sigstore + CycloneDX SBOM on every release artefact
 
 This is the auditable-and-reproducible niche that the rest of the
@@ -72,8 +72,8 @@ The script:
    cryptographically valid.
 4. Installs in an isolated venv, runs `uniprot-mcp --self-test`
    (live UniProt fetch).
-5. Re-derives all 30 benchmark prompts from live UniProt and prints
-   them, confirming they are reproducible from the primary source (this
+5. Re-derives the answers to all 30 benchmark prompts from live UniProt
+   and prints them, confirming they are reproducible from the primary source (this
    step does not recompute the committed seal; the full cryptographic
    check is the maintainer path with the local `expected.jsonl`).
 
