@@ -48,7 +48,7 @@ ClinVar-specific MCP and a ChEMBL-only MCP were not found as standalone servers 
 5. **`uniprot_lookup_variant` (HGVS) + `uniprot_features_at_position` + `uniprot_get_alphafold_confidence` (pLDDT bands) + `uniprot_resolve_clinvar`**, all chained with the same provenance envelope.
 6. **`UNIPROT_MCP_CACHE_DIR` offline replay** (`uniprot_replay_from_cache`) for air-gapped re-runs.
 7. **SLSA build provenance + Sigstore keyless signatures + CycloneDX SBOM** on every release artefact. PyPI Trusted Publishing (OIDC) — no long-lived API tokens. Not present in any competitor scanned.
-8. **Pre-registered benchmark with SHA-256 commitments on `main`** (`tests/benchmark/expected.hashes.jsonl`) — reviewer cannot rewrite "correct" answers post-hoc. 30 prompts; v1.1.0 measured run at 30/30.
+8. **Pre-registered benchmark with SHA-256 commitments on `main`** (`tests/benchmark/expected.hashes.jsonl`) — reviewer cannot rewrite "correct" answers post-hoc. 30 prompts; the answer key was re-derived 30/30 from live UniProt on 2026-04-26. No server or baseline has been run against the prompts yet.
 
 ## Honest weaknesses vs alternatives
 

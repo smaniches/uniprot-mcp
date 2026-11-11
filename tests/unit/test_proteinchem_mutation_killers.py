@@ -19,6 +19,14 @@ constant, both sides of the assertion would shift together. The
 literals below are therefore typed by hand from a one-time
 computation, not derived from the live module.
 
+The pI and net-charge literals were replaced on 2026-11-11, when the
+pK table changed to the Bjellqvist set. The earlier literals were
+snapshots of the previous table and could not survive that change.
+The current ones come from a separate evaluation of the
+Henderson-Hasselbalch sum, cross-checked against Biopython 1.88 for
+every sequence that does not end in Asp or Glu (see
+``docs/sequence-chemistry.md``).
+
 Why this matters for adoption: a wrong residue mass that passes the
 existing tests but produces a different MW for any non-trivial
 protein is exactly the kind of silent correctness defect a
@@ -29,7 +37,8 @@ Tolerances:
   - float outputs rounded to 4 dp by the source → abs_tol=1e-6
     (large enough to ignore IEEE-754 repr noise on rounded values,
     far below the 1e-4 minimum impact of any constant-digit flip)
-  - pI rounded to 2 dp by the source → abs_tol=1e-2
+  - pI rounded to 2 dp by the source, compared with a 4 dp reference →
+    abs_tol=5.1e-3 (the rounding step, and no more)
 """
 
 from __future__ import annotations
@@ -138,31 +147,32 @@ def test_single_residue_gravy_pins_kd_table(aa: str, expected_gravy: float) -> N
 # pK constants — pin via net_charge at pH 7 for each single residue
 # ---------------------------------------------------------------------------
 
-# Each single-residue net_charge_pH7 reflects: _PK_N_TERMINUS (9.69),
-# _PK_C_TERMINUS (2.34), and the residue's own side-chain pK if it has
-# one (acidic: C 8.5, D 3.9, E 4.07, Y 10.46; basic: H 6.04, K 10.54,
-# R 12.48). Hardcoded values from one-time computation 2026-04-27.
+# Each single-residue net_charge_pH7 reflects: the N-terminal pK of that
+# residue (default 7.5; A 7.59, E 7.7, M 7.0, P 8.36, S 6.93, T 6.82,
+# V 7.44), _PK_C_TERMINUS (3.55), and the residue's own side-chain pK if
+# it has one (acidic: C 9.0, D 4.05, E 4.45, Y 10.0; basic: H 5.98,
+# K 10.0, R 12.0). Reference values of 2026-11-11, see the module docstring.
 _NET_CHARGE_PH7_SINGLE_RESIDUE = [
-    ("A", -0.002),  # no ionizable side chain — only termini
-    ("C", -0.0327),
-    ("D", -1.0012),
-    ("E", -1.0008),
-    ("F", -0.002),
-    ("G", -0.002),
-    ("H", 0.0968),
-    ("I", -0.002),
-    ("K", 0.9977),
-    ("L", -0.002),
-    ("M", -0.002),
-    ("N", -0.002),
-    ("P", -0.002),
-    ("Q", -0.002),
-    ("R", 0.998),
-    ("S", -0.002),
-    ("T", -0.002),
-    ("V", -0.002),
-    ("W", -0.002),
-    ("Y", -0.0024),
+    ("A", -0.2041),  # N-terminal pK 7.59
+    ("C", -0.2498),
+    ("D", -1.2388),
+    ("E", -1.1632),  # N-terminal pK 7.7 and the side chain
+    ("F", -0.2399),  # no ionizable side chain, default N-terminal pK
+    ("G", -0.2399),
+    ("H", -0.1527),
+    ("I", -0.2399),
+    ("K", 0.7591),
+    ("L", -0.2399),
+    ("M", -0.4996),  # N-terminal pK 7.0
+    ("N", -0.2399),
+    ("P", -0.0415),  # N-terminal pK 8.36
+    ("Q", -0.2399),
+    ("R", 0.7601),
+    ("S", -0.5399),  # N-terminal pK 6.93
+    ("T", -0.6018),  # N-terminal pK 6.82
+    ("V", -0.2660),  # N-terminal pK 7.44
+    ("W", -0.2399),
+    ("Y", -0.2409),
 ]
 
 
@@ -223,22 +233,21 @@ def test_extinction_returns_int_not_float() -> None:
 # pI — pin bisection precision and pK constants jointly
 # ---------------------------------------------------------------------------
 
-# Hardcoded pI values from one-time computation against the unmutated
-# source on 2026-04-27. Source rounds to 2 dp. Mutations of pK
-# constants OR the bisection range (lo=0, hi=14) OR the iteration
-# count (60) shift these.
+# Reference pI values to 4 dp (2026-11-11, see the module docstring).
+# Source rounds to 2 dp. Mutations of pK constants OR the bisection
+# range (lo=0, hi=14) OR the iteration count (60) shift these.
 _PI_PINNED = [
-    ("A", 6.01),
-    ("D", 3.12),
-    ("E", 3.20),
-    ("K", 10.12),
-    ("R", 11.09),
-    ("H", 7.87),
-    ("KKKKK", 11.16),
-    ("DDDDD", 2.71),
-    ("EEEEE", 2.80),
-    ("AAAAAAAAAA", 6.01),
-    ("WYC", 5.40),
+    ("A", 5.5700),
+    ("D", 3.7998),
+    ("E", 3.9998),
+    ("K", 8.7500),
+    ("R", 9.7500),
+    ("H", 6.7411),
+    ("KKKKK", 10.6025),
+    ("DDDDD", 3.2403),
+    ("EEEEE", 3.5149),
+    ("AAAAAAAAAA", 5.5700),
+    ("WYC", 5.5174),
 ]
 
 
@@ -247,7 +256,7 @@ def test_pi_pinned_per_composition(seq: str, expected_pi: float) -> None:
     """Hardcoded pI values for representative compositions. Pins pK
     constants jointly with the bisection algorithm."""
     p = compute_protein_properties(seq)
-    assert math.isclose(p["theoretical_pi"], expected_pi, abs_tol=1e-2), (
+    assert math.isclose(p["theoretical_pi"], expected_pi, abs_tol=5.1e-3), (
         f"{seq}: expected pI {expected_pi}, got {p['theoretical_pi']}"
     )
 
@@ -393,24 +402,41 @@ def test_aromaticity_direct_for_zero_length_returns_zero() -> None:
     assert aromaticity(counts, 0) == 0.0
 
 
-def test_isoelectric_point_for_neutral_alanine_is_about_six() -> None:
-    """Single A: pI must be the average of N-term pK (9.69) and
-    C-term pK (2.34) = 6.015 → rounded to 2 dp = 6.01 or 6.02 depending
-    on bisection. Hardcoded 6.01 from the unmutated source."""
+def test_isoelectric_point_from_counts_alone_is_mean_of_default_terminal_pks() -> None:
+    """Counts only, no first residue named: the default N-terminal pK
+    (7.5) applies, so with no ionizable side chain the pI is the mean of
+    7.5 and the C-terminal pK 3.55 = 5.525, rounded to 2 dp either way."""
     counts = {aa: 0 for aa in "ACDEFGHIKLMNPQRSTVWY"}
     counts["A"] = 1
     counts["other"] = 0
-    assert math.isclose(isoelectric_point(counts), 6.01, abs_tol=1e-2)
+    assert math.isclose(isoelectric_point(counts), 5.525, abs_tol=5.1e-3)
 
 
-def test_net_charge_pH7_for_neutral_alanine() -> None:
-    """Single A at pH 7: charge = 1/(1 + 10**(7-9.69)) - 1/(1 + 10**(2.34-7))
-    = 0.998 - 1.000 = -0.002. Pins both terminus pKs jointly."""
+def test_isoelectric_point_uses_the_named_first_residue() -> None:
+    """The same counts with the first residue named take that residue's
+    N-terminal pK: Ala 7.59 gives (7.59 + 3.55) / 2 = 5.57, Pro 8.36
+    gives 5.955, and a residue without its own value changes nothing."""
+    counts = {aa: 0 for aa in "ACDEFGHIKLMNPQRSTVWY"}
+    counts["A"] = 1
+    counts["other"] = 0
+    assert math.isclose(isoelectric_point(counts, n_terminal="A"), 5.57, abs_tol=5.1e-3)
+    assert math.isclose(isoelectric_point(counts, n_terminal="P"), 5.955, abs_tol=5.1e-3)
+    assert isoelectric_point(counts, n_terminal="G") == isoelectric_point(counts)
+    # Lower case names the same residue.
+    assert isoelectric_point(counts, n_terminal="a") == isoelectric_point(counts, n_terminal="A")
+
+
+def test_net_charge_pH7_from_counts_alone_uses_default_terminal_pks() -> None:
+    """No side chain, no first residue named, pH 7:
+    1/(1 + 10**(7-7.5)) - 1/(1 + 10**(3.55-7)) = 0.75975 - 0.99965 = -0.2399.
+    Pins both default terminus pKs jointly."""
     counts = {aa: 0 for aa in "ACDEFGHIKLMNPQRSTVWY"}
     counts["A"] = 1
     counts["other"] = 0
     charge = net_charge_at_pH(counts, 7.0)
-    assert math.isclose(charge, -0.002, abs_tol=1e-3)
+    assert math.isclose(charge, -0.2399, abs_tol=1e-4)
+    # With the first residue named, the Ala value 7.59 raises the positive part.
+    assert math.isclose(net_charge_at_pH(counts, 7.0, n_terminal="A"), -0.2041, abs_tol=1e-4)
 
 
 # ---------------------------------------------------------------------------
@@ -421,15 +447,16 @@ def test_net_charge_pH7_for_neutral_alanine() -> None:
 def test_p53_n_terminal_10_residue_full_snapshot() -> None:
     """First 10 residues of P53 (M E E P Q S D P S V) — snapshot every
     derived property. Hardcoded values from one-time computation
-    against the unmutated source on 2026-04-27. Any constant or
-    operator mutation that changes any of these values fails one of
-    the assertions below.
+    against the unmutated source on 2026-04-27 (pI and net charge:
+    reference values of 2026-11-11, equal to Biopython 1.88). Any
+    constant or operator mutation that changes any of these values
+    fails one of the assertions below.
     """
     p = compute_protein_properties("MEEPQSDPSV")
     assert p["length"] == 10
     assert math.isclose(p["molecular_weight"], 1118.1806, abs_tol=1e-4)
-    assert math.isclose(p["theoretical_pi"], 2.90, abs_tol=1e-2)
-    assert math.isclose(p["net_charge_pH7"], -2.9989, abs_tol=1e-4)
+    assert math.isclose(p["theoretical_pi"], 3.5743, abs_tol=5.1e-3)
+    assert math.isclose(p["net_charge_pH7"], -3.4929, abs_tol=1e-4)
     assert math.isclose(p["gravy"], -1.27, abs_tol=1e-2)
     assert math.isclose(p["aromaticity"], 0.0, abs_tol=1e-9)
     assert p["extinction_coefficient_280nm"] == 0

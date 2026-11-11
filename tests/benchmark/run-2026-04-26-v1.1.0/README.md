@@ -1,4 +1,20 @@
-# Benchmark run — 2026-04-26 (v1.1.0)
+# Benchmark answer-key verification — 2026-04-26 (v1.1.0)
+
+> **Correction dated 2026-11-11.** This record was first titled
+> "Benchmark run" and closed by saying that the result confirmed the live
+> `uniprot-mcp` tools. It does not. The two commands recorded here check
+> the sealed answer key: `verify.py` confirms that the local plaintext
+> matches the committed SHA-256 values, and `verify_answers.py` re-derives
+> each answer from the UniProt REST API. Neither imports or calls
+> `uniprot-mcp`, and no model, server or baseline answered the prompts.
+> The 30 / 30 below is the number of expected answers confirmed against
+> UniProt on that date. It is not a score for any system. The benchmark
+> itself has not been run: `run.py` and `score.py` are scaffolds.
+>
+> Only the title and the closing paragraph were corrected. The commands,
+> their output and `verify-output.txt` are unchanged, and the original
+> wording remains readable at
+> [the v1.3.17 revision](https://github.com/smaniches/uniprot-mcp/blob/ba34026d8c831a840ddee23c4c8c768d1d03d3e6/tests/benchmark/run-2026-04-26-v1.1.0/README.md).
 
 **Date:** 2026-04-26
 **Package version:** uniprot-mcp-server 1.1.0
@@ -69,14 +85,13 @@ without a release-coupled re-seal). The second command may begin to
 report drift as UniProt issues new releases — that is the *intended*
 behaviour and the data point for downstream consumers.
 
-## Provenance
+## Scope of this record
 
-Each tool call by `uniprot-mcp` v1.1.0 itself emits a per-response
-`Provenance` record (UniProt release, retrieval timestamp, resolved
-URL, canonical SHA-256). The benchmark verifier above is a separate
-operational complement — it goes around the MCP layer to talk
-directly to the upstream REST API, so any disagreement between the
-two would surface a defect in `uniprot-mcp` rather than in UniProt.
-The fact that all 30 prompts verified end-to-end is mutual confirmation:
-the sealed answers, the upstream UniProt response, and the live
-`uniprot-mcp` tools are mutually consistent at this commit.
+The verifier talks directly to the upstream REST API and goes around the
+MCP layer. It therefore establishes one thing: on 2026-04-26 the sealed
+answers agreed with UniProt.
+
+_Withdrawn on 2026-11-11:_ the earlier closing statement that the sealed
+answers, the upstream UniProt response and the live `uniprot-mcp` tools
+were shown to be mutually consistent. No `uniprot-mcp` tool was called in
+this verification, so it carries no evidence about them.

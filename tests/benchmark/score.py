@@ -47,7 +47,8 @@ def main(argv: list[str]) -> int:
         file=sys.stderr,
     )
     print(
-        "[scaffold] To unblock, complete the sealing step and replace this stub.",
+        "[scaffold] Nothing has been scored: no benchmark run exists yet, and "
+        "the body of this scorer is not implemented.",
         file=sys.stderr,
     )
     return 1

@@ -46,6 +46,12 @@ Output (verbatim, release 2026_03):
 > mutation; does not induce SNAI1 degradation; reduces interaction with
 > ZNF385A; dbSNP:rs28934578. Evidence: ECO:0000269.
 
+The tool also checks the stated reference against the canonical
+sequence and prints the outcome above the match, here that residue 175
+is Arg. A change with the wrong reference residue (`K175H`) or a
+position beyond the end of the sequence (`R999H`) is reported as a
+mismatch or as out of range, not as a variant without annotation.
+
 `ECO:0000269` is **experimental evidence used in manual assertion**: a
 curator attributed the statement to published experimental work (here,
 seven PubMed references on the feature). It is distinct from codes for

@@ -329,6 +329,57 @@ def _parse_variant_change(value: str) -> tuple[str, int, str]:
     return original, int(position_str), alt
 
 
+def _check_variant_reference(entry: dict[str, Any], original: str, position: int) -> dict[str, Any]:
+    """Compare a stated reference residue and position with the entry's sequence.
+
+    The UniProtKB entry JSON carries the canonical sequence, so the check
+    needs no further request. ``original`` and ``position`` are the values
+    ``_parse_variant_change`` returns: an upper-case residue letter and a
+    1-based position of at least 1. The result always has ``status`` (one of
+    ``reference_confirmed``, ``reference_mismatch``, ``position_out_of_range``
+    or ``not_checked``), ``position`` and ``stated_residue``; the sequence
+    length and the residue found are added when the sequence was available.
+    """
+    check: dict[str, Any] = {
+        "status": "not_checked",
+        "position": position,
+        "stated_residue": original,
+    }
+    sequence = entry.get("sequence")
+    residues = sequence.get("value") if isinstance(sequence, dict) else None
+    if not isinstance(residues, str) or not residues:
+        return check
+    check["sequence_length"] = len(residues)
+    if position > len(residues):
+        check["status"] = "position_out_of_range"
+        return check
+    found = residues[position - 1].upper()
+    check["sequence_residue"] = found
+    check["status"] = "reference_confirmed" if found == original else "reference_mismatch"
+    return check
+
+
+# Both chemistry tools hand the canonical FASTA record to the calculation
+# unchanged, so each result carries this statement of what was measured.
+_CANONICAL_SEQUENCE_SCOPE: Final[str] = (
+    "Full canonical sequence of the UniProt FASTA record, with no processing "
+    "applied. A signal peptide, propeptide, transit peptide or initiator "
+    "methionine annotated on the entry is included, so for such an entry these "
+    "values describe the precursor and not the mature chain; "
+    "uniprot_get_processing_features lists the boundaries."
+)
+
+
+def _canonical_sequence_chemistry(fasta: str) -> dict[str, Any]:
+    """Derived chemistry of a canonical FASTA record, labelled with its sequence scope."""
+    # Drop the FASTA header and any PIR-style ;-comments; the remaining
+    # lines concatenated are the residues.
+    sequence = "".join(
+        line for line in fasta.splitlines() if not line.startswith(">") and not line.startswith(";")
+    )
+    return {"sequence_scope": _CANONICAL_SEQUENCE_SCOPE, **compute_protein_properties(sequence)}
+
+
 def _safe_error(tool: str, exc: BaseException) -> str:
     """Build an agent-safe error message. Detail goes to the stderr log,
     not the LLM.
@@ -990,6 +1041,10 @@ async def uniprot_target_dossier(
       count  ·  Functional annotations (top GO MF, subcellular, ECO
       diversity)  ·  Cross-references summary
 
+    Sequence chemistry is computed on the full canonical sequence,
+    unprocessed (signal peptide and propeptides included); the section
+    says so and names the pK values behind the pI and net charge.
+
     For per-residue pLDDT confidence call ``uniprot_get_alphafold_confidence``
     separately. For full disease detail call
     ``uniprot_get_disease_associations``. The dossier is the entry-
@@ -1008,12 +1063,7 @@ async def uniprot_target_dossier(
         try:
             fasta = await client.get_fasta(accession)
             chemistry_provenance = client.last_provenance
-            sequence = "".join(
-                line
-                for line in fasta.splitlines()
-                if not line.startswith(">") and not line.startswith(";")
-            )
-            chemistry = dict(compute_protein_properties(sequence))
+            chemistry = _canonical_sequence_chemistry(fasta)
             chemistry.pop("amino_acid_counts", None)  # too verbose for the dossier
         except Exception as exc:
             # Preserve the verified entry but make missing chemistry visible to
@@ -1473,25 +1523,30 @@ async def uniprot_compute_properties(
 ) -> str:
     """Derived sequence chemistry for a UniProt entry: molecular weight,
     theoretical pI, GRAVY hydrophobicity, aromaticity, net charge at pH 7,
-    extinction coefficient at 280 nm, amino-acid composition. Computed
-    from the canonical FASTA via standard methods (Lehninger pK values,
-    Kyte-Doolittle hydropathy, Pace 1995 ε₂₈₀ formula). Pure-Python — no
-    additional external API call beyond the FASTA fetch."""
+    extinction coefficient at 280 nm, amino-acid composition. Pure-Python —
+    no additional external API call beyond the FASTA fetch.
+
+    Computed on the full canonical sequence, unprocessed: a signal peptide,
+    propeptide, transit peptide or initiator methionine is included, so for
+    a secreted or otherwise processed protein the values describe the
+    precursor, not the mature chain (``uniprot_get_processing_features``
+    lists the boundaries).
+
+    Methods: average residue masses; pI and net charge from the Bjellqvist
+    pK set with residue-specific N-terminal values, the pK set ExPASy
+    ProtParam documents for its pI; Kyte-Doolittle hydropathy; Pace 1995
+    ε₂₈₀ formula with all cysteines reduced. The output names the pK values
+    applied. pI and charge are estimates from sequence alone."""
     try:
         _check_accession(accession)
         _check_format(response_format)
         client = _client()
         fasta = await client.get_fasta(accession)
-        # Drop the FASTA header and any PIR-style ;-comments; the
-        # remaining lines concatenated are the residues.
-        sequence = "".join(
-            line
-            for line in fasta.splitlines()
-            if not line.startswith(">") and not line.startswith(";")
-        )
-        properties = compute_protein_properties(sequence)
         return fmt_properties(
-            dict(properties), accession, response_format, provenance=client.last_provenance
+            _canonical_sequence_chemistry(fasta),
+            accession,
+            response_format,
+            provenance=client.last_provenance,
         )
     except Exception as exc:
         _raise_tool_error("uniprot_compute_properties", exc)
@@ -1648,7 +1703,8 @@ async def uniprot_lookup_variant(
             description=(
                 "HGVS-shorthand amino-acid change, e.g. 'R175H', 'V600E', "
                 "'R248*' (stop). Format: <original residue><1-indexed "
-                "position><alt residue or '*'>."
+                "position><alt residue or '*'>. Positions are numbered on the "
+                "UniProt canonical sequence."
             )
         ),
     ],
@@ -1657,9 +1713,17 @@ async def uniprot_lookup_variant(
     """Look up an HGVS-shorthand amino-acid change (e.g. ``R175H``,
     ``V600E``, ``R248*``) in the UniProt entry's natural-variant
     annotations. Returns the matching variant feature(s) including the
-    UniProt-curated description (often a disease association). A null
-    result here does NOT mean a variant is benign — UniProt only
-    annotates literature-described variants; ClinVar / dbSNP carry
+    UniProt-curated description (often a disease association).
+
+    The stated reference residue and position are checked against the
+    entry's canonical sequence, and the result reports which case applies
+    (``reference_check.status`` in JSON): ``reference_confirmed``,
+    ``reference_mismatch`` (the sequence has a different residue at that
+    position), ``position_out_of_range`` (beyond the end of the sequence)
+    or ``not_checked`` (the entry carried no sequence). Only a confirmed
+    reference with no match means UniProt has no annotation for the
+    change. Such a null result does NOT mean a variant is benign — UniProt
+    only annotates literature-described variants; ClinVar / dbSNP carry
     population-level data."""
     try:
         _check_accession(accession)
@@ -1684,7 +1748,12 @@ async def uniprot_lookup_variant(
             }:
                 matches.append(f)
         return fmt_variant_lookup(
-            matches, accession, change, response_format, provenance=client.last_provenance
+            matches,
+            accession,
+            change,
+            response_format,
+            provenance=client.last_provenance,
+            reference_check=_check_variant_reference(data, original, position),
         )
     except Exception as exc:
         _raise_tool_error("uniprot_lookup_variant", exc)

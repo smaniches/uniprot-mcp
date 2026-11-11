@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# One-command beta-lab replication of the sealed benchmark for the
-# latest published release. Override the version with the `VERSION`
-# env var to verify any specific release (e.g. `VERSION=1.1.0`).
+# One-command beta-lab verification of the latest published release,
+# with a re-derivation of the sealed benchmark answer key. Override the
+# version with the `VERSION` env var to verify any specific release
+# (e.g. `VERSION=1.1.0`).
 #
 # What this script does (in order):
 #
@@ -102,10 +103,10 @@ step "6. Re-derive benchmark answers from live UniProt (reproducibility)"
 # verify_answers.py with the local plaintext. Exit 0 iff every committed
 # prompt was re-derived; the tool exits 1 on drift between
 # expected.hashes.jsonl and the derivation pipeline, and `set -e` above
-# aborts the script before "replication complete" prints.
+# aborts the script before "re-derivation complete" prints.
 "$WORK/venv/bin/python" tests/benchmark/verify_against_hashes.py \
   tests/benchmark/expected.hashes.jsonl
-ok "benchmark replication complete"
+ok "benchmark answer re-derivation complete"
 
 printf "\n\033[1;32m==== REPLICATION SUCCESS ====\033[0m\n"
 echo "Source commit (per SLSA):  see 'gh attestation verify' output above"

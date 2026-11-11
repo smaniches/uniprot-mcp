@@ -76,8 +76,8 @@ def main(argv: list[str]) -> int:
         file=sys.stderr,
     )
     print(
-        "[scaffold] To unblock, complete the sealing step (see "
-        "tests/benchmark/AUDIT.md `Sealing checklist`) and replace this stub.",
+        "[scaffold] No benchmark run has been made. The answer key is sealed "
+        "(tests/benchmark/AUDIT.md); what is missing is the body of this runner.",
         file=sys.stderr,
     )
     return 1

@@ -100,8 +100,8 @@ If you are a biomedical researcher visiting this repo, the highest-signal places
 |---|---|
 | **[MCP tool documentation](docs/tools.md)** | Live UniProt source access, accession-level lookups, provenance, and optional AlphaFold structure-confidence retrieval. No separate hand-maintained clinical collection is distributed. |
 | **[TP53 R175H capture](examples/01_clinical_variant_interpretation.jsonl)** | Dated live transcript, preserved upstream response bytes, digest/footer checks, and recorded text comparison. Not independently validated biomedical interpretation. The illustrative transcripts were withdrawn. |
-| **[`tests/benchmark/`](tests/benchmark/)** | Pre-registered 30-prompt benchmark with SHA-256 commitments on `main`. The 2026-04-26 v1.1.0 run verified 30/30 against live UniProt — transcript at `tests/benchmark/run-2026-04-26-v1.1.0/`. |
-| **[`scripts/replicate.sh`](scripts/replicate.sh)** | One-command verification that the published PyPI wheel was built from this exact repo (cross-checks SHA-256 across PyPI / GitHub Release / SLSA attestation; runs `--self-test`; re-runs the benchmark live). POSIX + `scripts/replicate.ps1` for Windows. |
+| **[`tests/benchmark/`](tests/benchmark/)** | A 30-prompt benchmark protocol with a sealed answer key (SHA-256 commitments on `main`). On 2026-04-26 the answer key was re-derived 30/30 from live UniProt; the record is in `tests/benchmark/run-2026-04-26-v1.1.0/`. That check validates the answers, not this server: no server or baseline has been run against the prompts, and the runner and scorer are scaffolds. |
+| **[`scripts/replicate.sh`](scripts/replicate.sh)** | One-command verification that the published PyPI wheel was built from this exact repo (cross-checks SHA-256 across PyPI / GitHub Release / SLSA attestation; runs `--self-test`; re-derives the benchmark answers from live UniProt). POSIX + `scripts/replicate.ps1` for Windows. |
 | **[`docs/COMPETITIVE_LANDSCAPE.md`](docs/COMPETITIVE_LANDSCAPE.md)** | Honest 14-server survey of the bio-MCP space (April 2026) and the specific differentiation this server claims. |
 
 Issues / corrections welcome at https://github.com/smaniches/uniprot-mcp/issues. Tool results are source-attributed; UniProt annotations and predicted structural confidence retain their upstream evidence type. No separate clinical disease index is maintained.
@@ -116,16 +116,16 @@ Issues / corrections welcome at https://github.com/smaniches/uniprot-mcp/issues.
 | Source provenance | provider • date • URL • SHA-256 (release where available) | none | sometimes URL only |
 | UniProt REST verification | `uniprot_provenance_verify` compares recorded UniProt REST responses; external ClinVar/AlphaFold origins are outside its scope | varies | varies |
 | Release pinning | `--pin-release=YYYY_MM` raises on drift | n/a | n/a |
-| Pre-registered benchmark | 30 prompts, SHA-256 committed on `main` + reproducible verifier | n/a | n/a |
+| Benchmark protocol | 30 pre-registered prompts with a SHA-256-sealed answer key on `main` and an answer verifier; no system has been evaluated against it yet | n/a | n/a |
 | Local provenance cache | `uniprot_replay_from_cache` read primitive (automatic cache write-through is not wired into the request path — see [§Provenance & verification](#provenance--verification)) | n/a | n/a |
 | Clinical primitives | sequence chemistry / position-aware features / HGVS variant lookup / disease associations / AlphaFold pLDDT / ClinVar | none | none |
 | Composition tool | `uniprot_target_dossier` — one call, nine sections | n/a | n/a |
 | Input validation | regex + length cap before any HTTP call | none | partial |
 | Error-channel safety | upstream exception text never echoed to LLM | n/a | partial |
 | Cross-origin allowlist | enumerated, threat-modelled, privacy-listed | n/a | usually unaudited |
-| Supply chain | SLSA build provenance + Sigstore + CycloneDX SBOM (post-flip) | n/a | rare |
-| Test layers | unit + property + contract + client + integration + benchmark | n/a | usually unit only |
-| Mutation testing | weekly + on-demand workflow; per-module measurement complete for `cache` 82 %, `proteinchem` 92 %, `client` 70 %; gate currently 0 % (measurement-first), ≥ 95 % is the v1.2.0 target — see `docs/MUTATION_SCORES.md` | n/a | rare |
+| Supply chain | SLSA build provenance + Sigstore + CycloneDX SBOM, produced by the release workflow | n/a | rare |
+| Test layers | unit + property + contract + client + integration | n/a | usually unit only |
+| Mutation testing | weekly + on-demand workflow, measurement only: no kill-rate threshold is enforced. Last recorded per-module results (April 2026): `cache` 82 %, `proteinchem` 92 %, `client` 70 % — see `docs/MUTATION_SCORES.md` | n/a | rare |
 
 The **provenance + verify** chain is, in my 2026-04-26 survey, absent
 from every other bio-MCP I could find. A regulated user can take any
@@ -208,9 +208,9 @@ and an honest empty-set advisory.
 
 | Tool | Purpose |
 |---|---|
-| `uniprot_compute_properties` | Derived sequence chemistry from the FASTA: MW / pI / GRAVY / aromaticity / charge / ε₂₈₀. |
+| `uniprot_compute_properties` | Derived sequence chemistry from the FASTA: MW / pI / GRAVY / aromaticity / charge / ε₂₈₀. Computed on the full canonical sequence, signal peptide and propeptides included; pI and charge use the Bjellqvist pK set ([scope, methods and checks](docs/sequence-chemistry.md)). |
 | `uniprot_features_at_position` | Every feature overlapping a residue position. Critical for variant-effect interpretation. |
-| `uniprot_lookup_variant` | HGVS-shorthand match (`R175H`, `V600E`, `R248*`) against UniProt's natural-variant features. |
+| `uniprot_lookup_variant` | HGVS-shorthand match (`R175H`, `V600E`, `R248*`) against UniProt's natural-variant features. The stated residue and position are checked against the canonical sequence, so a wrong reference or an out-of-range position is reported as such and not as a missing annotation. |
 | `uniprot_get_disease_associations` | Structured disease records from DISEASE-type comments: name + acronym + UniProt disease ID + OMIM cross-ref + description. |
 | `uniprot_get_active_sites` | Catalytic and ligand-binding residues: active sites, binding sites, sites, metal binding, DNA binding. The residue-level chemistry of the protein. |
 | `uniprot_get_processing_features` | Maturation features: signal peptide, propeptide, transit peptide, initiator methionine, chain, peptide. Essential for therapeutic-protein engineering and pathogen-secretion analysis. |
@@ -283,14 +283,12 @@ uniprot-mcp
 # $UNIPROT_MCP_CACHE_DIR/<sha256(url)>.json if present.
 ```
 
-> **Status note (v1.1.3).** `uniprot_replay_from_cache` is a **read
-> primitive**. The cache must currently be populated by an external
-> process — for example, by the maintainer-provided benchmark capture
-> script, or by you wrapping `httpx` calls and writing to the directory
-> yourself in the documented JSON shape (see `src/uniprot_mcp/cache.py`).
-> Automatic cache write-through is not currently wired into the request
-> path; cache entries must be populated explicitly or by an external
-> capture workflow.
+> **Status note.** `uniprot_replay_from_cache` is a **read primitive**.
+> The server never writes to the cache: automatic write-through is not
+> wired into the request path. Entries have to be put there by your own
+> code, either by calling `ProvenanceCache.write` or by writing the
+> documented JSON shape to the directory (see `src/uniprot_mcp/cache.py`).
+> The repository ships no capture script for this.
 
 The [October 2026 TP53 example](examples/01_clinical_variant_interpretation.jsonl)
 preserves actual upstream response bytes and verifies them offline.
@@ -301,13 +299,24 @@ verdicts as scientific or cryptographic proof.
 
 ---
 
-## Pre-registered benchmark
+## Benchmark protocol: sealed answer key, no system run yet
 
-`tests/benchmark/` ships a 30-prompt evaluation (Tier A / B / C × 10)
+`tests/benchmark/` ships a 30-prompt evaluation protocol (Tier A / B / C × 10)
 with **SHA-256-committed expected answers** on `main`. The plaintext
 `expected.jsonl` is held local-only until a benchmark run is
 published; the cryptographic commitments mean the author cannot
 rewrite "correct" answers post-hoc.
+
+**What has been done and what has not.** The answer key has been
+validated: on 2026-04-26 every sealed answer was re-derived from live
+UniProt, 30 of 30
+([record](tests/benchmark/run-2026-04-26-v1.1.0/README.md)). That
+establishes that the expected answers were correct against UniProt on
+that date. It is not a measurement of this server. No system has been
+evaluated against the prompts: not `uniprot-mcp`, not a baseline. The
+runner (`run.py`) and the scorer (`score.py`) are scaffolds that exit
+without running anything, so there is no accuracy, tool-call or
+comparison result to report.
 
 **Third-party reproducibility path (no seal file required).** Re-derive every Tier A / B answer live from UniProt and print it — no `expected.jsonl` required. This confirms the answers are independently reproducible from the primary source today; it does **not** recompute the seal (the committed SHA-256 binds a withheld rationale — see below):
 
@@ -349,7 +358,7 @@ uvx --from uniprot-mcp-server uniprot-mcp
 > | Python module | `uniprot_mcp` | what you `import` (PEP-8 underscore form) |
 > | Console script + MCP server identity | `uniprot-mcp` | what you run from the shell and what Claude Desktop sees |
 >
-> Cross-checks that prove the wheel you installed was built from this repo: each release ships a [Sigstore signature](https://www.sigstore.dev/), [SLSA build provenance](https://slsa.dev/), and a [CycloneDX SBOM](https://cyclonedx.org/), all attached to the [v1.1.0 GitHub Release](https://github.com/smaniches/uniprot-mcp/releases/tag/v1.1.0). Run `bash scripts/replicate.sh` (POSIX) or `pwsh scripts/replicate.ps1` (Windows) to verify the full chain end-to-end. Common precedents for the same one-thing-three-names pattern: `pillow`/`PIL`, `python-dateutil`/`dateutil`, `beautifulsoup4`/`bs4`, `python-Levenshtein`/`Levenshtein`.
+> Cross-checks that prove the wheel you installed was built from this repo: for each release the release workflow signs the artifacts with [Sigstore](https://www.sigstore.dev/), generates a [CycloneDX SBOM](https://cyclonedx.org/) and attaches both to the [GitHub Release](https://github.com/smaniches/uniprot-mcp/releases), and records [SLSA build provenance](https://slsa.dev/) as a GitHub artifact attestation. Run `bash scripts/replicate.sh` (POSIX) or `pwsh scripts/replicate.ps1` (Windows) to verify the full chain end-to-end. Common precedents for the same one-thing-three-names pattern: `pillow`/`PIL`, `python-dateutil`/`dateutil`, `beautifulsoup4`/`bs4`, `python-Levenshtein`/`Levenshtein`.
 
 From source:
 
@@ -448,7 +457,11 @@ uniprot-mcp --self-test
 ```
 > What's the molecular weight, pI, and hydrophobicity of human insulin?
 → uniprot_compute_properties("P01308")
-   # MW 11,981 Da, pI 4.93, ε₂₈₀ 24,980 M⁻¹·cm⁻¹ — pure Python on the FASTA.
+   # MW 11,981 Da, pI 5.22, ε₂₈₀ 16,960 M⁻¹·cm⁻¹ — pure Python on the FASTA.
+   # These are the values for the 110-residue precursor: the result states that
+   # the full canonical sequence is used, signal peptide and C peptide included.
+→ uniprot_get_processing_features("P01308")
+   # signal peptide 1-24, B chain 25-54, C peptide 57-87, A chain 90-110
 ```
 
 **4. Provenance drift check using the recorded TP53 capture.**
@@ -470,10 +483,8 @@ pre-asserted.
 
 ```bash
 # Pre-condition: $UNIPROT_MCP_CACHE_DIR/<sha256(url)>.json already exists,
-# populated by the maintainer benchmark capture script or an external
-# wrapper. Automatic cache write-through is not currently wired into the
-# request path; cache entries must be populated explicitly or by an
-# external capture workflow.
+# written by your own code. Automatic cache write-through is not wired
+# into the request path, and the repository ships no capture script.
 export UNIPROT_MCP_CACHE_DIR=~/sealed-cache
 > uniprot_replay_from_cache("https://rest.uniprot.org/uniprotkb/P04637")
 ```
@@ -489,9 +500,9 @@ export UNIPROT_MCP_CACHE_DIR=~/sealed-cache
 | Contract | `tests/contract/` | Manifest / pyproject / docs / incident-policy / benchmark drift prevention. |
 | Client | `tests/client/` | Retry / back-off / id-mapping polling against `respx`-mocked HTTP. |
 | Integration | `tests/integration/` | Live UniProt + AlphaFold; opt-in via `--integration`. |
-| Benchmark | `tests/benchmark/` | 30 SHA-256-committed prompts + reproducible verifier. |
+| Benchmark protocol | `tests/benchmark/` | 30 prompts, a SHA-256-sealed answer key and an answer verifier. Not collected by `pytest`; no system has been run against it. |
 
-**Offline and optional live integration suites are enforced in CI** on `main` (real counts via `pytest --collect-only --ignore=tests/integration` and `pytest --collect-only tests/integration`; the offline count includes the v1.1.x mutation-killer files for `cache`, `proteinchem`, `client`, the contract tests for version-consistency / changelog-presence, and the coverage-gap test files that restored full coverage). Line + branch coverage is **100.00 %** across all seven source files, with the `[tool.coverage.report]` gate set to `fail_under = 100` so CI enforces it. Two branches carry a justified `# pragma: no cover` for genuinely-unreachable import-time fallbacks (documented inline and in `pyproject.toml`). Reproduce locally with `pytest tests/unit tests/property tests/client tests/contract --cov=uniprot_mcp --cov-branch --cov-report=term-missing`. Mypy (strict), ruff (check + format), bandit (0 issues at any severity), pip-audit (`--strict`, no known vulnerabilities) all clean. **Mutation testing infrastructure ships and is measurement-first:** see the per-module table at [`docs/MUTATION_SCORES.md`](docs/MUTATION_SCORES.md) for the latest matrix-workflow results; the ≥ 95 % gate is the v1.2.0 target, not the current state.
+**Offline and optional live integration suites are enforced in CI** on `main` (real counts via `pytest --collect-only --ignore=tests/integration` and `pytest --collect-only tests/integration`; the offline count includes the v1.1.x mutation-killer files for `cache`, `proteinchem`, `client`, the contract tests for version-consistency / changelog-presence, and the coverage-gap test files that restored full coverage). Line + branch coverage is **100.00 %** across all seven source files, with the `[tool.coverage.report]` gate set to `fail_under = 100` so CI enforces it. Two branches carry a justified `# pragma: no cover` for genuinely-unreachable import-time fallbacks (documented inline and in `pyproject.toml`). Reproduce locally with `pytest tests/unit tests/property tests/client tests/contract --cov=uniprot_mcp --cov-branch --cov-report=term-missing`. Mypy (strict), ruff (check + format), bandit (0 issues at any severity), pip-audit (`--strict`, no known vulnerabilities) all clean. **Mutation testing infrastructure ships and is measurement-only:** see the per-module table at [`docs/MUTATION_SCORES.md`](docs/MUTATION_SCORES.md) for the last recorded matrix-workflow results (April 2026). No kill-rate threshold is enforced; ≥ 95 % is an aspiration without a release commitment.
 
 ```bash
 # Fast, offline (CI on every push):

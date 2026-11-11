@@ -1,14 +1,32 @@
 # Benchmark v1 — `uniprot-mcp` pre-registered evaluation
 
-> Pre-registered prompts, SHA-256-committed expected answers, third-party-reproducible scoring under three independent conditions. See [`AUDIT.md`](AUDIT.md) for per-prompt independence.
+> Pre-registered prompts, SHA-256-committed expected answers, and a protocol for scoring three comparators. See [`AUDIT.md`](AUDIT.md) for per-prompt independence.
+
+## Status
+
+**The answer key is sealed and verified. The benchmark has not been run.**
+
+| Step | State |
+|---|---|
+| Prompts frozen | Done, 2026-04-24. |
+| Expected answers sealed (`expected.hashes.jsonl`) | Done, 2026-04-25. |
+| Answer key checked against live UniProt | Done: 30 of 30 on 2026-04-25 and again on 2026-04-26 ([record](run-2026-04-26-v1.1.0/README.md)). The verifiers query the UniProt REST API directly and call no `uniprot-mcp` tool. |
+| Any comparator run (`uniprot-mcp`, vanilla Claude, manual) | **Not done.** `run.py` is a scaffold that exits with status 1. |
+| Grading and aggregate scores | **Not done.** `score.py` is a scaffold; there is no `graders.md` and no scored run directory. |
+
+So there is no result for this server or for any baseline: no accuracy,
+no tool-call count, no comparison. The "30 / 30" that appears in this
+repository counts expected answers confirmed against UniProt, nothing
+else. The sections below describe the design that a run is meant to
+follow.
 
 ## Why this exists
 
 Marketing-grade benchmarks select for the system author's preferences. This benchmark is engineered to **exclude** that selection bias by three structural choices:
 
 1. **Pre-registration before scoring.** The prompts and the expected answers are frozen and SHA-256 committed *before* any system is run against them. Editing the expected answers post-hoc is a cryptographic break, not an unreviewable git diff.
-2. **Three comparators per run.** Every prompt is answered by `uniprot-mcp` v1.0.1, by vanilla Claude with WebFetch, and by a manual primary-source pass. The comparison is a delta, not an absolute.
-3. **Independent grading.** Two graders score blind, one arbitrator resolves disagreements. Grader names and affiliations are recorded in `graders.md` per run.
+2. **Three comparators per run.** Every prompt is to be answered by `uniprot-mcp`, by vanilla Claude with WebFetch, and by a manual primary-source pass. The comparison is a delta, not an absolute.
+3. **Independent grading.** Two graders are to score blind, with one arbitrator resolving disagreements. Grader names and affiliations are to be recorded in `graders.md` per run.
 
 ### Two reproducibility paths
 
@@ -41,10 +59,12 @@ python tests/benchmark/verify_answers.py tests/benchmark/expected.jsonl
 | `AUDIT.md` | Per-prompt source attribution. Names the primary-source URL or DOI consulted to author each expected answer. Independence statement: `uniprot-mcp` was **not** used during answer authoring. | Updated each time `expected.jsonl` is sealed. |
 | `seal.py` | Reads `expected.jsonl` → produces `expected.hashes.jsonl`. Apache-2.0. | — |
 | `verify.py` | Reads both → exits 0 iff hashes match. Apache-2.0. | — |
-| `run.py` | Driver: executes one prompt under one comparator, captures transcript. Skeleton in v1; full wire post-billing. | Filled at scoring time. |
-| `score.py` | Driver: takes a run directory + grader names, produces aggregate score table. Skeleton in v1. | Filled at scoring time. |
-| `run-YYYY-MM-DD/` | One directory per run. Per-prompt comparator transcripts, per-grader scoresheets, arbitration decisions, final aggregate. | At scoring time. |
-| `graders.md` | Named graders, affiliations, blind-protocol attestation. | At scoring time, per run. |
+| `run.py` | Intended driver: execute one prompt under one comparator and capture the transcript. Today a scaffold: it parses the command line, prints a `[scaffold]` notice and exits with status 1. It runs nothing. | Filled at scoring time. |
+| `score.py` | Intended driver: take a run directory and grader names and produce the aggregate score table. Today a scaffold with the same behaviour. | Filled at scoring time. |
+| `run-YYYY-MM-DD/` | One directory per run. Per-prompt comparator transcripts, per-grader scoresheets, arbitration decisions, final aggregate. None exists yet. | At scoring time. |
+| `run-2026-04-26-v1.1.0/` | Record of the answer-key verification of 2026-04-26. Not a benchmark run, despite the directory name. | 2026-04-26; corrected 2026-11-11. |
+| `run-2026-04-25-roundtrip/` | Withdrawn provenance transcript; see the note inside. | Withdrawn 2026-10-25. |
+| `graders.md` | Named graders, affiliations, blind-protocol attestation. Does not exist yet. | At scoring time, per run. |
 
 ## Tier semantics
 
@@ -77,6 +97,9 @@ Aggregate output is published as `run-YYYY-MM-DD/aggregate.md` plus the underlyi
 
 ## Running the benchmark
 
+The commands below are the intended interface. They do not work yet:
+`run.py` and `score.py` stop with a `[scaffold]` message and exit status 1.
+
 ```bash
 # 1. Install + configure
 pip install -e ".[test,dev]"
@@ -105,5 +128,8 @@ Prompts authored by Santiago Maniches (ORCID 0009-0005-6480-1987, TOPOLOGICA LLC
 ## State (updated on every change)
 
 - **2026-04-24:** v1 prompts frozen; scaffold and scripts in place. Expected-answer authoring + hash sealing land in the immediate follow-up commit. The `expected.hashes.jsonl` file does not yet exist on `main`; the benchmark is **not yet sealed**.
+- **2026-04-25:** expected answers sealed; `expected.hashes.jsonl` committed; answer key verified 30 / 30 against live UniProt (see `AUDIT.md`).
+- **2026-04-26:** answer key verified 30 / 30 again at v1.1.0 (`run-2026-04-26-v1.1.0/`).
+- **2026-11-11:** status stated explicitly at the top of this file. The answer key is sealed and verified; no comparator has been run and nothing has been scored. Earlier wording in this repository that presented the 2026-04-26 verification as a benchmark result was corrected.
 
-The compliance-officer test: a 2030 reviewer should find a sealed-and-verified benchmark on `main`. The test fails until the follow-up sealing commit lands.
+The compliance-officer test: a 2030 reviewer should find a sealed-and-verified answer key on `main`, which is the case since 2026-04-25, and should be able to tell at a glance that the benchmark run itself is still open.
