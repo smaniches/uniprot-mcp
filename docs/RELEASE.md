@@ -57,6 +57,16 @@ approved commit on main (optional Release-As: X.Y.Z)
       `tests/contract/test_changelog_has_current_version.py` checks.
       Confirm the required CI and strict docs checks are green.
 
+**Release Please PR checks.** Release Please creates or updates its PR
+using `GITHUB_TOKEN`. GitHub may queue the resulting `pull_request`
+workflows for approval (`action_required`) rather than running them
+automatically. On the generated release PR, use **Approve workflows to
+run** when prompted, then confirm that CI, CodeQL and strict docs
+checks pass for the current release PR head. Recheck after any bot update.
+Do not substitute `workflow_dispatch` runs: GitHub does not count
+checks from those runs as required PR checks. Never bypass the required
+checks merely to merge a release PR.
+
 ### 2. Merge the generated release PR
 
 After explicit approval and passing required checks, merge the Release
@@ -193,7 +203,7 @@ altering existing attribution.
 | Delayed `zenodo-verify` opens an issue | Zenodo still does not expose the release after the six-hour threshold | inspect the GitHub-Zenodo integration delivery and the existing concept record; do not mint manually or change the DOI badge |
 | `zenodo-verify` cannot read the API | Zenodo or the network is temporarily unavailable | retry later; this condition does not assert that a deposit is missing |
 | `publish-pypi` fails with `Token request error` | OIDC publisher entry missing on PyPI | re-add at `pypi.org/manage/account/publishing/` |
-| `release-verify` says `missing sigstore bundle` | `sign-and-release` job was skipped (likely a permissions regression) | re-grant `id-token: write` on the job, re-run the workflow |
+| `release-verify` says `missing sigstore bundle` | Missing release asset, incorrect attachment glob, deletion, or verification invoked separately before signing completed | Inspect the `sign-and-release` job logs, generated bundles and attached GitHub Release assets; repair the specific missing artifact without unnecessarily rerunning PyPI publication |
 | `pip install uniprot-mcp-server==X` says version not found | PyPI CDN lag, usually clears in 60 s | wait, retry; if persistent, check `pypi.org/project/uniprot-mcp-server/#history` |
 
 ## Rolling forward, not back
