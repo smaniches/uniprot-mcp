@@ -57,6 +57,10 @@ approved commit on main (optional Release-As: X.Y.Z)
       `tests/contract/test_changelog_has_current_version.py` checks.
       Confirm the required CI and strict docs checks are green.
 
+- [ ] Triage every review finding from maintainers, Codex, Dependabot
+      and security tooling. Reproduce or explain non-applicability, reply
+      with evidence and resolve actionable threads before merging.
+
 **Release Please PR checks.** Release Please creates or updates its PR
 using `GITHUB_TOKEN`. GitHub may queue the resulting `pull_request`
 workflows for approval (`action_required`) rather than running them
