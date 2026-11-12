@@ -1007,10 +1007,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-pre-tag-on-the-release-branch" class="md-nav__link">
+  <a href="#1-request-and-review-the-release" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Pre-tag (on the release branch)
+        1. Request and review the release
       
     </span>
   </a>
@@ -1018,10 +1018,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-tag-push" class="md-nav__link">
+  <a href="#2-merge-the-generated-release-pr" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Tag push
+        2. Merge the generated release PR
       
     </span>
   </a>
@@ -1187,10 +1187,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-pre-tag-on-the-release-branch" class="md-nav__link">
+  <a href="#1-request-and-review-the-release" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Pre-tag (on the release branch)
+        1. Request and review the release
       
     </span>
   </a>
@@ -1198,10 +1198,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-tag-push" class="md-nav__link">
+  <a href="#2-merge-the-generated-release-pr" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Tag push
+        2. Merge the generated release PR
       
     </span>
   </a>
@@ -1316,59 +1316,76 @@
 
 
 <h1 id="release-runbook">Release runbook<a class="headerlink" href="#release-runbook" title="Permanent link">&para;</a></h1>
-<p>How a <code>uniprot-mcp</code> release ships, link by link, and what to check
-when something looks wrong. The chain is designed to be re-runnable
-and auditable years after the fact — every artefact carries a
-provenance attestation, an SBOM, and a Zenodo DOI.</p>
+<p>How a <code>uniprot-mcp</code> release ships and what to verify. Release Please
+owns version bumps, tags and GitHub Releases; downstream workflows build,
+attest and publish artifacts. Zenodo synchronization is asynchronous.</p>
 <h2 id="release-policy-releases-are-deliberate">Release policy — releases are deliberate<a class="headerlink" href="#release-policy-releases-are-deliberate" title="Permanent link">&para;</a></h2>
-<p>release-please opens a release PR for <code>feat:</code> (minor), <code>fix:</code> (patch),
-and <code>security:</code> (patch) commits. Security commits are rendered in a dedicated
-Security changelog section. Housekeeping types — <code>ci</code>, <code>docs</code>, <code>test</code>,
-<code>refactor</code>, <code>perf</code>, <code>deps</code> — are marked <code>hidden: true</code> in
-<code>release-please-config.json</code>, so merging them lands silently on <code>main</code>
-<strong>without</strong> proposing a version bump. This stops a steady stream of
-<code>ci:</code>/<code>docs:</code> merges from each cutting their own patch release. Use
-<code>security:</code> for security-relevant dependency or hardening changes that must
-ship to users; use <code>fix:</code> for ordinary user-visible bug fixes. Past releases
-are immutable on PyPI/Zenodo regardless; this only governs what gets cut going
-forward.</p>
+<p><code>release-please.yml</code> runs on pushes to <code>main</code> and maintains a release
+PR based on Conventional Commits. <code>feat:</code> normally requests a minor
+release; <code>fix:</code> and <code>security:</code> normally request a patch release.
+Security changes appear in a dedicated changelog section.</p>
+<p>For a deliberate version override, include <code>Release-As: X.Y.Z</code> in the
+body of a commit merged into <code>main</code>. Release Please then updates its
+existing release PR. Preserve the footer in the final merge or squash
+commit. Do not edit the manifest, generated version files or the
+bot-owned release branch to select the next version.</p>
+<p><code>hidden: true</code> in <code>release-please-config.json</code> controls changelog
+visibility; it does <strong>not</strong> guarantee that a commit type cannot cause
+a release. Release eligibility and version selection are separate
+from changelog display.</p>
 <h2 id="the-chain">The chain<a class="headerlink" href="#the-chain" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git tag v1.1.6  ──►  release.yml (Actions)  ──►  PyPI (Trusted Publishing, OIDC)
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                               │                       │
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                               │                       └──►  MCP Registry (registry.modelcontextprotocol.io, GitHub OIDC)
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                               │
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                               ├──►  GitHub Release (assets: dist/*, sbom.cdx.json, *.sigstore.json)
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>                               │            │
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                               │            ├──►  release-verify.yml (immediate)
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                               │            │            ├── pip index versions uniprot-mcp-server
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                               │            │            ├── gh release view (asset presence)
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>                               │            │            └── gh attestation verify (SLSA)
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>                               │            │
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>                               │            └──►  Zenodo webhook  ──►  version DOI minted
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>                               │                                      │
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>                               │                                      └──►  zenodo-verify.yml
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                               │                                             (scheduled, delayed)
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>                               │
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>                               └──►  Sigstore signing (gh-action-sigstore-python)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>approved commit on main (optional Release-As: X.Y.Z)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  -&gt; release-please.yml -&gt; updated Release Please PR (versions + changelog)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  -&gt; review, required checks, merge of that PR
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  -&gt; release-please.yml -&gt; tag vX.Y.Z + GitHub Release
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>       |-&gt; release.yml (explicit workflow_dispatch)
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>       |     |-&gt; build (sdist, wheel, SLSA attestation)
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>       |     |-&gt; sbom -&gt; attest-sbom
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>       |     |-&gt; publish-pypi -&gt; publish-mcp-registry
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>       |     |-&gt; sign-and-release (Sigstore; attach GitHub Release assets)
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>       |     `-&gt; dispatch-verify -&gt; release-verify.yml
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>       `-&gt; Zenodo webhook -&gt; version DOI -&gt; zenodo-verify.yml (delayed)
 </code></pre></div>
 <h2 id="step-by-step">Step-by-step<a class="headerlink" href="#step-by-step" title="Permanent link">&para;</a></h2>
-<h3 id="1-pre-tag-on-the-release-branch">1. Pre-tag (on the release branch)<a class="headerlink" href="#1-pre-tag-on-the-release-branch" title="Permanent link">&para;</a></h3>
+<h3 id="1-request-and-review-the-release">1. Request and review the release<a class="headerlink" href="#1-request-and-review-the-release" title="Permanent link">&para;</a></h3>
 <ul>
-<li>[ ] <code>python scripts/check_versions.py</code> exits 0
-      (every version-bearing file agrees with <code>pyproject.toml</code>).</li>
-<li>[ ] <code>pytest tests/unit tests/property tests/client tests/contract</code>
-      green (includes <code>test_version_consistency</code> and
-      <code>test_changelog_has_current_version</code>).</li>
-<li>[ ] <code>CHANGELOG.md</code> has a <code>## [X.Y.Z] - YYYY-MM-DD</code> entry.</li>
-<li>[ ] PR is merged into <code>main</code>; CI on the merge commit is green.</li>
+<li>[ ] Merge a focused preparatory PR into <code>main</code>. To override the
+      version, put <code>Release-As: X.Y.Z</code> in the final commit body and
+      confirm it survives the chosen merge method.</li>
+<li>[ ] Confirm <code>release-please.yml</code> updates the existing release PR to
+      the intended version and adds a <code>## [X.Y.Z]</code> entry to
+      <code>CHANGELOG.md</code> in the bot-generated branch.</li>
+<li>[ ] Check that <code>pyproject.toml</code>, <code>.release-please-manifest.json</code>,
+      <code>CITATION.cff</code>, <code>.zenodo.json</code>, <code>.well-known/mcp.json</code>,
+      both versions in <code>server.json</code> and the user-agent test pin agree.</li>
+<li>
+<p>[ ] On the generated release PR head, run
+      <code>python scripts/check_versions.py</code> and the focused
+      <code>tests/contract/test_version_consistency.py</code> and
+      <code>tests/contract/test_changelog_has_current_version.py</code> checks.
+      Confirm the required CI and strict docs checks are green.</p>
+</li>
+<li>
+<p>[ ] Triage every review finding from maintainers, Codex, Dependabot
+      and security tooling. Reproduce or explain non-applicability, reply
+      with evidence and resolve actionable threads before merging.</p>
+</li>
 </ul>
-<h3 id="2-tag-push">2. Tag push<a class="headerlink" href="#2-tag-push" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v1.1.6<span class="w"> </span>-m<span class="w"> </span><span class="s2">"v1.1.6"</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.6
-</code></pre></div>
-<p>The tag triggers <code>.github/workflows/release.yml</code>. Watch the run at
-<code>https://github.com/smaniches/uniprot-mcp/actions/workflows/release.yml</code>.</p>
+<p><strong>Release Please PR checks.</strong> Release Please creates or updates its PR
+using <code>GITHUB_TOKEN</code>. GitHub may queue the resulting <code>pull_request</code>
+workflows for approval (<code>action_required</code>) rather than running them
+automatically. On the generated release PR, use <strong>Approve workflows to
+run</strong> when prompted, then confirm that CI, CodeQL and strict docs
+checks pass for the current release PR head. Recheck after any bot update.
+Do not substitute <code>workflow_dispatch</code> runs: GitHub does not count
+checks from those runs as required PR checks. Never bypass the required
+checks merely to merge a release PR.</p>
+<h3 id="2-merge-the-generated-release-pr">2. Merge the generated release PR<a class="headerlink" href="#2-merge-the-generated-release-pr" title="Permanent link">&para;</a></h3>
+<p>After explicit approval and passing required checks, merge the Release
+Please PR. Its subsequent <code>main</code> run creates the tag <code>vX.Y.Z</code> and
+GitHub Release, then dispatches <code>release.yml</code> with that tag via
+<code>workflow_dispatch</code>. The <code>push: tags</code> trigger is a fallback, not the
+normal procedure. <strong>Do not create or push the tag manually.</strong></p>
 <h3 id="3-releaseyml-jobs">3. <code>release.yml</code> jobs<a class="headerlink" href="#3-releaseyml-jobs" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1380,19 +1397,31 @@ forward.</p>
 <tbody>
 <tr>
 <td><code>build</code></td>
-<td>sdist + wheel; CycloneDX SBOM (<code>sbom.cdx.json</code>); SLSA build-provenance attestation; SBOM attestation; uploads as <code>release-artifacts</code></td>
+<td>Build sdist and wheel, attach SLSA build-provenance attestation, upload dist artifact.</td>
+</tr>
+<tr>
+<td><code>sbom</code></td>
+<td>Generate CycloneDX SBOM from the exact built wheel in an unprivileged job.</td>
+</tr>
+<tr>
+<td><code>attest-sbom</code></td>
+<td>Attest the SBOM against the released wheel.</td>
 </tr>
 <tr>
 <td><code>publish-pypi</code></td>
-<td>PyPI upload via OIDC Trusted Publishing (no token)</td>
+<td>Publish to PyPI via OIDC Trusted Publishing after build and SBOM attestation.</td>
 </tr>
 <tr>
 <td><code>publish-mcp-registry</code></td>
-<td><code>server.json</code> published to the official MCP Registry (<code>registry.modelcontextprotocol.io</code>); runs after <code>publish-pypi</code>; GitHub OIDC auth, no secret</td>
+<td>Publish <code>server.json</code> to the official MCP Registry after PyPI succeeds, using GitHub OIDC.</td>
 </tr>
 <tr>
 <td><code>sign-and-release</code></td>
-<td>Sigstore signatures (<code>*.sigstore.json</code>); GitHub Release created with all assets</td>
+<td>Sigstore-sign artifacts and attach them and the SBOM to the Release Please-created GitHub Release; create a Release only on the push-tag fallback.</td>
+</tr>
+<tr>
+<td><code>dispatch-verify</code></td>
+<td>Start immediate verification after PyPI publication and signing; does not wait for the MCP Registry job.</td>
 </tr>
 </tbody>
 </table>
@@ -1408,10 +1437,11 @@ control of the PyPI package via the <code>mcp-name: io.github.smaniches/uniprot-
 marker in <code>README.md</code> (the PyPI long description). Both must stay intact for
 the publish to validate. <code>server.json</code>'s version is bumped by release-please
 (an <code>extra-files</code> target), so it always matches the released PyPI version.</p>
-<p>If any job fails: read the failure, fix on a follow-up commit, push
-a <em>new</em> tag (<code>v1.1.6.post1</code> or <code>v1.1.7</code>). Do not delete and re-push
-the original tag — Zenodo treats the original as a separate version
-and the duplicate DOI is forever.</p>
+<p>If a downstream job fails, inspect which uploads already completed before
+retrying: a published PyPI file cannot be uploaded again under the same
+name and version. Re-run only a safely incomplete step; if a new version
+is needed, use a fresh Release Please cycle. Never move or re-push a
+published tag.</p>
 <h3 id="4-zenodo-webhook-passive">4. Zenodo webhook (passive)<a class="headerlink" href="#4-zenodo-webhook-passive" title="Permanent link">&para;</a></h3>
 <p>The Zenodo–GitHub integration is enabled per-account. Once flipped
 on for the repo, every new GitHub Release triggers Zenodo to read
@@ -1449,36 +1479,38 @@ mint duplicate DOIs.</p>
 the publisher entry with the four fields above.</p>
 <h3 id="6-post-tag-verification-automatic">6. Post-tag verification (automatic)<a class="headerlink" href="#6-post-tag-verification-automatic" title="Permanent link">&para;</a></h3>
 <p>Verification is split by expected consistency window.</p>
-<p><code>release-verify.yml</code> fires immediately on <code>release: [published]</code>. It verifies
-PyPI, the complete GitHub Release asset set, and SLSA provenance. A failure in
-one of those links opens <code>Release verification failed for &lt;tag&gt;</code> with the
-<code>release-drift</code> label. Zenodo is deliberately excluded from this immediate
-gate.</p>
-<p><code>zenodo-verify.yml</code> runs every six hours. For scheduled runs it checks the
-latest stable GitHub Release only after that release is at least six hours old.
-It compares the release tag with <code>metadata.version</code> on Zenodo concept record
-<code>19817710</code>. Only a mismatch after that delayed threshold opens
-<code>Zenodo verification failed for &lt;tag&gt;</code>. When a later delayed run observes the
-expected version, it records the successful run on that Zenodo-specific issue
-and closes it. A transient inability to read the Zenodo API fails the workflow
-without claiming that the deposit itself is missing.</p>
+<p><code>release-verify.yml</code> declares a <code>release: published</code> trigger, but
+GitHub suppresses downstream workflows for Release Please events created
+with <code>GITHUB_TOKEN</code>. The normal path is an explicit dispatch from the
+end of <code>release.yml</code>, after PyPI publication and release-asset signing
+complete. It verifies the PyPI version and downloaded hashes, GitHub
+Release assets, SLSA provenance and SBOM-to-wheel binding. A failure
+opens <code>Release verification failed for &lt;tag&gt;</code> with the <code>release-drift</code>
+label. <strong>This workflow does not verify MCP Registry publication or Zenodo.</strong>
+Check the official registry entry and its package version separately.</p>
+<p><code>zenodo-verify.yml</code> runs every six hours. On scheduled runs it checks
+the latest stable GitHub Release only when it is at least six hours old.
+It compares the release tag with <code>metadata.version</code> on Zenodo concept
+record <code>19817710</code>. An observed mismatch past that threshold opens
+<code>Zenodo verification failed for &lt;tag&gt;</code>; a later match closes that
+issue. Transient Zenodo API failures are inconclusive on scheduled
+runs (the workflow remains green and retries later); manual runs fail
+without asserting that a deposit is missing.</p>
 <p>To re-trigger immediate verification manually for an older tag:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>gh workflow run release-verify.yml --field tag=v1.1.6
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>gh workflow run release-verify.yml --ref v1.4.0 --field tag=v1.4.0
 </code></pre></div>
 <p>To verify Zenodo immediately for the latest stable tag, bypassing the scheduled
 age gate explicitly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>gh workflow run zenodo-verify.yml --field tag=v1.3.2
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>gh workflow run zenodo-verify.yml --ref v1.4.0 --field tag=v1.4.0
 </code></pre></div>
 <p>The manual Zenodo workflow rejects older tags because the concept-record API
 exposes only the latest-version pointer. Historical version records must be
 verified by their immutable version DOI rather than compared with that pointer.</p>
 <h3 id="7-citationcff-version-doi-append-next-cycle">7. CITATION.cff version-DOI append (next cycle)<a class="headerlink" href="#7-citationcff-version-doi-append-next-cycle" title="Permanent link">&para;</a></h3>
-<p>Each release mints a Zenodo version DOI that is only known <em>after</em>
-the deposit lands. The convention: the v1.1.6 release adds the
-v1.1.6 changelog entry; the <em>following</em> release cycle (v1.1.7)
-appends the v1.1.6 version DOI to <code>CITATION.cff</code> <code>identifiers:</code>.
-This is why the <code>identifiers:</code> list always trails the releases and
-does not carry a version DOI for every one of them.</p>
+<p>A version DOI becomes available only after Zenodo ingests the GitHub
+Release. The following release cycle may add that verified DOI to
+<code>CITATION.cff</code> <code>identifiers:</code>, without replacing the concept DOI or
+altering existing attribution.</p>
 <h2 id="when-a-release-goes-wrong">When a release goes wrong<a class="headerlink" href="#when-a-release-goes-wrong" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1511,8 +1543,8 @@ does not carry a version DOI for every one of them.</p>
 </tr>
 <tr>
 <td><code>release-verify</code> says <code>missing sigstore bundle</code></td>
-<td><code>sign-and-release</code> job was skipped (likely a permissions regression)</td>
-<td>re-grant <code>id-token: write</code> on the job, re-run the workflow</td>
+<td>Missing release asset, incorrect attachment glob, deletion, or verification invoked separately before signing completed</td>
+<td>Inspect the <code>sign-and-release</code> job logs, generated bundles and attached GitHub Release assets; repair the specific missing artifact without unnecessarily rerunning PyPI publication</td>
 </tr>
 <tr>
 <td><code>pip install uniprot-mcp-server==X</code> says version not found</td>
@@ -1522,11 +1554,10 @@ does not carry a version DOI for every one of them.</p>
 </tbody>
 </table>
 <h2 id="rolling-forward-not-back">Rolling forward, not back<a class="headerlink" href="#rolling-forward-not-back" title="Permanent link">&para;</a></h2>
-<p><strong>Never delete or re-push a release tag.</strong> PyPI rejects re-uploads
-of the same <code>(name, version)</code>. Zenodo treats the second push as a
-separate version. GitHub renders both as duplicate releases. If a
-release goes wrong, ship a <code>.postN</code> or a <code>Z+1</code> patch — fast forward
-only.</p>
+<p><strong>Never delete, overwrite or re-push a release tag.</strong> PyPI rejects
+re-uploads of the same name and version, and Zenodo release records
+must not be rewritten. If a partial publication cannot be safely
+completed, ship a new forward version through Release Please.</p>
 
 
 
