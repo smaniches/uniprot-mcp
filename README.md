@@ -530,9 +530,8 @@ bandit -r src/uniprot_mcp && pip-audit --strict
 - [`AUDIT.md`](AUDIT.md) — pre-1.0.1 professional audit, P0/P1
   remediations recorded.
 - [`docs/RELEASE.md`](docs/RELEASE.md) — release runbook covering the
-  tag → PyPI → MCP Registry → Sigstore → GitHub Release → Zenodo chain,
-  including the `release-verify.yml` post-tag verification job and the
-  one-time setup for the Zenodo + PyPI webhooks.
+  Release Please PR → automated tag/GitHub Release → PyPI/MCP Registry,
+  signing, verification and delayed Zenodo synchronization.
 - [`docs/archive/`](docs/archive/) — pre-flip planning docs retained
   for audit trail (`PENDING_V1.md`, `MERGE_PLAN.md`,
   `RELEASE_AUDIT_v1.1.3.md`). Not part of the published docs site;

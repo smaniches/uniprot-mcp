@@ -1,77 +1,81 @@
 # Release runbook
 
-How a `uniprot-mcp` release ships, link by link, and what to check
-when something looks wrong. The chain is designed to be re-runnable
-and auditable years after the fact — every artefact carries a
-provenance attestation, an SBOM, and a Zenodo DOI.
+How a `uniprot-mcp` release ships and what to verify. Release Please
+owns version bumps, tags and GitHub Releases; downstream workflows build,
+attest and publish artifacts. Zenodo synchronization is asynchronous.
 
 ## Release policy — releases are deliberate
 
-release-please opens a release PR for `feat:` (minor), `fix:` (patch),
-and `security:` (patch) commits. Security commits are rendered in a dedicated
-Security changelog section. Housekeeping types — `ci`, `docs`, `test`,
-`refactor`, `perf`, `deps` — are marked `hidden: true` in
-`release-please-config.json`, so merging them lands silently on `main`
-**without** proposing a version bump. This stops a steady stream of
-`ci:`/`docs:` merges from each cutting their own patch release. Use
-`security:` for security-relevant dependency or hardening changes that must
-ship to users; use `fix:` for ordinary user-visible bug fixes. Past releases
-are immutable on PyPI/Zenodo regardless; this only governs what gets cut going
-forward.
+`release-please.yml` runs on pushes to `main` and maintains a release
+PR based on Conventional Commits. `feat:` normally requests a minor
+release; `fix:` and `security:` normally request a patch release.
+Security changes appear in a dedicated changelog section.
+
+For a deliberate version override, include `Release-As: X.Y.Z` in the
+body of a commit merged into `main`. Release Please then updates its
+existing release PR. Preserve the footer in the final merge or squash
+commit. Do not edit the manifest, generated version files or the
+bot-owned release branch to select the next version.
+
+`hidden: true` in `release-please-config.json` controls changelog
+visibility; it does **not** guarantee that a commit type cannot cause
+a release. Release eligibility and version selection are separate
+from changelog display.
 
 ## The chain
 
-```
-git tag v1.1.6  ──►  release.yml (Actions)  ──►  PyPI (Trusted Publishing, OIDC)
-                               │                       │
-                               │                       └──►  MCP Registry (registry.modelcontextprotocol.io, GitHub OIDC)
-                               │
-                               ├──►  GitHub Release (assets: dist/*, sbom.cdx.json, *.sigstore.json)
-                               │            │
-                               │            ├──►  release-verify.yml (immediate)
-                               │            │            ├── pip index versions uniprot-mcp-server
-                               │            │            ├── gh release view (asset presence)
-                               │            │            └── gh attestation verify (SLSA)
-                               │            │
-                               │            └──►  Zenodo webhook  ──►  version DOI minted
-                               │                                      │
-                               │                                      └──►  zenodo-verify.yml
-                               │                                             (scheduled, delayed)
-                               │
-                               └──►  Sigstore signing (gh-action-sigstore-python)
+```text
+approved commit on main (optional Release-As: X.Y.Z)
+  -> release-please.yml -> updated Release Please PR (versions + changelog)
+  -> review, required checks, merge of that PR
+  -> release-please.yml -> tag vX.Y.Z + GitHub Release
+       |-> release.yml (explicit workflow_dispatch)
+       |     |-> build (sdist, wheel, SLSA attestation)
+       |     |-> sbom -> attest-sbom
+       |     |-> publish-pypi -> publish-mcp-registry
+       |     |-> sign-and-release (Sigstore; attach GitHub Release assets)
+       |     `-> dispatch-verify -> release-verify.yml
+       `-> Zenodo webhook -> version DOI -> zenodo-verify.yml (delayed)
 ```
 
 ## Step-by-step
 
-### 1. Pre-tag (on the release branch)
+### 1. Request and review the release
 
-- [ ] `python scripts/check_versions.py` exits 0
-      (every version-bearing file agrees with `pyproject.toml`).
-- [ ] `pytest tests/unit tests/property tests/client tests/contract`
-      green (includes `test_version_consistency` and
-      `test_changelog_has_current_version`).
-- [ ] `CHANGELOG.md` has a `## [X.Y.Z] - YYYY-MM-DD` entry.
-- [ ] PR is merged into `main`; CI on the merge commit is green.
+- [ ] Merge a focused preparatory PR into `main`. To override the
+      version, put `Release-As: X.Y.Z` in the final commit body and
+      confirm it survives the chosen merge method.
+- [ ] Confirm `release-please.yml` updates the existing release PR to
+      the intended version and adds a `## [X.Y.Z]` entry to
+      `CHANGELOG.md` in the bot-generated branch.
+- [ ] Check that `pyproject.toml`, `.release-please-manifest.json`,
+      `CITATION.cff`, `.zenodo.json`, `.well-known/mcp.json`,
+      both versions in `server.json` and the user-agent test pin agree.
+- [ ] On the generated release PR head, run
+      `python scripts/check_versions.py` and the focused
+      `tests/contract/test_version_consistency.py` and
+      `tests/contract/test_changelog_has_current_version.py` checks.
+      Confirm the required CI and strict docs checks are green.
 
-### 2. Tag push
+### 2. Merge the generated release PR
 
-```sh
-git checkout main && git pull
-git tag -a v1.1.6 -m "v1.1.6"
-git push origin v1.1.6
-```
-
-The tag triggers `.github/workflows/release.yml`. Watch the run at
-`https://github.com/smaniches/uniprot-mcp/actions/workflows/release.yml`.
+After explicit approval and passing required checks, merge the Release
+Please PR. Its subsequent `main` run creates the tag `vX.Y.Z` and
+GitHub Release, then dispatches `release.yml` with that tag via
+`workflow_dispatch`. The `push: tags` trigger is a fallback, not the
+normal procedure. **Do not create or push the tag manually.**
 
 ### 3. `release.yml` jobs
 
 | Job | Output |
 |---|---|
-| `build` | sdist + wheel; CycloneDX SBOM (`sbom.cdx.json`); SLSA build-provenance attestation; SBOM attestation; uploads as `release-artifacts` |
-| `publish-pypi` | PyPI upload via OIDC Trusted Publishing (no token) |
-| `publish-mcp-registry` | `server.json` published to the official MCP Registry (`registry.modelcontextprotocol.io`); runs after `publish-pypi`; GitHub OIDC auth, no secret |
-| `sign-and-release` | Sigstore signatures (`*.sigstore.json`); GitHub Release created with all assets |
+| `build` | Build sdist and wheel, attach SLSA build-provenance attestation, upload dist artifact. |
+| `sbom` | Generate CycloneDX SBOM from the exact built wheel in an unprivileged job. |
+| `attest-sbom` | Attest the SBOM against the released wheel. |
+| `publish-pypi` | Publish to PyPI via OIDC Trusted Publishing after build and SBOM attestation. |
+| `publish-mcp-registry` | Publish `server.json` to the official MCP Registry after PyPI succeeds, using GitHub OIDC. |
+| `sign-and-release` | Sigstore-sign artifacts and attach them and the SBOM to the Release Please-created GitHub Release; create a Release only on the push-tag fallback. |
+| `dispatch-verify` | Start immediate verification after PyPI publication and signing; does not wait for the MCP Registry job. |
 
 The **source distribution** is an installable package archive, not a complete
 research checkout. It includes the package, metadata, license, and core
@@ -87,10 +91,11 @@ marker in `README.md` (the PyPI long description). Both must stay intact for
 the publish to validate. `server.json`'s version is bumped by release-please
 (an `extra-files` target), so it always matches the released PyPI version.
 
-If any job fails: read the failure, fix on a follow-up commit, push
-a *new* tag (`v1.1.6.post1` or `v1.1.7`). Do not delete and re-push
-the original tag — Zenodo treats the original as a separate version
-and the duplicate DOI is forever.
+If a downstream job fails, inspect which uploads already completed before
+retrying: a published PyPI file cannot be uploaded again under the same
+name and version. Re-run only a safely incomplete step; if a new version
+is needed, use a fresh Release Please cycle. Never move or re-push a
+published tag.
 
 ### 4. Zenodo webhook (passive)
 
@@ -137,32 +142,36 @@ the publisher entry with the four fields above.
 
 Verification is split by expected consistency window.
 
-`release-verify.yml` fires immediately on `release: [published]`. It verifies
-PyPI, the complete GitHub Release asset set, and SLSA provenance. A failure in
-one of those links opens `Release verification failed for <tag>` with the
-`release-drift` label. Zenodo is deliberately excluded from this immediate
-gate.
+`release-verify.yml` declares a `release: published` trigger, but
+GitHub suppresses downstream workflows for Release Please events created
+with `GITHUB_TOKEN`. The normal path is an explicit dispatch from the
+end of `release.yml`, after PyPI publication and release-asset signing
+complete. It verifies the PyPI version and downloaded hashes, GitHub
+Release assets, SLSA provenance and SBOM-to-wheel binding. A failure
+opens `Release verification failed for <tag>` with the `release-drift`
+label. **This workflow does not verify MCP Registry publication or Zenodo.**
+Check the official registry entry and its package version separately.
 
-`zenodo-verify.yml` runs every six hours. For scheduled runs it checks the
-latest stable GitHub Release only after that release is at least six hours old.
-It compares the release tag with `metadata.version` on Zenodo concept record
-`19817710`. Only a mismatch after that delayed threshold opens
-`Zenodo verification failed for <tag>`. When a later delayed run observes the
-expected version, it records the successful run on that Zenodo-specific issue
-and closes it. A transient inability to read the Zenodo API fails the workflow
-without claiming that the deposit itself is missing.
+`zenodo-verify.yml` runs every six hours. On scheduled runs it checks
+the latest stable GitHub Release only when it is at least six hours old.
+It compares the release tag with `metadata.version` on Zenodo concept
+record `19817710`. An observed mismatch past that threshold opens
+`Zenodo verification failed for <tag>`; a later match closes that
+issue. Transient Zenodo API failures are inconclusive on scheduled
+runs (the workflow remains green and retries later); manual runs fail
+without asserting that a deposit is missing.
 
 To re-trigger immediate verification manually for an older tag:
 
 ```
-gh workflow run release-verify.yml --field tag=v1.1.6
+gh workflow run release-verify.yml --ref v1.4.0 --field tag=v1.4.0
 ```
 
 To verify Zenodo immediately for the latest stable tag, bypassing the scheduled
 age gate explicitly:
 
 ```
-gh workflow run zenodo-verify.yml --field tag=v1.3.2
+gh workflow run zenodo-verify.yml --ref v1.4.0 --field tag=v1.4.0
 ```
 
 The manual Zenodo workflow rejects older tags because the concept-record API
@@ -171,12 +180,10 @@ verified by their immutable version DOI rather than compared with that pointer.
 
 ### 7. CITATION.cff version-DOI append (next cycle)
 
-Each release mints a Zenodo version DOI that is only known *after*
-the deposit lands. The convention: the v1.1.6 release adds the
-v1.1.6 changelog entry; the *following* release cycle (v1.1.7)
-appends the v1.1.6 version DOI to `CITATION.cff` `identifiers:`.
-This is why the `identifiers:` list always trails the releases and
-does not carry a version DOI for every one of them.
+A version DOI becomes available only after Zenodo ingests the GitHub
+Release. The following release cycle may add that verified DOI to
+`CITATION.cff` `identifiers:`, without replacing the concept DOI or
+altering existing attribution.
 
 ## When a release goes wrong
 
@@ -191,8 +198,7 @@ does not carry a version DOI for every one of them.
 
 ## Rolling forward, not back
 
-**Never delete or re-push a release tag.** PyPI rejects re-uploads
-of the same `(name, version)`. Zenodo treats the second push as a
-separate version. GitHub renders both as duplicate releases. If a
-release goes wrong, ship a `.postN` or a `Z+1` patch — fast forward
-only.
+**Never delete, overwrite or re-push a release tag.** PyPI rejects
+re-uploads of the same name and version, and Zenodo release records
+must not be rewritten. If a partial publication cannot be safely
+completed, ship a new forward version through Release Please.
